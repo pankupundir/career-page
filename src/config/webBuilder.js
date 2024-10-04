@@ -1,11 +1,25 @@
-import axios from 'axios';
+import axios from "axios";
 
-const baseURL = import.meta.env.VITE_WEBSITE_BUILDER;
+export const openJobAPI = import.meta.env.VITE_JOB_OPEN_API;
 
-console.log(baseURL, "baseURLLL");
+const createAxiosInstance = (baseUrl,contentType) => {
+  const instance = axios.create({
+    baseURL: baseUrl ? baseUrl : import.meta.env.VITE_WEBSITE_BUILDER,
+  });
 
-const webSiteBuilderInstance = axios.create({
-  baseURL,
-});
+  instance.interceptors.request.use(
+    (config) => {
+      if (contentType) {
+        config.headers["content-type"] = contentType;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+  return instance;
+};
 
-export default webSiteBuilderInstance;
+// Create two instances with different content-type
+export const webSiteBuilderInstance = createAxiosInstance();
+export const webSiteBuilderFormInstance = createAxiosInstance(openJobAPI,"multipart/form-data");
+export const openAPIBuilderInstance = createAxiosInstance(openJobAPI);
