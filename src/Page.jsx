@@ -55,16 +55,19 @@ const Page = () => {
           `/api/pages/${pageId}/content`
         );
 
+  // commented for feature use
         // const updatedHTML = await updateJobListContent(
         //   response?.data?.data["mycustom-html"]
         // );
-        const updatedHTML = await updateJobFilterSelectBoxes(
-          response?.data?.data["mycustom-html"],
-          jobTypeRes.skillNames,
-          jobTypeRes.jobType
-        );
+        // const updatedHTML = await updateJobFilterSelectBoxes(
+        //   response?.data?.data["mycustom-html"],
+        //   jobTypeRes.skillNames,
+        //   jobTypeRes.jobType
+        // );
 
-        setHtmlContent(updatedHTML);
+        // setHtmlContent(updatedHTML);
+        setHtmlContent(response?.data?.data["mycustom-html"]);
+
 
         setWebsite(response?.data?.data);
         if (
@@ -74,6 +77,7 @@ const Page = () => {
           setNotFound(true);
           setLoader(false);
         }
+        setLoader(false);
       } catch (error) {
         setNotFound(true);
         setLoader(false);
@@ -96,69 +100,71 @@ const Page = () => {
   //   }
   // }, [loader]);
 
-  useEffect(() => {
-    console.log("useEffect run hello");
-    if (htmlContent) {
-      const jobPostButton = document.querySelectorAll("#apply-more");
-      if (jobPostButton) {
-        jobPostButton.forEach((button) => {
-          button.addEventListener("click", handleApplyJob);
-        });
-      }
-    }
 
-    const select1 = document.getElementById("select1");
-    const select2 = document.getElementById("select2");
-    const input = document.getElementById("input");
+  // commented for feature use
+  // useEffect(() => {
+  //   console.log("useEffect run hello");
+  //   if (htmlContent) {
+  //     const jobPostButton = document.querySelectorAll("#apply-more");
+  //     if (jobPostButton) {
+  //       jobPostButton.forEach((button) => {
+  //         button.addEventListener("click", handleApplyJob);
+  //       });
+  //     }
+  //   }
 
-    if (select1) {
-      select1.addEventListener("change", handleSelect);
-    }
-    if (select2) {
-      select2.addEventListener("change", handleSelect);
-    }
-    if (input) {
-      input.addEventListener("input", handleSelect);
-    }
+  //   const select1 = document.getElementById("select1");
+  //   const select2 = document.getElementById("select2");
+  //   const input = document.getElementById("input");
 
-    return () => {
-      const select1 = document.getElementById("select1");
-      const select2 = document.getElementById("select2");
-      const input = document.getElementById("input");
+  //   if (select1) {
+  //     select1.addEventListener("change", handleSelect);
+  //   }
+  //   if (select2) {
+  //     select2.addEventListener("change", handleSelect);
+  //   }
+  //   if (input) {
+  //     input.addEventListener("input", handleSelect);
+  //   }
 
-      if (select1) {
-        select1.removeEventListener("change", handleSelect);
-      }
-      if (select2) {
-        select2.removeEventListener("change", handleSelect);
-      }
-      if (input) {
-        input.removeEventListener("input", handleSelect);
-      }
+  //   return () => {
+  //     const select1 = document.getElementById("select1");
+  //     const select2 = document.getElementById("select2");
+  //     const input = document.getElementById("input");
 
-      const jobPostButton = document.querySelectorAll("#apply-more");
-      jobPostButton.forEach((button) => {
-        button.removeEventListener("click", handleApplyJob);
-      });
-    };
-  }, [htmlContent, modalIsOpen]);
+  //     if (select1) {
+  //       select1.removeEventListener("change", handleSelect);
+  //     }
+  //     if (select2) {
+  //       select2.removeEventListener("change", handleSelect);
+  //     }
+  //     if (input) {
+  //       input.removeEventListener("input", handleSelect);
+  //     }
 
-  useEffect(() => {
-    if (jobList.length > 0 && website["mycustom-html"]) {
-      const updateJObList = async () => {
-        try {
-          const updatedHTML = await updateJobListContent(htmlContent, jobList);
+  //     const jobPostButton = document.querySelectorAll("#apply-more");
+  //     jobPostButton.forEach((button) => {
+  //       button.removeEventListener("click", handleApplyJob);
+  //     });
+  //   };
+  // }, [htmlContent, modalIsOpen]);
 
-          setHtmlContent(updatedHTML);
-          setLoader(false);
-        } catch (err) {
-          setLoader(false);
-          console.log(err);
-        }
-      };
-      updateJObList();
-    }
-  }, [jobList, website]);
+  // useEffect(() => {
+  //   if (jobList.length > 0 && website["mycustom-html"]) {
+  //     const updateJObList = async () => {
+  //       try {
+  //         const updatedHTML = await updateJobListContent(htmlContent, jobList);
+
+  //         setHtmlContent(updatedHTML);
+  //         setLoader(false);
+  //       } catch (err) {
+  //         setLoader(false);
+  //         console.log(err);
+  //       }
+  //     };
+  //     updateJObList();
+  //   }
+  // }, [jobList, website]);
 
   const updateTheContent = async () => {
     const jobData = await fetchJobData();
