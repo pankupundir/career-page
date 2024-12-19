@@ -3,12 +3,15 @@ import {
   webSiteBuilderInstance,
   openJobAPI,
   openAPIBuilderInstance,
+  DEFAULT_TEMPLATE_ID,
+  DEFAULT_LADING_PAGE,
 } from "./config/webBuilder";
 import { useParams } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
 import ScreenLoader from "./ScreenLoader";
 import JobFormModal from "./Components/JobFormModal";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Page = () => {
   const [website, setWebsite] = useState({
@@ -26,36 +29,40 @@ const Page = () => {
   const [jobTypeList, setJobTypeList] = useState([]);
   const [jobList, setJobList] = useState([]);
   const [firstTimeRender, setFirstTimeRender] = useState(true);
+  const [isHeaderActive, setIsHeaderActive] = useState(false);
+  const [headerSectionData, setHeaderSectionData] = useState("");
+  const navigate = useNavigate();
 
-  console.log(htmlContent, "htmlcontent=====>>>>>");
+  // console.log(htmlContent, "htmlcontent=====>>>>>");
 
   let { pageId } = useParams();
 
   useEffect(() => {
     const fetchWebsite = async () => {
       try {
-        const jobTypeRes = await updateTheContent();
-        if (!pageId) {
-          const data = await webSiteBuilderInstance.get("/api/pages");
-          const pageList = data?.data?.pages || [];
-          const homePage = pageList.find((pg) => pg.isHomePage);
-          if (homePage) {
-            pageId = homePage.name;
-          } else if (pageList.length > 0) {
-            pageList.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            );
-            pageId = pageList[0].name;
-          } else {
-            setNotFound(true);
-            console.log("no page found");
-          }
-        }
+        // const jobTypeRes = await updateTheContent();
+        // if (!pageId) {
+        //   const data = await webSiteBuilderInstance.get("/api/pages");
+        //   const pageList = data?.data?.pages || [];
+        //   const homePage = pageList.find((pg) => pg.isHomePage);
+        //   if (homePage) {
+        //     pageId = homePage.name;
+        //   } else if (pageList.length > 0) {
+        //     pageList.sort(
+        //       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        //     );
+        //     pageId = pageList[0].name;
+        //   } else {
+        //     setNotFound(true);
+        //     console.log("no page found");
+        //   }
+        // }
+        const landingPage = pageId || DEFAULT_LADING_PAGE;
         const response = await webSiteBuilderInstance.get(
-          `/api/pages/${pageId}/content`
+          `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
         );
 
-  // commented for feature use
+        // commented for feature use
         // const updatedHTML = await updateJobListContent(
         //   response?.data?.data["mycustom-html"]
         // );
@@ -67,7 +74,6 @@ const Page = () => {
 
         // setHtmlContent(updatedHTML);
         setHtmlContent(response?.data?.data["mycustom-html"]);
-
 
         setWebsite(response?.data?.data);
         if (
@@ -88,6 +94,43 @@ const Page = () => {
     fetchWebsite();
   }, []);
 
+  useEffect(() => {
+    if (!loader && !notFound) {
+      setTimeout(() => {
+        const headerToggle = document.getElementById("header-toggle");
+        if (headerToggle) {
+          headerToggle.addEventListener("click", () => {
+            const body = document.body;
+            body.classList.add("header-active");
+            setIsHeaderActive(true);
+          });
+        }
+        const jobDetailsButtons = document.querySelectorAll(".job-details-btn");
+        if (jobDetailsButtons) {
+          jobDetailsButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+              // const jobId = button.getAttribute("data-job-id");
+              window.location.href = `/job-details`;
+            });
+          });
+        }
+      }, 5000);
+    }
+  }, [loader]);
+
+  useEffect(() => {
+    if (isHeaderActive) {
+      const closeMenuHeader = document.getElementById("close-menu-header");
+      if (closeMenuHeader) {
+        closeMenuHeader.addEventListener("click", () => {
+          const body = document.body;
+          body.classList.remove("header-active");
+          setIsHeaderActive(false);
+        });
+      }
+    }
+  }, [isHeaderActive]);
+
   // useEffect(() => {
   //   if (!loader && !notFound) {
   //     const jobPostButton = document.querySelectorAll("#apply-more");
@@ -99,7 +142,6 @@ const Page = () => {
   //     }
   //   }
   // }, [loader]);
-
 
   // commented for feature use
   // useEffect(() => {
@@ -165,6 +207,20 @@ const Page = () => {
   //     updateJObList();
   //   }
   // }, [jobList, website]);
+
+  useEffect(() => {
+    webSiteBuilderInstance
+      .get(`/api/section/${DEFAULT_TEMPLATE_ID}/header/content`)
+      .then((res) => {
+        // console.log(res.data);
+        setHeaderSectionData(res.data?.data);
+        setLoader(false);
+      })
+      .catch((err) => {
+        setLoader(false);
+        console.log(err);
+      });
+  }, []);
 
   const updateTheContent = async () => {
     const jobData = await fetchJobData();
@@ -237,7 +293,7 @@ const Page = () => {
         .setAttribute("data-job-id", job.id);
       // Clear previous skills if any
       // const skillMatch = newJobCard.querySelector("#skill-match");
-      for(let i = 0; i < 10; i++){
+      for (let i = 0; i < 10; i++) {
         let skillCard;
         if (i === 1) {
           skillCard = newJobCard.querySelector("#skill-match"); // This is the first card
@@ -412,6 +468,15 @@ const Page = () => {
             <NoPageFound />
           ) : (
             <>
+              {/* <style>{headerSectionData.css}</style> */}
+              <div className={isHeaderActive ? "header-show" : "header-hide"}>
+                <style>{headerSectionData["mycustom-css"]}</style>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: headerSectionData["mycustom-html"],
+                  }}
+                />
+              </div>
               <style>{website.css}</style>
               <style>{website["mycustom-css"]}</style>
               <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
