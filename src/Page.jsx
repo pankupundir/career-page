@@ -228,12 +228,12 @@ const Page = () => {
     const skillNames = Array.from(
       new Set(
         jobData.flatMap((job) =>
-          job.job_skills.map((skill) => skill.skill_name.toLowerCase())
+          job.job_skills.map((skill) => skill.skill_name?.toLowerCase())
         )
       )
     );
     const jobType = [
-      ...new Set(jobData.map((job) => job.job_type.toLowerCase())),
+      ...new Set(jobData.map((job) => job.job_type?.toLowerCase())),
     ];
     setSkillList(skillNames);
     setJobTypeList(jobType);
@@ -406,7 +406,7 @@ const Page = () => {
 
   async function fetchJobData(jobId) {
     const response = await openAPIBuilderInstance.get(
-      "/web/jobs/published?page=1&per_page=50"
+      "web/jobs/published?page=1&per_page=50"
     );
     return response.data.data.jobs;
   }

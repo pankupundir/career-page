@@ -26,5 +26,5 @@ export const webSiteBuilderFormInstance = createAxiosInstance(
   "multipart/form-data"
 );
 export const openAPIBuilderInstance = createAxiosInstance(openJobAPI);
-export const DEFAULT_TEMPLATE_ID = "234458234";
+export const DEFAULT_TEMPLATE_ID = "67472e150e56424b96cfcd30";
 export const DEFAULT_LADING_PAGE = "home";
