@@ -11,7 +11,8 @@ import NoPageFound from "./NoPageFound";
 import ScreenLoader from "./ScreenLoader";
 import JobFormModal from "./Components/JobFormModal";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import moment from "moment";
+import Header from "./Components/Header";
 
 const Page = () => {
   const [website, setWebsite] = useState({
@@ -25,226 +26,124 @@ const Page = () => {
   const [jobId, setJobId] = useState(null);
   const [jobDetails, setJobDetails] = useState({});
   const [htmlContent, setHtmlContent] = useState("");
-  const [skillSetList, setSkillList] = useState([]);
-  const [jobTypeList, setJobTypeList] = useState([]);
   const [jobList, setJobList] = useState([]);
-  const [firstTimeRender, setFirstTimeRender] = useState(true);
-  const [isHeaderActive, setIsHeaderActive] = useState(false);
-  const [headerSectionData, setHeaderSectionData] = useState("");
-  const navigate = useNavigate();
-
-  // console.log(htmlContent, "htmlcontent=====>>>>>");
+  const [isFilterActivate, setFilterActivate] = useState(false);
+  const [filterList, setFilterList] = useState({
+    job_type: [],
+    job_skills: [],
+    job_location: [],
+    job_category: [],
+    contract_type: [],
+  });
 
   let { pageId } = useParams();
 
   useEffect(() => {
-    const fetchWebsite = async () => {
-      try {
-        // const jobTypeRes = await updateTheContent();
-        // if (!pageId) {
-        //   const data = await webSiteBuilderInstance.get("/api/pages");
-        //   const pageList = data?.data?.pages || [];
-        //   const homePage = pageList.find((pg) => pg.isHomePage);
-        //   if (homePage) {
-        //     pageId = homePage.name;
-        //   } else if (pageList.length > 0) {
-        //     pageList.sort(
-        //       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        //     );
-        //     pageId = pageList[0].name;
-        //   } else {
-        //     setNotFound(true);
-        //     console.log("no page found");
-        //   }
-        // }
-        const landingPage = pageId || DEFAULT_LADING_PAGE;
-        const response = await webSiteBuilderInstance.get(
-          `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
-        );
-
-        // commented for feature use
-        // const updatedHTML = await updateJobListContent(
-        //   response?.data?.data["mycustom-html"]
-        // );
-        // const updatedHTML = await updateJobFilterSelectBoxes(
-        //   response?.data?.data["mycustom-html"],
-        //   jobTypeRes.skillNames,
-        //   jobTypeRes.jobType
-        // );
-
-        // setHtmlContent(updatedHTML);
-        setHtmlContent(response?.data?.data["mycustom-html"]);
-
-        setWebsite(response?.data?.data);
-        if (
-          response?.data?.data &&
-          Object.keys(response?.data?.data).length === 0
-        ) {
-          setNotFound(true);
-          setLoader(false);
-        }
-        setLoader(false);
-      } catch (error) {
-        setNotFound(true);
-        setLoader(false);
-        console.error("Error fetching website data:", error);
-      }
-    };
-
+    setFilterActivate(false);
     fetchWebsite();
   }, []);
 
-  useEffect(() => {
-    if (!loader && !notFound) {
-      setTimeout(() => {
-        const headerToggle = document.getElementById("header-toggle");
-        if (headerToggle) {
-          headerToggle.addEventListener("click", () => {
-            const body = document.body;
-            body.classList.add("header-active");
-            setIsHeaderActive(true);
-          });
-        }
-        const jobDetailsButtons = document.querySelectorAll(".job-details-btn");
-        if (jobDetailsButtons) {
-          jobDetailsButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-              // const jobId = button.getAttribute("data-job-id");
-              window.location.href = `/job-details`;
-            });
-          });
-        }
-      }, 5000);
-    }
-  }, [loader]);
+  const fetchWebsite = async () => {
+    try {
+      await fetchJobData();
+      await fetchFilterList();
+      // if (!pageId) {
+      //   const data = await webSiteBuilderInstance.get("/api/pages");
+      //   const pageList = data?.data?.pages || [];
+      //   const homePage = pageList.find((pg) => pg.isHomePage);
+      //   if (homePage) {
+      //     pageId = homePage.name;
+      //   } else if (pageList.length > 0) {
+      //     pageList.sort(
+      //       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      //     );
+      //     pageId = pageList[0].name;
+      //   } else {
+      //     setNotFound(true);
+      //     console.log("no page found");
+      //   }
+      // }
+      const landingPage = pageId || DEFAULT_LADING_PAGE;
+      const response = await webSiteBuilderInstance.get(
+        `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
+      );
 
-  useEffect(() => {
-    if (isHeaderActive) {
-      const closeMenuHeader = document.getElementById("close-menu-header");
-      if (closeMenuHeader) {
-        closeMenuHeader.addEventListener("click", () => {
-          const body = document.body;
-          body.classList.remove("header-active");
-          setIsHeaderActive(false);
-        });
+      // commented for feature use
+      // const updatedHTML = await updateJobListContent(
+      //   response?.data?.data["mycustom-html"]
+      // );
+      // const updatedHTML = await updateJobFilterSelectBoxes(
+      //   response?.data?.data["mycustom-html"],
+      //   jobTypeRes.skillNames,
+      //   jobTypeRes.jobType
+      // );
+
+      // setHtmlContent(updatedHTML);
+      setHtmlContent(response?.data?.data["mycustom-html"]);
+
+      setWebsite(response?.data?.data);
+      if (
+        response?.data?.data &&
+        Object.keys(response?.data?.data).length === 0
+      ) {
+        setNotFound(true);
+        setLoader(false);
       }
+      setLoader(false);
+    } catch (error) {
+      setNotFound(true);
+      setLoader(false);
+      console.error("Error fetching website data:", error);
     }
-  }, [isHeaderActive]);
-
-  // useEffect(() => {
-  //   if (!loader && !notFound) {
-  //     const jobPostButton = document.querySelectorAll("#apply-more");
-  //     if (jobPostButton) {
-  //       jobPostButton.forEach((button) => {
-  //         console.log("working")
-  //         button.addEventListener("click", handleApplyJob);
-  //       });
-  //     }
-  //   }
-  // }, [loader]);
-
-  // commented for feature use
-  // useEffect(() => {
-  //   console.log("useEffect run hello");
-  //   if (htmlContent) {
-  //     const jobPostButton = document.querySelectorAll("#apply-more");
-  //     if (jobPostButton) {
-  //       jobPostButton.forEach((button) => {
-  //         button.addEventListener("click", handleApplyJob);
-  //       });
-  //     }
-  //   }
-
-  //   const select1 = document.getElementById("select1");
-  //   const select2 = document.getElementById("select2");
-  //   const input = document.getElementById("input");
-
-  //   if (select1) {
-  //     select1.addEventListener("change", handleSelect);
-  //   }
-  //   if (select2) {
-  //     select2.addEventListener("change", handleSelect);
-  //   }
-  //   if (input) {
-  //     input.addEventListener("input", handleSelect);
-  //   }
-
-  //   return () => {
-  //     const select1 = document.getElementById("select1");
-  //     const select2 = document.getElementById("select2");
-  //     const input = document.getElementById("input");
-
-  //     if (select1) {
-  //       select1.removeEventListener("change", handleSelect);
-  //     }
-  //     if (select2) {
-  //       select2.removeEventListener("change", handleSelect);
-  //     }
-  //     if (input) {
-  //       input.removeEventListener("input", handleSelect);
-  //     }
-
-  //     const jobPostButton = document.querySelectorAll("#apply-more");
-  //     jobPostButton.forEach((button) => {
-  //       button.removeEventListener("click", handleApplyJob);
-  //     });
-  //   };
-  // }, [htmlContent, modalIsOpen]);
-
-  // useEffect(() => {
-  //   if (jobList.length > 0 && website["mycustom-html"]) {
-  //     const updateJObList = async () => {
-  //       try {
-  //         const updatedHTML = await updateJobListContent(htmlContent, jobList);
-
-  //         setHtmlContent(updatedHTML);
-  //         setLoader(false);
-  //       } catch (err) {
-  //         setLoader(false);
-  //         console.log(err);
-  //       }
-  //     };
-  //     updateJObList();
-  //   }
-  // }, [jobList, website]);
-
+  };
   useEffect(() => {
-    webSiteBuilderInstance
-      .get(`/api/section/${DEFAULT_TEMPLATE_ID}/header/content`)
-      .then((res) => {
-        // console.log(res.data);
-        setHeaderSectionData(res.data?.data);
-        setLoader(false);
-      })
-      .catch((err) => {
-        setLoader(false);
-        console.log(err);
-      });
-  }, []);
+    const sideBarFilterBtn = document.getElementById("filter_btn");
+    const sideBarFilterForm = document.getElementById("side_filter_form");
+    if (sideBarFilterBtn) {
+      sideBarFilterBtn.setAttribute("type", "submit");
+      sideBarFilterForm.addEventListener("submit", handleFormSubmit);
+    }
+  }, [htmlContent]);
 
-  const updateTheContent = async () => {
-    const jobData = await fetchJobData();
-    setJobList(jobData);
-    const skillNames = Array.from(
-      new Set(
-        jobData.flatMap((job) =>
-          job.job_skills.map((skill) => skill.skill_name?.toLowerCase())
-        )
-      )
-    );
-    const jobType = [
-      ...new Set(jobData.map((job) => job.job_type?.toLowerCase())),
-    ];
-    setSkillList(skillNames);
-    setJobTypeList(jobType);
-    return { skillNames, jobType };
+  const fetchFilterList = async () => {
+    try {
+      const response = await openAPIBuilderInstance.get(
+        "/web/career/career-page-filters"
+      );
+      setFilterList(response.data.data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  async function updateJobListContent(htmlString, jobData, isUpdate = false) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, "text/html");
+  useEffect(() => {
+    if (jobList.length > 0 && website["mycustom-html"]) {
+      const updateJObList = async () => {
+        try {
+          const updatedHTML = await updateJobListContent(htmlContent, jobList);
 
-    const firstJobCard = doc.getElementById("job-card");
+          setHtmlContent(updatedHTML);
+          setLoader(false);
+          setFilterActivate(false);
+        } catch (err) {
+          setLoader(false);
+          console.log(err);
+        }
+      };
+      updateJObList();
+    }
+  }, [jobList, website]);
+
+  async function updateJobListContent(htmlString, jobData) {
+    const parser = new DOMParser();
+    let doc;
+    if (isFilterActivate) {
+      doc = document;
+    } else {
+      doc = parser.parseFromString(htmlString, "text/html");
+    }
+
+    const firstJobCard = doc.getElementById("job_card");
 
     if (!firstJobCard) {
       console.error("No first job card found.");
@@ -254,19 +153,51 @@ const Page = () => {
     const jobListParent = firstJobCard.parentNode;
     const copyFirstNode = firstJobCard.cloneNode(true);
 
-    if (isUpdate) {
-      const jobCards = doc.querySelectorAll("#job-card");
+    if (isFilterActivate) {
+      const jobCards = doc.querySelectorAll("#job_card");
       jobCards.forEach((job) => {
         job.remove();
       });
     } else {
+      // Update the sidebar only first time
+      // updateSideFilterContent(htmlContent);
+      const jobTypeFilter = doc.getElementById("job_type_filter");
+      const jobSkillFilter = doc.getElementById("job_skill_set_filter");
+      const jobCategoryFilter = doc.getElementById("job_category_filter");
+      jobTypeFilter.innerHTML = "";
+      jobSkillFilter.innerHTML = "";
+
+      filterList?.jobType?.forEach((item) => {
+        const listItem = doc.createElement("li");
+        listItem.innerHTML = `
+          <input type="checkbox" id="${item.originalName}">
+          <label for="${item.originalName}">${item.type} (${item.count})</label>
+      `;
+        jobTypeFilter.appendChild(listItem);
+      });
+      filterList?.skills?.forEach((item) => {
+        const listItem = doc.createElement("li");
+        listItem.innerHTML = `
+          <input type="checkbox" id="${item.skill}">
+          <label for="${item.skill}">${item.skill} (${item.count})</label>
+      `;
+        jobSkillFilter.appendChild(listItem);
+      });
+      // filterList?.categories?.forEach((item) => {
+      //   const listItem = doc.createElement("li");
+      //   listItem.innerHTML = `
+      //     <input type="checkbox" id="${item.id}">
+      //     <label for="${item.title}">${item.title}</label>
+      // `;
+      //   jobCategoryFilter.appendChild(listItem);
+      // });
       // Remove existing job cards
       for (let i = 1; i < 6; i++) {
         let jobCard;
         if (i === 1) {
           jobCard = firstJobCard; // This is the first card
         } else {
-          jobCard = doc.querySelector(`#job-card-${i}`);
+          jobCard = doc.querySelector(`#job_card-${i}`);
         }
         if (!jobCard) {
           break;
@@ -280,49 +211,20 @@ const Page = () => {
     }
 
     // Loop through jobData and append new job cards
-    jobData.forEach((job) => {
+    jobData.forEach((job, index) => {
       const newJobCard = copyFirstNode.cloneNode(true);
-      newJobCard.querySelector("#job-title").innerText = job.title;
-      newJobCard.querySelector("#job-description").innerText = job.description;
-      newJobCard.querySelector("#job-location").innerText = job.job_location;
+      newJobCard.querySelector(`#job_card_title`).innerText = job.title;
+      newJobCard.querySelector(`#job_company_name`).innerText =
+        job.company_name;
+      newJobCard.querySelector(`#job-post-time`).innerText = moment(
+        job.created_at
+      ).fromNow();
+      newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
+      newJobCard.querySelector(`#job_contract_type`).innerText =
+        job.contract_type;
       newJobCard
-        .querySelector("#read-more")
-        .setAttribute("data-job-id", job.id);
-      newJobCard
-        .querySelector("#apply-more")
-        .setAttribute("data-job-id", job.id);
-      // Clear previous skills if any
-      // const skillMatch = newJobCard.querySelector("#skill-match");
-      for (let i = 0; i < 10; i++) {
-        let skillCard;
-        if (i === 1) {
-          skillCard = newJobCard.querySelector("#skill-match"); // This is the first card
-        } else {
-          skillCard = doc.querySelector(`#skill-match-${i}`);
-        }
-        if (!skillCard) {
-          break;
-        }
-        skillCard.remove();
-        // skillCard.innerText = ""; // Clear previous skills
-      }
-
-      job.job_skills.forEach((skill) => {
-        let jobSkills = "";
-        // for (let i = 1; i < 10; i++) {
-        //   if (i === 1) {
-        //     jobSkills = newJobCard.querySelector(`#skill-match`);
-        //   } else {
-        //     jobSkills = newJobCard.querySelector(`#skill-match-${i}`);
-        //   }
-        //   if (!jobSkills) {
-        //     break;
-        //   }
-
-        //   jobSkills.remove();
-        // }
-        newJobCard.querySelector("#skill-match").innerText = skill.skill_name;
-      });
+        .querySelector("#job-details-btn")
+        .setAttribute("data-job-id", job.job_external_id);
 
       jobListParent.appendChild(newJobCard);
     });
@@ -330,85 +232,47 @@ const Page = () => {
     return doc.body.innerHTML;
   }
 
-  const handleSelect = (event) => {
-    console.log("func call hellooooooo", event.target);
-    const eventValue = event.target;
-    let tempJobData = [];
-    if (eventValue.id === "select1") {
-      tempJobData = jobList.filter((jb) =>
-        jb.job_skills.some(
-          (skl) => skl.skill_name.toLowerCase() === eventValue.value
-        )
-      );
-    } else if (eventValue.id === "select2") {
-      tempJobData = jobList.filter(
-        (jb) => jb.job_type?.toLowerCase() === eventValue.value
-      );
-    } else {
-      tempJobData = jobList.filter((jb) => jb.title.includes(eventValue.value));
-    }
-    updateJobListContent(htmlContent, tempJobData, true);
-  };
+  function handleFormSubmit(event) {
+    event.preventDefault();
+    const jobTypeFilterCheckboxes = document.querySelectorAll(
+      '#job_type_filter input[type="checkbox"]'
+    );
+    const jobSkillSetFilterCheckboxes = document.querySelectorAll(
+      '#job_skill_set_filter input[type="checkbox"]'
+    );
 
-  function updateJobFilterSelectBoxes(htmlString, skillSetList, jobTypeList) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, "text/html");
-
-    const jobFilter = doc.getElementById("job-filter");
-
-    if (!jobFilter) {
-      console.error("No job filter found.");
-      return htmlString;
-    }
-
-    const jobSkillsSelect = jobFilter.querySelector("#select1");
-    if (jobSkillsSelect) {
-      jobSkillsSelect.innerHTML = "";
-      skillSetList.forEach((skill) => {
-        const option = document.createElement("option");
-        option.value = skill;
-        option.textContent = skill;
-        jobSkillsSelect.appendChild(option);
-      });
-
-      jobSkillsSelect.addEventListener("change", (event) => {
-        handleInputChange(event.target.value);
-      });
-
-      jobSkillsSelect.value = skillSetList.length > 0 ? skillSetList[0] : "";
-    }
-
-    const jobTypeSelect = jobFilter.querySelector("#select2");
-    if (jobTypeSelect) {
-      jobTypeSelect.innerHTML = "";
-      jobTypeList.forEach((type) => {
-        const option = document.createElement("option");
-        option.value = type;
-        option.textContent = type;
-        jobTypeSelect.appendChild(option);
-      });
-
-      jobTypeSelect.addEventListener("change", (event) => {
-        handleInputChange(event.target.value);
-      });
-
-      jobTypeSelect.value = jobTypeList.length > 0 ? jobTypeList[0] : "";
-    }
-
-    const inputField = jobFilter.querySelector("#input");
-    if (inputField) {
-      inputField.addEventListener("change", (event) => {
-        handleInputChange(event.target.value);
-      });
-    }
-    return doc.body.innerHTML;
+    const selectedCategories = [];
+    const selectedJobType = [];
+    const selectedSkillSet = [];
+    jobTypeFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedJobType.push(checkbox.id);
+      }
+    });
+    jobSkillSetFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedSkillSet.push(checkbox.id);
+      }
+    });
+    const job_type = selectedJobType.join(",");
+    const category = selectedCategories.join(",");
+    const skill_name = selectedSkillSet.join(",");
+    const search = document.getElementById("search_job_title")?.value;
+    setFilterActivate(true);
+    fetchJobData(job_type, category, skill_name, search);
   }
 
-  async function fetchJobData(jobId) {
+  async function fetchJobData(
+    job_type = "",
+    category = "",
+    skill_name = "",
+    search = ""
+  ) {
     const response = await openAPIBuilderInstance.get(
-      "web/jobs/published?page=1&per_page=50"
+      `web/jobs/published?page=1&per_page=50&job_type=${job_type}&category=${category}&skill_name=${skill_name}&search=${search}`
     );
-    return response.data.data.jobs;
+    console.log(response.data.data, "response.data.data.job");
+    setJobList(response.data.data.jobs);
   }
 
   async function handleApplyJob(event) {
@@ -455,9 +319,6 @@ const Page = () => {
     closeModal();
   };
 
-  function handleInputChange(value) {
-    console.log("Selected value:", value);
-  }
   return (
     <div>
       {loader ? (
@@ -468,15 +329,7 @@ const Page = () => {
             <NoPageFound />
           ) : (
             <>
-              {/* <style>{headerSectionData.css}</style> */}
-              <div className={isHeaderActive ? "header-show" : "header-hide"}>
-                <style>{headerSectionData["mycustom-css"]}</style>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: headerSectionData["mycustom-html"],
-                  }}
-                />
-              </div>
+              <Header setLoader={setLoader} />
               <style>{website.css}</style>
               <style>{website["mycustom-css"]}</style>
               <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
