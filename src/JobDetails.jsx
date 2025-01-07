@@ -7,6 +7,7 @@ import {
 } from "./config/webBuilder";
 import { toast } from "react-toastify";
 import Header from "./Components/Header";
+import Cookies from "js-cookie";
 
 const JobDetails = () => {
   const [website, setWebsite] = useState({
@@ -26,7 +27,6 @@ const JobDetails = () => {
         const jobDetails = await fetchJobDetails();
         setJobDetails(jobDetails);
         if (jobDetails && Object.keys(jobDetails).length > 0) {
-          console.log(jobDetails, "jobDetails");
           const response = await webSiteBuilderInstance.get(
             `/api/pages/${DEFAULT_TEMPLATE_ID}/job-details/content`
           );
@@ -73,6 +73,21 @@ const JobDetails = () => {
       updateJObList();
     }
   }, [website]);
+
+  useEffect(() => {
+    const applyBtn = document.getElementById("apply_btn");
+    if (applyBtn) {
+      applyBtn.addEventListener("click", handleApplyJob);
+    }
+  }, [htmlContent]);
+
+  useEffect(() => {
+    fetch("http://localhost:8090/api/upload/set-cookie", {
+      credentials: "include",
+    })
+      .then((res) => console.log(res))
+      .catch((err) => console.log(err));
+  }, []);
 
   async function updateJobDetailsContent(
     htmlString,
@@ -144,6 +159,25 @@ const JobDetails = () => {
     return doc.body.innerHTML;
   }
 
+  function handleApplyJob() {
+    console.log("job");
+  }
+
+  const handleGetCookies = () => {
+    console.log(Cookies.get("asdf"));
+    console.log(Cookies.get("userToken"));
+    fetch("http://localhost:8090/api/upload/get-cookie", {
+      credentials: "include",
+    })
+      .then((res) => res.json()) // Parse the response to JSON
+      .then((data) => {
+        console.log("Cookie Data:", data); // Print the response data
+      })
+      .catch((err) => {
+        console.error("Error fetching cookie:", err);
+      });
+  };
+
   async function fetchJobDetails() {
     const response = await openAPIBuilderInstance.get(
       `web/job-details/${jobId}`
@@ -162,6 +196,7 @@ const JobDetails = () => {
       ) : (
         <>
           <Header setLoader={setLoader} />
+          <button onClick={handleGetCookies}>click</button>
           <style>{website.css}</style>
           <style>{website["mycustom-css"]}</style>
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
