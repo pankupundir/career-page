@@ -1,6 +1,7 @@
 import axios from "axios";
 
 export const openJobAPI = import.meta.env.VITE_JOB_OPEN_API;
+export const openJobServerAPI = import.meta.env.VITE_JOB_OPEN_SERVER_API;
 
 const createAxiosInstance = (baseUrl, contentType) => {
   const instance = axios.create({
@@ -26,5 +27,6 @@ export const webSiteBuilderFormInstance = createAxiosInstance(
   "multipart/form-data"
 );
 export const openAPIBuilderInstance = createAxiosInstance(openJobAPI);
-export const DEFAULT_TEMPLATE_ID = "67472e150e56424b96cfcd30";
-export const DEFAULT_LADING_PAGE = "home";
+export const updatedURLInstance = createAxiosInstance(openJobServerAPI);
+export const DEFAULT_TEMPLATE_ID = "677e9e61d9e434ab98544ca8";
+export const DEFAULT_LADING_PAGE = "Homepage";

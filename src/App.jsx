@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Page from "./Page";
 import { ToastContainer } from "react-toastify";

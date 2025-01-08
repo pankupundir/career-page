@@ -1,35 +1,42 @@
 .sidebar-container {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 400px;
-    height: 100vh;
-    background-color: #424b54;
-    color: white;
-    transition: left 0.3s ease-in-out;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-  }
-  
-  .sidebar-container.open {
-    left: 0;
-  }
-  
-  .sidebar {
-    padding: 20px;
-  }
-  
-  .close-btn {
-    background-color: #af1f4a;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin-bottom: 20px;
-    cursor: pointer;
-    border-radius: 4px;
-  }
-  
-  .close-btn:hover {
-    background-color: #6c757d;
-  }
-  
+  position: fixed;
+  top: 0;
+  right: -600px; /* Start off-screen on the right */
+  width: 600px;
+  height: 100vh;
+  background-color: #ffff;
+  color: #0000
+  transition: right 0.3s ease-in-out; /* Transition the right property */
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Shadow on the left side */
+  z-index: 1000;
+  padding: 20px;
+}
+
+.sidebar-container.open {
+  right: 0; /* Bring the sidebar into view */
+}
+
+.sidebar {
+  display: flex;
+  justify-content: end;
+}
+
+.close_btn {
+  background-color: #af1f4a;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.close_btn:hover {
+  background-color: #f70a0a;
+}
+
+.form-data {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

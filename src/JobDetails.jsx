@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   DEFAULT_TEMPLATE_ID,
@@ -7,7 +7,7 @@ import {
 } from "./config/webBuilder";
 import { toast } from "react-toastify";
 import Header from "./Components/Header";
-import Sidebar from './Components/SideBar/SideBar';
+import Sidebar from "./Components/SideBar/SideBar";
 
 const JobDetails = () => {
   const [website, setWebsite] = useState({
@@ -40,7 +40,7 @@ const JobDetails = () => {
             setNotFound(true);
           }
         } else {
-          const message = error.message || "Invalid job ID";
+          const message = "Invalid job ID";
           toast.error(message);
           setNotFound(true);
         }
@@ -82,22 +82,9 @@ const JobDetails = () => {
     }
   }, [htmlContent]);
 
-  useEffect(() => {
-    fetch("http://localhost:8090/api/upload/set-cookie", {
-      credentials: "include",
-    })
-      .then((res) => console.log(res))
-      .catch((err) => console.log(err));
-  }, []);
-
-  async function updateJobDetailsContent(
-    htmlString,
-    jobDetails,
-    isUpdate = false
-  ) {
+  async function updateJobDetailsContent(htmlString, jobDetails) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
-    debugger;
     const jobCardDetails = doc.getElementById("job_card_details");
     jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
@@ -120,7 +107,6 @@ const JobDetails = () => {
       jobDetails.publishedBy?.name;
     jobCardDetails.querySelector(`#contact_person_profession`).innerText =
       jobDetails.publishedBy?.profession;
-      
 
     const contactPersonImg = jobCardDetails.querySelector(
       `#contact_person_profile`
@@ -162,7 +148,6 @@ const JobDetails = () => {
   }
 
   function handleApplyJob() {
-    debugger;
     console.log("job");
     setSidebarOpen(true);
   }
@@ -170,7 +155,6 @@ const JobDetails = () => {
   const handleCloseSidebar = () => {
     setSidebarOpen(false);
   };
-
 
   async function fetchJobDetails() {
     const response = await openAPIBuilderInstance.get(
@@ -189,11 +173,17 @@ const JobDetails = () => {
         <div>Loading...</div>
       ) : (
         <>
-          <Header setLoader={setLoader} />
-          <style>{website.css}</style>
-          <style>{website["mycustom-css"]}</style>
-          <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-          <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} jobDetails={jobDetails} />
+          <div className={sidebarOpen ? "overlay" : ""}>
+            <Header setLoader={setLoader} />
+            <style>{website.css}</style>
+            <style>{website["mycustom-css"]}</style>
+            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+          </div>
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={handleCloseSidebar}
+            jobDetails={jobDetails}
+          />
         </>
       )}
     </div>

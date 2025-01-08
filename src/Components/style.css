@@ -108,3 +108,23 @@ button.close-btn:hover {
   background-color: #f5f5f5;
   border-radius: 0.375rem;
 }
+
+.ReactModalPortal {
+  position: relative;
+  z-index: 9999;
+}
+
+.otpInput {
+  padding: 10px;
+  margin: 5px 3px 20px;
+  width: 55px !important;
+  border-radius: 8px;
+  border: 1px solid gray;
+  height: 55px;
+  text-align: center;
+}
+
+.OTPInputContainer {
+  justify-content: center;
+  gap: 3px;
+}

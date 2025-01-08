@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from "react";
-import ReactDOM, { createRoot } from "react-dom/client";
+import { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
 import {
   webSiteBuilderInstance,
-  openJobAPI,
   openAPIBuilderInstance,
   DEFAULT_TEMPLATE_ID,
   DEFAULT_LADING_PAGE,
@@ -10,8 +9,6 @@ import {
 import { useParams } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
 import ScreenLoader from "./ScreenLoader";
-import JobFormModal from "./Components/JobFormModal";
-import axios from "axios";
 import moment from "moment";
 import Header from "./Components/Header";
 import usePagination from "./Hooks/usePaginantion";
@@ -25,9 +22,6 @@ const Page = () => {
   });
   const [notFound, setNotFound] = useState(false);
   const [loader, setLoader] = useState(true);
-  const [modalIsOpen, setIsOpen] = useState(false);
-  const [jobId, setJobId] = useState(null);
-  const [jobDetails, setJobDetails] = useState({});
   const [htmlContent, setHtmlContent] = useState("");
   const [jobList, setJobList] = useState([]);
   const [isFilterActivate, setFilterActivate] = useState(false);
@@ -46,8 +40,12 @@ const Page = () => {
   });
 
   let { pageId } = useParams();
-  const { page, onPageChange, setPage } = usePagination();
-  const [totalData, setTotalData] = useState(100);
+  const { page, onPageChange } = usePagination();
+  const [paginationData, setPaginationData] = useState({
+    totalData: 0,
+    current_page: 0,
+    per_page: 0,
+  });
   const ITEMS_PER_PAGE = 2;
 
   useEffect(() => {
@@ -59,22 +57,6 @@ const Page = () => {
     try {
       await fetchJobData();
       await fetchFilterList();
-      // if (!pageId) {
-      //   const data = await webSiteBuilderInstance.get("/api/pages");
-      //   const pageList = data?.data?.pages || [];
-      //   const homePage = pageList.find((pg) => pg.isHomePage);
-      //   if (homePage) {
-      //     pageId = homePage.name;
-      //   } else if (pageList.length > 0) {
-      //     pageList.sort(
-      //       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      //     );
-      //     pageId = pageList[0].name;
-      //   } else {
-      //     setNotFound(true);
-      //     console.log("no page found");
-      //   }
-      // }
       const landingPage = pageId || DEFAULT_LADING_PAGE;
       const response = await webSiteBuilderInstance.get(
         `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
@@ -110,6 +92,27 @@ const Page = () => {
     }
     if (shortByFilter) {
       shortByFilter.addEventListener("change", function () {
+        // reset the sidebar form
+        const jobTypeFilterCheckboxes = document.querySelectorAll(
+          '#job_type_filter input[type="checkbox"]'
+        );
+        const jobSkillSetFilterCheckboxes = document.querySelectorAll(
+          '#job_skill_set_filter input[type="checkbox"]'
+        );
+        const selectedJobType = [];
+        const selectedSkillSet = [];
+        jobTypeFilterCheckboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            selectedJobType.push(checkbox.id);
+          }
+        });
+        jobSkillSetFilterCheckboxes.forEach((checkbox) => {
+          if (checkbox.checked) {
+            selectedSkillSet.push(checkbox.id);
+          }
+        });
+        uncheckAll(jobTypeFilterCheckboxes);
+        uncheckAll(jobSkillSetFilterCheckboxes);
         const selectedValue = shortByFilter.value;
         setSelectedFilter({
           ...selectedFilter,
@@ -124,22 +127,37 @@ const Page = () => {
         );
       });
     }
+    const totalResult = document.getElementById("result-total");
+    const fromResult = document.getElementById("result-from");
+    const toResult = document.getElementById("result-to");
+    if (totalResult || fromResult || toResult) {
+      const start =
+        (paginationData.current_page - 1) * paginationData.per_page + 1;
+      const end = Math.min(
+        paginationData.current_page * paginationData.per_page,
+        paginationData.totalData
+      );
+      totalResult.innerText = paginationData.totalData;
+      fromResult.innerText = start;
+      toResult.innerText = end;
+    }
     const paginationComponent = document.getElementById("job_list_pagination");
 
-    // if (paginationComponent) {
-    //   const root = createRoot(paginationComponent);
-    //   root.render(
-    //     <Pagination
-    //       onPageChange={onPageChange}
-    //       itemsPerPage={ITEMS_PER_PAGE}
-    //       totalData={totalData}
-    //       currentPage={page}
-    //     />
-    //   );
-    // }
+    if (paginationComponent) {
+      const root = createRoot(paginationComponent);
+      root.render(
+        <Pagination
+          onPageChange={onPageChange}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalData={paginationData.totalData}
+          currentPage={page}
+        />
+      );
+    }
   }, [htmlContent]);
 
   useEffect(() => {
+    setFilterActivate(true);
     fetchJobData();
   }, [page]);
 
@@ -158,7 +176,30 @@ const Page = () => {
       };
       updateJObList();
     }
+
+    const totalResult = document.getElementById("result-total");
+    const fromResult = document.getElementById("result-from");
+    const toResult = document.getElementById("result-to");
+    if (totalResult || fromResult || toResult) {
+      const start =
+        (paginationData.current_page - 1) * paginationData.per_page + 1;
+      const end = Math.min(
+        paginationData.current_page * paginationData.per_page,
+        paginationData.totalData
+      );
+      totalResult.innerText = paginationData.totalData;
+      fromResult.innerText = start;
+      toResult.innerText = end;
+    }
   }, [jobList, website]);
+
+  function uncheckAll(checkboxes) {
+    checkboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        checkbox.checked = false;
+      }
+    });
+  }
 
   const fetchFilterList = async () => {
     try {
@@ -191,112 +232,12 @@ const Page = () => {
       }
     });
 
-    setSelectedFilter({ job_type, skill_name, search, sortBy: "" });
+    setSelectedFilter({ job_type: "", skill_name: "", search: "", sortBy: "" });
 
     if (selectedSkillSet.length > 0 || selectedJobType.length > 0) {
       fetchJobData();
     }
   }
-
-  // async function updateJobListContent(htmlString, jobData) {
-  //   const parser = new DOMParser();
-  //   let doc;
-  //   if (isFilterActivate) {
-  //     doc = document;
-  //   } else {
-  //     doc = parser.parseFromString(htmlString, "text/html");
-  //   }
-
-  //   const firstJobCard = doc.getElementById("job_card");
-
-  //   if (!firstJobCard) {
-  //     console.error("No first job card found.");
-  //     return;
-  //   }
-
-  //   const jobListParent = firstJobCard.parentNode;
-  //   const copyFirstNode = firstJobCard.cloneNode(true);
-
-  //   if (isFilterActivate) {
-  //     const jobCards = doc.querySelectorAll("#job_card");
-  //     jobCards.forEach((job) => {
-  //       job.remove();
-  //     });
-  //   } else {
-  //     // Update the sidebar only first time
-  //     // updateSideFilterContent(htmlContent);
-  //     const jobTypeFilter = doc.getElementById("job_type_filter");
-  //     const jobSkillFilter = doc.getElementById("job_skill_set_filter");
-  //     jobTypeFilter.innerHTML = "";
-  //     jobSkillFilter.innerHTML = "";
-
-  //     filterList?.jobType?.forEach((item) => {
-  //       const listItem = doc.createElement("li");
-  //       listItem.innerHTML = `
-  //         <input type="checkbox" id="${item.originalName}">
-  //         <label for="${item.originalName}">${item.type} (${item.count})</label>
-  //     `;
-  //       jobTypeFilter.appendChild(listItem);
-  //     });
-  //     filterList?.skills?.forEach((item) => {
-  //       const listItem = doc.createElement("li");
-  //       listItem.innerHTML = `
-  //         <input type="checkbox" id="${item.skill}">
-  //         <label for="${item.skill}">${item.skill} (${item.count})</label>
-  //     `;
-  //       jobSkillFilter.appendChild(listItem);
-  //     });
-  //     // filterList?.categories?.forEach((item) => {
-  //     //   const listItem = doc.createElement("li");
-  //     //   listItem.innerHTML = `
-  //     //     <input type="checkbox" id="${item.id}">
-  //     //     <label for="${item.title}">${item.title}</label>
-  //     // `;
-  //     //   jobCategoryFilter.appendChild(listItem);
-  //     // });
-  //     // Remove existing job cards
-  //     for (let i = 1; i < 6; i++) {
-  //       let jobCard;
-  //       if (i === 1) {
-  //         jobCard = firstJobCard; // This is the first card
-  //       } else {
-  //         jobCard = doc.querySelector(`#job_card-${i}`);
-  //       }
-  //       if (!jobCard) {
-  //         break;
-  //       }
-  //       jobCard.remove();
-  //     }
-  //   }
-  //   if (!jobListParent) {
-  //     console.error("No parent container found for job cards.");
-  //     return doc.body.innerHTML;
-  //   }
-
-  //   // Loop through jobData and append new job cards
-  //   jobData.forEach((job, index) => {
-  //     const newJobCard = copyFirstNode.cloneNode(true);
-  //     newJobCard.querySelector(`#job_card_title`).innerText = job.title;
-  //     newJobCard.querySelector(`#job_company_name`).innerText =
-  //       job.company_name;
-  //     newJobCard.querySelector(`#job-post-time`).innerText = moment(
-  //       job.created_at
-  //     ).fromNow();
-  //     newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
-  //     newJobCard.querySelector(`#job_contract_type`).innerText =
-  //       job.contract_type;
-  //     if (newJobCard.querySelector(`#job_pay`))
-  //       newJobCard.querySelector(`#job_pay`).innerText = job.pay;
-  //     if (newJobCard.querySelector(`#job_currency`))
-  //       newJobCard.querySelector(`#job_currency`).innerText = job.currency;
-  //     newJobCard
-  //       .querySelector("#job-details-btn")
-  //       .setAttribute("data-job-id", job.job_external_id);
-
-  //     jobListParent.appendChild(newJobCard);
-  //   });
-  //   if (!isFilterActivate) return doc.body.innerHTML;
-  // }
 
   async function updateJobListContent(htmlString, jobData) {
     const parser = new DOMParser();
@@ -327,7 +268,7 @@ const Page = () => {
       const sortBar = document.createElement("div");
       sortBar.className = "sort-bar";
       sortBar.innerHTML = `
-        <span>Showing 6–10 of 10 results</span>
+        <p>Showing <span id="result-from">1</span>–<span id="result-to">10</span> of <span id="result-total">10<span> results</p>
         <select class="form-select" id="short_by_filter">
           <option value="DESC">Sort by: Oldest Job</option>
           <option value="ASC">Sort by: Latest Job</option>
@@ -360,7 +301,7 @@ const Page = () => {
       });
 
       // Remove existing job cards
-      for (let i = 1; i < 6; i++) {
+      for (let i = 1; i < 2; i++) {
         let jobCard;
         if (i === 1) {
           jobCard = firstJobCard; // This is the first card
@@ -380,7 +321,7 @@ const Page = () => {
     }
 
     // Loop through jobData and append new job cards
-    jobData.forEach((job, index) => {
+    jobData.forEach((job) => {
       const newJobCard = copyFirstNode.cloneNode(true);
       newJobCard.querySelector(`#job_card_title`).innerText = job.title;
       newJobCard.querySelector(`#job_company_name`).innerText =
@@ -395,9 +336,11 @@ const Page = () => {
         newJobCard.querySelector(`#job_pay`).innerText = job.pay;
       if (newJobCard.querySelector(`#job_currency`))
         newJobCard.querySelector(`#job_currency`).innerText = job.currency;
-      newJobCard
-        .querySelector("#job-details-btn")
-        .setAttribute("data-job-id", job.job_external_id);
+      if (newJobCard.querySelector("#job-details-btn")) {
+        newJobCard
+          .querySelector("#job-details-btn")
+          .setAttribute("href", `/job-details/${job.job_external_id}`);
+      }
 
       jobListParent.appendChild(newJobCard);
     });
@@ -413,6 +356,8 @@ const Page = () => {
     const jobSkillSetFilterCheckboxes = document.querySelectorAll(
       '#job_skill_set_filter input[type="checkbox"]'
     );
+
+    document.getElementById("short_by_filter").value = "DESC";
 
     const selectedJobType = [];
     const selectedSkillSet = [];
@@ -446,57 +391,22 @@ const Page = () => {
     sortBy = ""
   ) {
     setLoader(() => true);
-    const response = await openAPIBuilderInstance.get(
-      `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&job_type=${job_type}&skill_name=${skill_name}&search=${search}&sort_order=${sortBy}`
-    );
-    setTotalData(response.data.data.total_items);
-    setJobList(response.data.data.jobs);
-    setLoader(() => false);
-  }
-
-  async function handleApplyJob(event) {
-    console.log("function run hello");
-    const jobId = event.target.getAttribute("data-job-id");
-    console.log(jobId, "jobIdjobIdjobId");
-    setLoader(true);
-    axios
-      .get(`${openJobAPI}/web/job-details/${jobId}`)
-      .then((res) => {
-        setJobDetails(res?.data?.data);
-        setJobId(jobId);
-        setIsOpen(true);
-        setLoader(false);
-      })
-      .catch((err) => {
-        setLoader(false);
-        console.log("Error !!!!", err);
+    try {
+      const response = await openAPIBuilderInstance.get(
+        `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&job_type=${job_type}&skill_name=${skill_name}&search=${search}&sort_order=${sortBy}`
+      );
+      setPaginationData({
+        totalData: response.data.data.total_items,
+        current_page: response.data.data.current_page,
+        per_page: response.data.data.per_page,
       });
-  }
-
-  function closeModal() {
-    setJobId(null);
-    setIsOpen(false);
-    setJobDetails(null);
-  }
-
-  const submitApplyJob = async (event) => {
-    event.preventDefault();
-
-    const emailInput = event.target.elements.email;
-    if (!emailInput.value) {
-      alert("Email is required");
-      return;
+      setJobList(response.data.data.jobs);
+      setLoader(() => false);
+    } catch (err) {
+      setLoader(() => false);
+      console.log(err);
     }
-    const payload = {
-      job_id: jobId,
-      email: emailInput.value,
-    };
-    const response = await axios.post(
-      `${openJobAPI}/web/career/apply-on-job`,
-      payload
-    );
-    closeModal();
-  };
+  }
 
   return (
     <div>
@@ -513,15 +423,6 @@ const Page = () => {
           </>
         )}
       </>
-      {modalIsOpen && (
-        <JobFormModal
-          closeModal={closeModal}
-          modalIsOpen={modalIsOpen}
-          submitApplyJob={submitApplyJob}
-          jobDetails={jobDetails}
-          setLoader={setLoader}
-        />
-      )}
     </div>
   );
 };

@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./SideBar.css";
 
 import { useForm } from "react-hook-form";
 import ErrorMsg from "../ErrorMsg";
 import { toast } from "react-toastify";
+import {
+  openAPIBuilderInstance,
+  updatedURLInstance,
+  webSiteBuilderFormInstance,
+} from "../../config/webBuilder";
+import { EMAIL_REGEX } from "../../Constant/Constant";
+import OTPModal from "../OTPModal";
 
 const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const {
@@ -12,10 +19,15 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     formState: { errors },
     reset,
     setValue,
-  } = useForm();
-  const [error, setError] = useState({ show: false, msg: "" });
+    watch,
+    trigger,
+  } = useForm({
+    mode: "onChange",
+  });
+  const [error, setCustomError] = useState({ show: false, msg: "" });
   const [file, setFile] = useState(false);
   const [resumeUrl, setResumeURL] = useState("");
+  const [showOTPModal, setShowOTPModal] = useState(false);
 
   const [showNext, setShowNext] = useState(true);
 
@@ -33,25 +45,25 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     ];
     const file = event.target.files[0];
     if (file && allowedTypes.includes(file.type)) {
-      setError({ show: false, msg: "" });
+      setCustomError({ show: false, msg: "" });
       setFile(file);
     } else {
       event.target.value = "";
-      setError({ show: true, msg: "" });
+      setCustomError({ show: true, msg: "" });
     }
   };
 
   const beforeHandleSUbmit = (event) => {
     event.preventDefault();
     if (!file) {
-      setError({ show: true, msg: "Please Enter the file" });
+      setCustomError({ show: true, msg: "Please Enter the file" });
     }
     handleSubmit(onSubmit)();
   };
 
   const onSubmit = async (data) => {
     if (!file) {
-      setError({ show: true, msg: "Please Enter the file" });
+      setCustomError({ show: true, msg: "Please Enter the file" });
       return;
     }
     webSiteBuilderFormInstance
@@ -83,7 +95,30 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
       );
       const message = response.data.message || "Applied successfully";
       toast.success(message);
-      closeModal();
+      console.log(response, "response");
+    } catch (err) {
+      console.log(err, "error !!!!!!!!!!");
+      const message = error.message || "Something went wrong";
+      toast.error(message);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    const email = watch("email");
+    if (!email || !EMAIL_REGEX.test(email)) {
+      trigger("email");
+      return;
+    }
+    try {
+      const response = await updatedURLInstance.post(
+        `/web/career/get-email-otp`,
+        {
+          email: email,
+        }
+      );
+      const message = response.data.message || "Applied successfully";
+      toast.success(message);
+      setShowOTPModal(true);
       console.log(response, "response");
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
@@ -95,27 +130,36 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   return (
     <div className={`sidebar-container ${isOpen ? "open" : ""}`}>
       <div className="sidebar">
-        <button className="close-btn" onClick={onClose}>
-          Close
+        <button className="close_btn" onClick={onClose}>
+          &times;
         </button>
-        <h2>Sidebar Menu</h2>
+      </div>
+      <div>
+        <h3>Application</h3>
+        <p>{jobDetails.title}</p>
       </div>
 
       <form onSubmit={beforeHandleSUbmit}>
         {showNext ? (
-          <div>
-            <input
-              type="text"
-              name="email"
-              placeholder="Email address"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/,
-                  message: "Enter a valid email address",
-                },
-              })}
-            />
+          <div className="form-data">
+            <div>
+              <input
+                type="text"
+                name="email"
+                placeholder="Email address"
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: EMAIL_REGEX,
+                    message: "Enter a valid email address",
+                  },
+                })}
+              />
+              <button onClick={handleVerifyEmail} type="button">
+                Verify
+              </button>
+            </div>
+
             {errors.email && <ErrorMsg error={errors.email.message} />}
 
             <input
@@ -154,9 +198,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
               type="text"
               name="profession"
               placeholder="Enter your Profession"
-              {...register("profession", { required: "Profession is required" })}
+              {...register("profession", {
+                required: "Profession is required",
+              })}
             />
-            {errors.profession && <ErrorMsg error={errors.profession.message} />}
+            {errors.profession && (
+              <ErrorMsg error={errors.profession.message} />
+            )}
 
             <input
               type="text"
@@ -167,8 +215,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
             {errors.location && <ErrorMsg error={errors.location.message} />}
 
             <div className="questionsListing">
-              {jobDetails.screening_questions.map((res) => (
-                <div>
+              {jobDetails?.screening_questions?.map((res, index) => (
+                <div key={index}>
                   <div key={res.id}>
                     <div>{res.question}</div>
                     {res.web_type == "input" ? (
@@ -185,7 +233,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             name="radio-btn"
                             value="no"
                           />
-                          <label for="html">Yes</label>
+                          <label>Yes</label>
 
                           <input
                             type="radio"
@@ -193,7 +241,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             name="radio-btn"
                             value="no"
                           />
-                          <label for="no">No</label>
+                          <label>No</label>
                         </div>
                       </div>
                     ) : (
@@ -240,6 +288,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
           </div>
         )}
       </form>
+      {showOTPModal && (
+        <OTPModal
+          modalIsOpen={showOTPModal}
+          closeModal={() => setShowOTPModal(false)}
+          email={watch("email")}
+        />
+      )}
     </div>
   );
 };
