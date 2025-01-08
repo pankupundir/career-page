@@ -7,7 +7,7 @@ import {
 } from "./config/webBuilder";
 import { toast } from "react-toastify";
 import Header from "./Components/Header";
-import Cookies from "js-cookie";
+import Sidebar from './Components/SideBar/SideBar';
 
 const JobDetails = () => {
   const [website, setWebsite] = useState({
@@ -19,6 +19,7 @@ const JobDetails = () => {
   const [notFound, setNotFound] = useState(false);
   const [jobDetails, setJobDetails] = useState({});
   const [loader, setLoader] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { jobId } = useParams();
 
   useEffect(() => {
@@ -96,7 +97,7 @@ const JobDetails = () => {
   ) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
-
+    debugger;
     const jobCardDetails = doc.getElementById("job_card_details");
     jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
@@ -119,6 +120,7 @@ const JobDetails = () => {
       jobDetails.publishedBy?.name;
     jobCardDetails.querySelector(`#contact_person_profession`).innerText =
       jobDetails.publishedBy?.profession;
+      
 
     const contactPersonImg = jobCardDetails.querySelector(
       `#contact_person_profile`
@@ -160,23 +162,15 @@ const JobDetails = () => {
   }
 
   function handleApplyJob() {
+    debugger;
     console.log("job");
+    setSidebarOpen(true);
   }
 
-  const handleGetCookies = () => {
-    console.log(Cookies.get("asdf"));
-    console.log(Cookies.get("userToken"));
-    fetch("http://localhost:8090/api/upload/get-cookie", {
-      credentials: "include",
-    })
-      .then((res) => res.json()) // Parse the response to JSON
-      .then((data) => {
-        console.log("Cookie Data:", data); // Print the response data
-      })
-      .catch((err) => {
-        console.error("Error fetching cookie:", err);
-      });
+  const handleCloseSidebar = () => {
+    setSidebarOpen(false);
   };
+
 
   async function fetchJobDetails() {
     const response = await openAPIBuilderInstance.get(
@@ -196,10 +190,10 @@ const JobDetails = () => {
       ) : (
         <>
           <Header setLoader={setLoader} />
-          <button onClick={handleGetCookies}>click</button>
           <style>{website.css}</style>
           <style>{website["mycustom-css"]}</style>
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+          <Sidebar isOpen={sidebarOpen} onClose={handleCloseSidebar} jobDetails={jobDetails} />
         </>
       )}
     </div>
