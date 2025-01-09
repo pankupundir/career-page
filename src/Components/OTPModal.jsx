@@ -3,9 +3,18 @@ import Modal from "react-modal";
 import OTPInput from "react-otp-input";
 import { updatedURLInstance } from "../config/webBuilder";
 import { toast } from "react-toastify";
-const OTPModal = ({ modalIsOpen, closeModal, email }) => {
+import ScreenLoader from "../ScreenLoader";
+
+const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
   const [otp, setOtpValue] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loader, setLoader] = useState(false);
+
   const customStyles = {
+    overlay: {
+      backgroundColor: "rgb(16 14 14 / 75%)",
+    },
     content: {
       top: "50%",
       left: "50%",
@@ -14,16 +23,26 @@ const OTPModal = ({ modalIsOpen, closeModal, email }) => {
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
       zIndex: 999999,
+      width: "500px",
+      padding: "60px",
+      borderRadius: "15px",
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
     },
   };
+
   const handleOtpInputChange = (otp) => {
     if (isNaN(otp)) return;
     setOtpValue(otp);
+    setError("");
   };
 
   const submitOTP = async () => {
-    // submit the OTP here
-    console.log("OTP submitted: ", otp);
+    if (!otp || otp.length < 6) {
+      setError("Please enter a valid OTP.");
+      return;
+    }
+    setLoader(true);
+    setIsSubmitting(true); // Disable button while submitting
     try {
       const response = await updatedURLInstance.post(
         `/web/career/verify-email-otp`,
@@ -34,24 +53,43 @@ const OTPModal = ({ modalIsOpen, closeModal, email }) => {
       );
       const message = response.data.message || "Applied successfully";
       toast.success(message);
-      //   setShowOTPModal(true);
-      console.log(response, "response");
+      setIsEmailVerified({
+        isVerify: true,
+        external_id: response.data?.data?.external_id,
+      });
+      closeModal();
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
-      const message = err.message || "Something went wrong";
-      toast.error(message);
+      setError("Invalid OTP. Please try again.");
+    } finally {
+      setLoader((prev) => !prev);
+      setIsSubmitting(false);
     }
-    closeModal();
   };
+
   return (
     <Modal
       isOpen={modalIsOpen}
-      //   onAfterOpen={afterOpenModal}
       onRequestClose={closeModal}
       style={customStyles}
       contentLabel="Example Modal"
       shouldCloseOnOverlayClick={false}
     >
+      {loader && <ScreenLoader />}
+
+      <button
+        onClick={closeModal}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "10px",
+          fontSize: "20px",
+        }}
+        aria-label="Close"
+        className="close_btn"
+      >
+        &times;
+      </button>
       <h2>Enter Verification Code</h2>
       <p>
         Enter the verification code we sent to your E-mail Id.{" "}
@@ -71,7 +109,19 @@ const OTPModal = ({ modalIsOpen, closeModal, email }) => {
           isInputNum={true}
           containerStyle="OTPInputContainer"
         />
-        <button onClick={submitOTP}>Submit</button>
+        {error && <p style={{ color: "red", marginTop: "10px" }}>{error}</p>}
+        <button
+          onClick={submitOTP}
+          disabled={isSubmitting || otp.length < 6 || error}
+          className="otpSubmitButton"
+          style={{
+            backgroundColor: otp.length === 6 ? "#4caf50" : "#ccc",
+            color: otp.length === 6 ? "#fff" : "#666",
+            cursor: otp.length === 6 ? "pointer" : "not-allowed",
+          }}
+        >
+          {isSubmitting ? "Verifying..." : "Verify"}
+        </button>
       </div>
     </Modal>
   );

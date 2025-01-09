@@ -8,6 +8,7 @@ import {
 import { toast } from "react-toastify";
 import Header from "./Components/Header";
 import Sidebar from "./Components/SideBar/SideBar";
+import ScreenLoader from "./ScreenLoader";
 
 const JobDetails = () => {
   const [website, setWebsite] = useState({
@@ -170,7 +171,7 @@ const JobDetails = () => {
   return (
     <div>
       {loader ? (
-        <div>Loading...</div>
+        <ScreenLoader />
       ) : (
         <>
           <div className={sidebarOpen ? "overlay" : ""}>

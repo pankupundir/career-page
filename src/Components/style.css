@@ -128,3 +128,228 @@ button.close-btn:hover {
   justify-content: center;
   gap: 3px;
 }
+
+/* Modal Title */
+.otpModalTitle {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Modal Subtitle */
+.otpModalSubtitle {
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+/* Change Email/Number Link */
+.otpModalChangeLink {
+  color: #007bff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* OTP Input Container */
+.OTPInputContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* OTP Input Fields */
+.otpInput {
+  width: 50px;
+  height: 50px;
+  margin: 0 5px;
+  font-size: 18px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s ease;
+}
+
+.otpInput:focus {
+  border-color: #28a745;
+}
+
+/* Submit Button */
+.otpSubmitButton {
+  width: 100%;
+  padding: 12px 0;
+  background: linear-gradient(90deg, #28a745, #1abc9c);
+  border: none;
+  border-radius: 35px;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.backToCareerButton {
+  width: 100%;
+  padding: 12px 0;
+  background: #F1F1F1;
+  border: none;
+  border-radius: 35px;
+  color: #000000;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.otpSubmitButton:hover {
+  background: linear-gradient(90deg, #1abc9c, #28a745);
+}
+.backToCareerButton:hover {
+  background: #ebe4e4;
+}
+
+.otpSubmitButton:disabled {
+  background: #68e485;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.upload-section {
+  font-family: Arial, sans-serif;
+  margin-top: 10px;
+  max-width: 500px; /* Increase max-width for larger upload sections */
+  width: 100%; /* Make it responsive */
+  /* padding: 20px; */
+}
+
+.form-group {
+  margin-bottom: 30px;
+}
+
+label {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #00b7a8;
+  border-radius: 8px;
+  padding: 30px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  text-align: center;
+  height: 120px; /* Increased height for better visibility */
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.upload-box:hover {
+  background-color: #e6f7f5;
+  border-color: #00a08c;
+}
+
+.upload-box span {
+  color: #00b7a8;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.application-textarea {
+  width: 100%;
+  height: 100px; /* Increased height */
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  resize: none;
+}
+
+.checkbox-group label {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checkbox-group a {
+  color: #00b7a8;
+  text-decoration: none;
+}
+
+.checkbox-group a:hover {
+  text-decoration: underline;
+}
+
+.submit-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  background: linear-gradient(90deg, #00b7a8, #36d1dc);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .upload-section {
+    padding: 10px;
+  }
+
+  .upload-box {
+    padding: 20px;
+    height: 100px; /* Adjust height for smaller screens */
+  }
+
+  .application-textarea {
+    height: 80px;
+  }
+
+  .submit-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-box {
+    padding: 15px;
+    height: 90px; /* Further adjustment for very small screens */
+    font-size: 12px;
+  }
+
+  .application-textarea {
+    height: 70px;
+    font-size: 12px;
+  }
+
+  .checkbox-group label {
+    font-size: 12px;
+  }
+
+  .submit-btn {
+    font-size: 13px;
+    padding: 10px;
+  }
+}
