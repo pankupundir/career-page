@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./SideBar.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 import { useForm } from "react-hook-form";
 import ErrorMsg from "../ErrorMsg";
@@ -13,6 +14,8 @@ import { EMAIL_REGEX } from "../../Constant/Constant";
 import OTPModal from "../OTPModal";
 import ScreenLoader from "../../ScreenLoader";
 import ThankYouModal from "../ThankyouModal/ThankYouModal";
+import { Form } from "react-bootstrap";
+import { useParams } from "react-router-dom";
 
 const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const {
@@ -26,6 +29,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   } = useForm({
     mode: "onChange",
   });
+  const { jobId } = useParams();
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState({
     isVerify: false,
@@ -44,6 +48,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const [showNext, setShowNext] = useState(true);
   const [loader, setLoader] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
+  const [rangeValue, setRangeValue] = useState(0);
 
   const nextPage = () => {
     if (!isEmailVerified.isVerify) {
@@ -204,11 +209,31 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
 
       // Construct payload
       const payload = {
-        ...data,
+        email: data.email,
+        // firstName: data.firstName,
+        // lastName: data.lastName,
+        phone_number: data.phone_number,
+        profession: data.profession,
+        work_type: data.apply_work_type,
+        language_prefreance: data.language_prefreance,
+        // experinace: data.apply_experiance,
+        address: data.apply_address,
+        country: data.apply_country,
+        time_zone: data.apply_timezone,
+        zip_code: data.apply_zipcode,
+        application_letter_text: data.name,
         external_id: isEmailVerified.external_id,
-        job_id: jobDetails.id,
-        resume: resumeLocation,
-        video: videoLocation,
+        job_id: jobDetails.job_external_id,
+        resume_file: resumeLocation,
+        video_file: videoLocation,
+        screeing_questions_answers: jobDetails.screening_questions?.map(
+          (question, index) => ({
+            question_id: question?.id,
+            question: question?.question,
+            answer: data[`question_${index}`] || "1",
+            web_type: question.web_type || "range",
+          })
+        ),
       };
 
       console.log(payload, "Payload for Job Application");
@@ -299,258 +324,461 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     }
   };
 
+  const handleRange = (e) => {
+    setRangeValue(e.target.value);
+  };
+
   return (
-    <div className={`sidebar-container ${isOpen ? "open" : ""}`}>
-      <div className="sidebar">
-        <button className="close_btn" onClick={handleOnCloseSidebar}>
-          &times;
-        </button>
-      </div>
-      <div>
-        <h3>Application</h3>
-        <p>{jobDetails?.title}</p>
-      </div>
-      {loader && <ScreenLoader />}
-      <form onSubmit={beforeHandleSUbmit}>
-        {showNext ? (
-          <div>
-            <div className="form-group">
-              <label>Email *</label>
-              <div className="input-group">
-                <input
-                  type="text"
-                  name="email"
-                  placeholder="Enter Email"
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: EMAIL_REGEX,
-                      message: "Enter a valid email address",
-                    },
-                  })}
-                />
-                <button
-                  className="verify-btn"
-                  onClick={handleVerifyEmail}
-                  type="button"
-                >
-                  Verify
-                </button>
-              </div>
-              {errors.email && <ErrorMsg error={errors.email.message} />}
-            </div>
+    <div
+      className={`offcanvas offcanvas-end ofcanvas-width ${
+        isOpen ? "visiblity" : ""
+      }`}
+    >
+      <div className="offcanvas-body">
+        <div className={`sidebar-container ${isOpen ? "open" : ""}`}>
+          <div className="sidebar offcanvas-header">
+            <button
+              className="close_btn btn-close text-reset"
+              onClick={handleOnCloseSidebar}
+            >
+              &times;
+            </button>
+          </div>
+          <div className="career-sidebar-heading">
+            <p>Application</p>
+            <h5>{jobDetails?.title}</h5>
+          </div>
+          {loader && <ScreenLoader />}
+          <div className="career-sidebar-input mt-3">
+            <form onSubmit={beforeHandleSUbmit}>
+              {showNext ? (
+                <div>
+                  <div className="form-group">
+                    <label className="form-label">Email *</label>
+                    <div className="input-group">
+                      <input
+                        type="text"
+                        name="email"
+                        className="form-control user_email"
+                        placeholder="Enter Email"
+                        {...register("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: EMAIL_REGEX,
+                            message: "Enter a valid email address",
+                          },
+                        })}
+                      />
+                      <button
+                        className="verifyb-btn-section"
+                        onClick={handleVerifyEmail}
+                        type="button"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                    {errors.email && <ErrorMsg error={errors.email.message} />}
+                  </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>First Name *</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  placeholder="Enter First Name"
-                  {...register("firstName", {
-                    required: "First name is required",
-                  })}
-                />
-                {errors.firstName && (
-                  <ErrorMsg error={errors.firstName.message} />
-                )}
-              </div>
-              <div className="form-group">
-                <label>Last Name *</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  placeholder="Enter Last Name"
-                  {...register("lastName", {
-                    required: "Last name is required",
-                  })}
-                />
-                {errors.lastName && (
-                  <ErrorMsg error={errors.lastName.message} />
-                )}
-              </div>
-            </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">First Name *</label>
+                      <input
+                        disabled={!isEmailVerified.isVerify}
+                        type="text"
+                        name="firstName"
+                        placeholder="Enter First Name"
+                        {...register("firstName", {
+                          required: "First name is required",
+                        })}
+                      />
+                      {errors.firstName && (
+                        <ErrorMsg error={errors.firstName.message} />
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Last Name *</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        placeholder="Enter Last Name"
+                        {...register("lastName", {
+                          required: "Last name is required",
+                        })}
+                      />
+                      {errors.lastName && (
+                        <ErrorMsg error={errors.lastName.message} />
+                      )}
+                    </div>
+                  </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Phone Number *</label>
-                <input
-                  type="text"
-                  name="phone_number"
-                  placeholder="+1"
-                  {...register("phone_number", {
-                    required: "Phone number is required",
-                    onChange: (e) => {
-                      const numberValue = e.target.value.replace(/[^0-9]/g, "");
-                      setValue("phone_number", numberValue);
-                    },
-                  })}
-                />
-                {errors.phone_number && (
-                  <ErrorMsg error={errors.phone_number.message} />
-                )}
-              </div>
-              <div className="form-group">
-                <label>Profession *</label>
-                <input
-                  type="text"
-                  name="profession"
-                  placeholder="Enter Profession Name"
-                  {...register("profession", {
-                    required: "Profession is required",
-                  })}
-                />
-                {errors.profession && (
-                  <ErrorMsg error={errors.profession.message} />
-                )}
-              </div>
-            </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Phone Number *</label>
+                      <input
+                        type="text"
+                        name="phone_number"
+                        placeholder="+1"
+                        {...register("phone_number", {
+                          required: "Phone number is required",
+                          onChange: (e) => {
+                            const numberValue = e.target.value.replace(
+                              /[^0-9]/g,
+                              ""
+                            );
+                            setValue("phone_number", numberValue);
+                          },
+                        })}
+                      />
+                      {errors.phone_number && (
+                        <ErrorMsg error={errors.phone_number.message} />
+                      )}
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Profession *</label>
+                      <input
+                        type="text"
+                        name="profession"
+                        placeholder="Enter Profession Name"
+                        {...register("profession", {
+                          required: "Profession is required",
+                        })}
+                      />
+                      {errors.profession && (
+                        <ErrorMsg error={errors.profession.message} />
+                      )}
+                    </div>
+                  </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Location *</label>
-                <input
-                  type="text"
-                  name="location"
-                  placeholder="Enter Location"
-                  {...register("location", {
-                    required: "Location is required",
-                  })}
-                />
-                {errors.location && (
-                  <ErrorMsg error={errors.location.message} />
-                )}
-              </div>
-            </div>
-
-            <div className="questions-listing">
-              {jobDetails?.screening_questions?.map((res, index) => (
-                <div key={index} className="form-group">
-                  <label>{res.question}</label>
-                  {res.web_type === "input" ? (
+                  {/* <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Location *</label>
                     <input
                       type="text"
-                      placeholder="Enter Answer"
-                      {...register(`question_${index}`)}
+                      name="location"
+                      placeholder="Enter Location"
+                      {...register("location", {
+                        required: "Location is required",
+                      })}
                     />
-                  ) : res.web_type === "radio" ? (
-                    <div className="radio-options">
-                      <div>
-                        <input
-                          type="radio"
-                          id={`yes_${index}`}
-                          name={`radio_${index}`}
-                          value="yes"
-                        />
-                        <label htmlFor={`yes_${index}`}>Yes</label>
-                      </div>
-                      <div>
-                        <input
-                          type="radio"
-                          id={`no_${index}`}
-                          name={`radio_${index}`}
-                          value="no"
-                        />
-                        <label htmlFor={`no_${index}`}>No</label>
-                      </div>
+                    {errors.location && (
+                      <ErrorMsg error={errors.location.message} />
+                    )}
+                  </div>
+                </div> */}
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label
+                        htmlFor="exampleInputPassword1"
+                        className="form-label"
+                      >
+                        Work Type*
+                      </label>
+                      <select
+                        name="apply_work_type"
+                        className="form-control apply_work_type"
+                        {...register("apply_work_type", {
+                          required: "Work type is required",
+                        })}
+                      >
+                        <option value="">Select Work Type</option>
+                        <option value="Onsite">Onsite</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="Contact">Contact</option>
+                      </select>
                     </div>
-                  ) : null}
+                    {errors.apply_work_type && (
+                      <ErrorMsg error={errors.apply_work_type.message} />
+                    )}
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Language Prefreances*
+                      </label>
+                      <select
+                        name="apply_language_prefreances"
+                        className="form-control apply_language_prefreances"
+                        {...register("apply_language_prefreances", {
+                          required: "Language is required",
+                        })}
+                      >
+                        <option value="">Select Language</option>
+                        <option value="English">English</option>
+                        <option value="Swedsih">Swedish</option>
+                      </select>
+                    </div>
+                    {errors.apply_language_prefreances && (
+                      <ErrorMsg
+                        error={errors.apply_language_prefreances.message}
+                      />
+                    )}
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Experiance*
+                      </label>
+                      <select
+                        name="apply_experiance"
+                        className="form-control apply_experiance"
+                        {...register("apply_experiance", {
+                          required: "Experience is required",
+                        })}
+                      >
+                        <option value="">Select Experiance</option>
+                        <option value="1 Year">1 Year</option>
+                        <option value="2 Year">2 Year</option>
+                      </select>
+                    </div>
+                    {errors.apply_experiance && (
+                      <ErrorMsg error={errors.apply_experiance.message} />
+                    )}
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Address*
+                      </label>
+                      <input
+                        type="text"
+                        name="apply_address"
+                        className="form-control apply_address"
+                        placeholder="Enter address"
+                        {...register("apply_address", {
+                          required: "Address is required",
+                        })}
+                      />
+                      {errors.apply_address && (
+                        <ErrorMsg error={errors.apply_address.message} />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Country*
+                      </label>
+                      <input
+                        type="text"
+                        name="apply_country"
+                        className="form-control apply_country"
+                        placeholder="Enter Country"
+                        {...register("apply_country", {
+                          required: "Country is required",
+                        })}
+                      />
+                      {errors.apply_country && (
+                        <ErrorMsg error={errors.apply_country.message} />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Timezone*
+                      </label>
+                      <select
+                        name="apply_timezone"
+                        className="form-control apply_timezone"
+                        {...register("apply_timezone", {
+                          required: "Timezone is required",
+                        })}
+                      >
+                        <option value="">Select Timezone</option>
+                        <option value="-09:00">(GMT -9:00) Alaska</option>
+                        <option value="+05:50">
+                          (GMT +5:30) Bombay, Calcutta, Madras, New Delhi
+                        </option>
+                        <option value="+04:50">(GMT +4:30) Kabul</option>
+                        <option value="+00:00">
+                          (GMT) Western Europe Time, London, Lisbon, Casablanca
+                        </option>
+                      </select>
+                    </div>
+                    {errors.apply_timezone && (
+                      <ErrorMsg error={errors.apply_timezone.message} />
+                    )}
+                  </div>
+
+                  <div className="col-lg-6">
+                    <div className="mb-3">
+                      <label for="exampleInputPassword1" className="form-label">
+                        Zipcode*
+                      </label>
+                      <input
+                        type="text"
+                        name="apply_zipcode"
+                        className="form-control apply_zipcode"
+                        placeholder="Enter Zipcode"
+                        {...register("apply_zipcode", {
+                          required: "Zipcode is required",
+                        })}
+                      />
+                    </div>
+                    {errors.apply_zipcode && (
+                      <ErrorMsg error={errors.apply_zipcode.message} />
+                    )}
+                  </div>
+
+                  <div className="questions-listing">
+                    {jobDetails?.screening_questions?.map((res, index) => (
+                      <div key={index} className="form-group">
+                        <label className="form-label">{res.question}</label>
+                        {res.web_type === "input" ? (
+                          <input
+                            type="text"
+                            placeholder="Enter Answer"
+                            {...register(`question_${index}`)}
+                          />
+                        ) : res.web_type === "radio" ? (
+                          <div className="radio-options">
+                            <div>
+                              <input
+                                type="radio"
+                                id={`yes_${index}`}
+                                name={`radio_${index}`}
+                                value="yes"
+                              />
+                              <label
+                                className="form-label"
+                                htmlFor={`yes_${index}`}
+                              >
+                                Yes
+                              </label>
+                            </div>
+                            <div>
+                              <input
+                                type="radio"
+                                id={`no_${index}`}
+                                name={`radio_${index}`}
+                                value="no"
+                              />
+                              <label
+                                className="form-label"
+                                htmlFor={`no_${index}`}
+                              >
+                                No
+                              </label>
+                            </div>
+                          </div>
+                        ) : res.web_type === "range" ? (
+                          <Form.Range
+                            value={rangeValue}
+                            onChange={handleRange}
+                            className="custom-slider"
+                          />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  {showVerifyEmailError && (
+                    <ErrorMsg error={"Please verify the email first"} />
+                  )}
+                  <button className="next-btn" onClick={nextPage} type="button">
+                    Next
+                  </button>
                 </div>
-              ))}
-            </div>
-            {showVerifyEmailError && (
-              <ErrorMsg error={"Please verify the email first"} />
-            )}
-            <button className="next-btn" onClick={nextPage} type="button">
-              Next
-            </button>
+              ) : (
+                <div className="upload-section">
+                  <div className="form-group">
+                    <label className="form-label">Upload your CV *</label>
+                    <div className="upload-box">
+                      <input
+                        type="file"
+                        onChange={handleFileUpload}
+                        className="file-input"
+                      />
+                      <span>Upload Document</span>
+                    </div>
+                    {resumeUploadError?.file && (
+                      <span>{resumeUploadError.file.name} </span>
+                    )}
+                    {resumeUploadError?.show && (
+                      <ErrorMsg error={resumeUploadError.msg} />
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Upload Video</label>
+                    <div className="upload-box">
+                      <input
+                        type="file"
+                        onChange={handleVideoUpload}
+                        className="file-input"
+                        accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
+                      />
+                      <span>Upload Video / Create Video</span>
+                    </div>
+                    {videoUploadError?.file && (
+                      <span>videoUploadError.file.name </span>
+                    )}
+                    {videoUploadError?.show && (
+                      <ErrorMsg error={videoUploadError.msg} />
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Application Letter</label>
+                    <textarea
+                      name="letter"
+                      placeholder="Enter a short application text (max 1500 characters)"
+                      {...register("name", {
+                        required: "Application Letter is required",
+                      })}
+                      maxLength={1500}
+                      className="application-textarea"
+                    />
+                    {}
+                    {errors?.name && <ErrorMsg error={errors.name.message} />}
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label className="form-label">
+                      <input type="checkbox" />I confirm that I have read and
+                      agree to the <a href="#">User Agreement</a>,{" "}
+                      <a href="#">Privacy Policy</a>, and{" "}
+                      <a href="#">Cookie Notice</a>.
+                    </label>
+                  </div>
+
+                  <button className="submit-btn" type="submit">
+                    Apply Now
+                  </button>
+                </div>
+              )}
+            </form>
           </div>
-        ) : (
-          <div className="upload-section">
-            <div className="form-group">
-              <label>Upload your CV *</label>
-              <div className="upload-box">
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  className="file-input"
-                />
-                <span>Upload Document</span>
-              </div>
-              {resumeUploadError?.file && (
-                <span>{resumeUploadError.file.name} </span>
-              )}
-              {resumeUploadError?.show && (
-                <ErrorMsg error={resumeUploadError.msg} />
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Upload Video</label>
-              <div className="upload-box">
-                <input
-                  type="file"
-                  onChange={handleVideoUpload}
-                  className="file-input"
-                  accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
-                />
-                <span>Upload Video / Create Video</span>
-              </div>
-              {videoUploadError?.file && (
-                <span>videoUploadError.file.name </span>
-              )}
-              {videoUploadError?.show && (
-                <ErrorMsg error={videoUploadError.msg} />
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Application Letter</label>
-              <textarea
-                name="letter"
-                placeholder="Enter a short application text (max 1500 characters)"
-                {...register("name", {
-                  required: "Application Letter is required",
-                })}
-                maxLength={1500}
-                className="application-textarea"
-              />
-              {}
-              {errors?.name && <ErrorMsg error={errors.name.message} />}
-            </div>
-
-            <div className="form-group checkbox-group">
-              <label>
-                <input type="checkbox" />I confirm that I have read and agree to
-                the <a href="#">User Agreement</a>,{" "}
-                <a href="#">Privacy Policy</a>, and{" "}
-                <a href="#">Cookie Notice</a>.
-              </label>
-            </div>
-
-            <button className="submit-btn" type="submit">
-              Apply Now
-            </button>
-          </div>
-        )}
-      </form>
-      {showOTPModal && (
-        <OTPModal
-          modalIsOpen={showOTPModal}
-          closeModal={() => setShowOTPModal(false)}
-          email={watch("email")}
-          setIsEmailVerified={setIsEmailVerified}
-        />
-      )}
-      {showThankYouModal && (
-        <ThankYouModal
-          isOpen={showThankYouModal}
-          onClose={() => setShowThankYouModal(false)}
-          jobTitle={jobDetails.title}
-          handleConnect={handleConnect}
-          loader={loader}
-        />
-      )}
+          {showOTPModal && (
+            <OTPModal
+              modalIsOpen={showOTPModal}
+              closeModal={() => setShowOTPModal(false)}
+              email={watch("email")}
+              setIsEmailVerified={setIsEmailVerified}
+            />
+          )}
+          {showThankYouModal && (
+            <ThankYouModal
+              isOpen={showThankYouModal}
+              onClose={() => setShowThankYouModal(false)}
+              jobTitle={jobDetails.title}
+              handleConnect={handleConnect}
+              loader={loader}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
