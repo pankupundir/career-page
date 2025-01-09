@@ -281,9 +281,10 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const handleConnect = async () => {
     setLoader(true);
     try {
-      const response = await openAPIBuilderInstance.get(
+      const response = await updatedURLInstance.get(
         `/web/career/connect/${isEmailVerified.external_id}`
       );
+      setShowThankYouModal(false);
       const message =
         response.data.message ||
         "We have sent connection email please check your email";
