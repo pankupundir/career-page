@@ -26,7 +26,7 @@
   right: 400px; /* Bring the sidebar into view */
 }
 
-.sidebar {
+.sidebar_section {
   display: flex;
   justify-content: end;
 }
@@ -65,7 +65,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .input-group input {
@@ -99,6 +99,12 @@
   padding: 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
+}
+
+.react-tel-input .form-control {
+  width: 100% !important;
+  background: #F1F1F1 !important;
+  padding: 10px 65px !important;
 }
 /* 
 .questions-listing .form-group {
@@ -159,6 +165,7 @@
   background: #F1F1F1;
   height: 40px;
   border: none;
+  border-radius: .25rem !important;
   padding: 0 17px;
   margin-bottom: 10px;
 }

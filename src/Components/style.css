@@ -225,13 +225,32 @@ button.close-btn:hover {
 }
 
 .form-group {
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+}
+.career-sidebar-input .form-range
+{
+  background: #F1F1F1;
+  height: 40px;
+  border: none;
+  padding: 0 17px;
+  margin-bottom: 10px;
+}
+.radio-options > div
+{
+  display: flex;
+  align-items: center;
+}
+.radio-options > div label
+{
+  margin-bottom: 0px;
+  font-weight: 400;
 }
 
-label {
+.form-label {
   display: block;
-  font-size: 16px;
+  font-size: 15px !important;
   margin-bottom: 10px;
+  font-weight: 500;
   color: #333;
 }
 
@@ -259,6 +278,20 @@ label {
   color: #00b7a8;
   font-weight: bold;
   font-size: 14px;
+}
+
+.verify-mail-career {
+  position: absolute;
+  bottom: 19px;
+  right: 18px;
+  font-size: 14px;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  font-weight: 700;
+  color: #309689;
+  text-decoration: none;
 }
 
 .file-input {
@@ -352,4 +385,35 @@ label {
     font-size: 13px;
     padding: 10px;
   }
+}
+
+
+div#job_list_pagination ul.pagination-container {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+div#job_list_pagination ul.pagination-container li a {
+  background: #ffffff;
+  display: flex;
+  width: 30px;
+  height: 30px;
+  color:#000;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+div#job_list_pagination ul.pagination-container li {
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+div#job_list_pagination ul.pagination-container li.active-link a {
+  background: #008873;
+  border-color: #008873;
+  color: #fff
 }

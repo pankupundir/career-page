@@ -174,12 +174,11 @@ const JobDetails = () => {
         <ScreenLoader />
       ) : (
         <>
-          <div className={sidebarOpen ? "overlay" : ""}>
-            <Header setLoader={setLoader} />
-            <style>{website.css}</style>
-            <style>{website["mycustom-css"]}</style>
-            <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-          </div>
+          <div className={sidebarOpen ? "overlay" : ""}></div>
+          <Header setLoader={setLoader} />
+          <style>{website.css}</style>
+          <style>{website["mycustom-css"]}</style>
+          <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           <Sidebar
             isOpen={sidebarOpen}
             onClose={handleCloseSidebar}

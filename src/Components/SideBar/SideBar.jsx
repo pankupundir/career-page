@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./SideBar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import ErrorMsg from "../ErrorMsg";
 import { toast } from "react-toastify";
 import {
@@ -14,8 +14,10 @@ import { EMAIL_REGEX } from "../../Constant/Constant";
 import OTPModal from "../OTPModal";
 import ScreenLoader from "../../ScreenLoader";
 import ThankYouModal from "../ThankyouModal/ThankYouModal";
-import { Form } from "react-bootstrap";
-import { useParams } from "react-router-dom";
+import { Col, Form, Row } from "react-bootstrap";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/bootstrap.css";
+import parsePhoneNumberFromString from "libphonenumber-js";
 
 const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const {
@@ -24,12 +26,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     formState: { errors },
     reset,
     setValue,
+    getValues,
     watch,
     trigger,
+    control,
   } = useForm({
     mode: "onChange",
   });
-  const { jobId } = useParams();
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState({
     isVerify: false,
@@ -206,22 +209,20 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
         videoLocation = videoResponse.data.data.Location;
         console.log(videoLocation, "Video Uploaded Location");
       }
-
       // Construct payload
       const payload = {
         email: data.email,
-        // firstName: data.firstName,
-        // lastName: data.lastName,
-        phone_number: data.phone_number,
+        name: data.firstName + data.lastName,
+        // country_code: data.country_code,
+        phone_number: data.phone_number.replace(/[^\d]/g, ""),
         profession: data.profession,
-        work_type: data.apply_work_type,
-        language_prefreance: data.language_prefreance,
-        // experinace: data.apply_experiance,
-        address: data.apply_address,
-        country: data.apply_country,
-        time_zone: data.apply_timezone,
-        zip_code: data.apply_zipcode,
-        application_letter_text: data.name,
+        work_type: data.work_type,
+        language_preference: data.language_preference,
+        experience: data.experience,
+        address: data.address,
+        country: data.country,
+        time_zone: data.time_zone,
+        zip_code: data.zip_code,
         external_id: isEmailVerified.external_id,
         job_id: jobDetails.job_external_id,
         resume_file: resumeLocation,
@@ -230,12 +231,12 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
           (question, index) => ({
             question_id: question?.id,
             question: question?.question,
-            answer: data[`question_${index}`] || "1",
-            web_type: question.web_type || "range",
+            answer: data[`question_${index}`],
+            web_type: question.web_type,
           })
         ),
+        application_letter_text: data.application_letter_text,
       };
-
       console.log(payload, "Payload for Job Application");
 
       // Submit Job Application
@@ -328,6 +329,29 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     setRangeValue(e.target.value);
   };
 
+  const validatePhoneNumber = (value) => {
+    const stringValue = (value || "").trim();
+
+    // Get country calling code from libphonenumber-js
+    const phoneNumber = parsePhoneNumberFromString(stringValue, country);
+    const countryCallingCode = phoneNumber?.countryCallingCode || "";
+
+    if (!stringValue && isRequired) {
+      return "Phone number is required";
+    }
+
+    // Strip the country code if already present
+    const nationalNumber = stringValue.startsWith(`+${countryCallingCode}`)
+      ? stringValue.replace(`+${countryCallingCode}`, "")
+      : stringValue;
+
+    // Re-validate using the extracted national number
+    const parsedNumber = parsePhoneNumberFromString(nationalNumber, country);
+    return parsedNumber && parsedNumber.isValid()
+      ? true
+      : "Invalid phone number";
+  };
+
   return (
     <div
       className={`offcanvas offcanvas-end ofcanvas-width ${
@@ -336,7 +360,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     >
       <div className="offcanvas-body">
         <div className={`sidebar-container ${isOpen ? "open" : ""}`}>
-          <div className="sidebar offcanvas-header">
+          <div className="sidebar_section offcanvas-header">
             <button
               className="close_btn btn-close text-reset"
               onClick={handleOnCloseSidebar}
@@ -353,7 +377,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
             <form onSubmit={beforeHandleSUbmit}>
               {showNext ? (
                 <div>
-                  <div className="form-group">
+                  <div className="form-group position-relative">
                     <label className="form-label">Email *</label>
                     <div className="input-group">
                       <input
@@ -369,13 +393,15 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                           },
                         })}
                       />
-                      <button
-                        className="verifyb-btn-section"
-                        onClick={handleVerifyEmail}
-                        type="button"
-                      >
-                        Verify
-                      </button>
+                      <span className="verifyb-btn-section">
+                        <button
+                          className="verify-mail-career"
+                          onClick={handleVerifyEmail}
+                          type="button"
+                        >
+                          Verify
+                        </button>
+                      </span>
                     </div>
                     {errors.email && <ErrorMsg error={errors.email.message} />}
                   </div>
@@ -403,6 +429,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                       <input
                         type="text"
                         name="lastName"
+                        disabled={!isEmailVerified.isVerify}
                         placeholder="Enter Last Name"
                         {...register("lastName", {
                           required: "Last name is required",
@@ -417,7 +444,55 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Phone Number *</label>
-                      <input
+                      {/* <PhoneInput
+                        disabled={isEmailVerified.isVerify}
+                        placeholder="Enter Your phone number"
+                        defaultCountry="SW"
+                        country="SW"
+                        value={watch("phone_number")}
+                        inputProps={
+                          ({
+                            name: "phone_number",
+                            required: true,
+                          },
+                          {
+                            ...register("phone_number", {
+                              required: "Phone number is required",
+                            }),
+                          })
+                        }
+                      />
+                      {errors.phone_number && (
+                        <ErrorMsg error={errors.phone_number.message} />
+                      )} */}
+                      <Controller
+                        name={"phone_numer"}
+                        control={control}
+                        // rules={{ validate: validatePhoneNumber }}
+                        render={({ field: { onChange, ref, ...field } }) => (
+                          <PhoneInput
+                            {...field}
+                            inputProps={{
+                              ref,
+                              required: true,
+                              autoFocus: true,
+                            }}
+                            country={"SW"}
+                            placeholder={"Enter Your phone number"}
+                            onChange={(phone, code) => {
+                              const numberValue = phone.replace(
+                                /[^0-9]/g,
+                                ""
+                              );
+                              setValue("phone_number", numberValue);
+                              // setValue("country_code", code?.countryCode);
+                            }}
+                            disabled={!isEmailVerified.isVerify}
+                            disableCountryGuess={false}
+                          />
+                        )}
+                      />
+                      {/* <input
                         type="text"
                         name="phone_number"
                         placeholder="+1"
@@ -431,7 +506,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             setValue("phone_number", numberValue);
                           },
                         })}
-                      />
+                      /> */}
                       {errors.phone_number && (
                         <ErrorMsg error={errors.phone_number.message} />
                       )}
@@ -442,6 +517,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                       <label className="form-label">Profession *</label>
                       <input
                         type="text"
+                        disabled={!isEmailVerified.isVerify}
                         name="profession"
                         placeholder="Enter Profession Name"
                         {...register("profession", {
@@ -470,167 +546,191 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                     )}
                   </div>
                 </div> */}
-
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label
-                        htmlFor="exampleInputPassword1"
-                        className="form-label"
-                      >
-                        Work Type*
-                      </label>
-                      <select
-                        name="apply_work_type"
-                        className="form-control apply_work_type"
-                        {...register("apply_work_type", {
-                          required: "Work type is required",
-                        })}
-                      >
-                        <option value="">Select Work Type</option>
-                        <option value="Onsite">Onsite</option>
-                        <option value="Remote">Remote</option>
-                        <option value="Hybrid">Hybrid</option>
-                        <option value="Contact">Contact</option>
-                      </select>
-                    </div>
-                    {errors.apply_work_type && (
-                      <ErrorMsg error={errors.apply_work_type.message} />
-                    )}
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Language Prefreances*
-                      </label>
-                      <select
-                        name="apply_language_prefreances"
-                        className="form-control apply_language_prefreances"
-                        {...register("apply_language_prefreances", {
-                          required: "Language is required",
-                        })}
-                      >
-                        <option value="">Select Language</option>
-                        <option value="English">English</option>
-                        <option value="Swedsih">Swedish</option>
-                      </select>
-                    </div>
-                    {errors.apply_language_prefreances && (
-                      <ErrorMsg
-                        error={errors.apply_language_prefreances.message}
-                      />
-                    )}
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Experiance*
-                      </label>
-                      <select
-                        name="apply_experiance"
-                        className="form-control apply_experiance"
-                        {...register("apply_experiance", {
-                          required: "Experience is required",
-                        })}
-                      >
-                        <option value="">Select Experiance</option>
-                        <option value="1 Year">1 Year</option>
-                        <option value="2 Year">2 Year</option>
-                      </select>
-                    </div>
-                    {errors.apply_experiance && (
-                      <ErrorMsg error={errors.apply_experiance.message} />
-                    )}
-                  </div>
-
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Address*
-                      </label>
-                      <input
-                        type="text"
-                        name="apply_address"
-                        className="form-control apply_address"
-                        placeholder="Enter address"
-                        {...register("apply_address", {
-                          required: "Address is required",
-                        })}
-                      />
-                      {errors.apply_address && (
-                        <ErrorMsg error={errors.apply_address.message} />
+                  <Row>
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Work Type*
+                        </label>
+                        <select
+                          name="work_type"
+                          disabled={!isEmailVerified.isVerify}
+                          className="form-control form-select apply_work_type"
+                          {...register("work_type", {
+                            required: "Work type is required",
+                          })}
+                        >
+                          <option value="">Select Work Type</option>
+                          <option value="onsite">Onsite</option>
+                          <option value="remote">Remote</option>
+                          <option value="hybrid">Hybrid</option>
+                        </select>
+                      </div>
+                      {errors.work_type && (
+                        <ErrorMsg error={errors.work_type.message} />
                       )}
-                    </div>
-                  </div>
+                    </Col>
 
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Country*
-                      </label>
-                      <input
-                        type="text"
-                        name="apply_country"
-                        className="form-control apply_country"
-                        placeholder="Enter Country"
-                        {...register("apply_country", {
-                          required: "Country is required",
-                        })}
-                      />
-                      {errors.apply_country && (
-                        <ErrorMsg error={errors.apply_country.message} />
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Language Prefreances*
+                        </label>
+                        <select
+                          name="language_preference"
+                          disabled={!isEmailVerified.isVerify}
+                          className="form-control form-select apply_language_prefreances"
+                          {...register("language_preference", {
+                            required: "Language is required",
+                          })}
+                        >
+                          <option value="">Select Language</option>
+                          <option value="English">English</option>
+                          <option value="Swedsih">Swedish</option>
+                        </select>
+                      </div>
+                      {errors.language_preference && (
+                        <ErrorMsg error={errors.language_preference.message} />
                       )}
-                    </div>
-                  </div>
+                    </Col>
 
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Timezone*
-                      </label>
-                      <select
-                        name="apply_timezone"
-                        className="form-control apply_timezone"
-                        {...register("apply_timezone", {
-                          required: "Timezone is required",
-                        })}
-                      >
-                        <option value="">Select Timezone</option>
-                        <option value="-09:00">(GMT -9:00) Alaska</option>
-                        <option value="+05:50">
-                          (GMT +5:30) Bombay, Calcutta, Madras, New Delhi
-                        </option>
-                        <option value="+04:50">(GMT +4:30) Kabul</option>
-                        <option value="+00:00">
-                          (GMT) Western Europe Time, London, Lisbon, Casablanca
-                        </option>
-                      </select>
-                    </div>
-                    {errors.apply_timezone && (
-                      <ErrorMsg error={errors.apply_timezone.message} />
-                    )}
-                  </div>
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Experiance*
+                        </label>
+                        <select
+                          name="experience"
+                          className="form-control form-select apply_experiance"
+                          disabled={!isEmailVerified.isVerify}
+                          {...register("experience", {
+                            required: "Experience is required",
+                          })}
+                        >
+                          <option value="">Select Experiance</option>
+                          <option value="1 Year">1 Year</option>
+                          <option value="2 Year">2 Year</option>
+                        </select>
+                      </div>
+                      {errors.experience && (
+                        <ErrorMsg error={errors.experience.message} />
+                      )}
+                    </Col>
 
-                  <div className="col-lg-6">
-                    <div className="mb-3">
-                      <label for="exampleInputPassword1" className="form-label">
-                        Zipcode*
-                      </label>
-                      <input
-                        type="text"
-                        name="apply_zipcode"
-                        className="form-control apply_zipcode"
-                        placeholder="Enter Zipcode"
-                        {...register("apply_zipcode", {
-                          required: "Zipcode is required",
-                        })}
-                      />
-                    </div>
-                    {errors.apply_zipcode && (
-                      <ErrorMsg error={errors.apply_zipcode.message} />
-                    )}
-                  </div>
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Address*
+                        </label>
+                        <input
+                          type="text"
+                          name="address"
+                          disabled={!isEmailVerified.isVerify}
+                          className="form-control apply_address"
+                          placeholder="Enter address"
+                          {...register("address", {
+                            required: "Address is required",
+                          })}
+                        />
+                        {errors.address && (
+                          <ErrorMsg error={errors.address.message} />
+                        )}
+                      </div>
+                    </Col>
+
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Country*
+                        </label>
+                        <input
+                          type="text"
+                          name="country"
+                          className="form-control apply_country"
+                          disabled={!isEmailVerified.isVerify}
+                          placeholder="Enter Country"
+                          {...register("country", {
+                            required: "Country is required",
+                          })}
+                        />
+                        {errors.country && (
+                          <ErrorMsg error={errors.country.message} />
+                        )}
+                      </div>
+                    </Col>
+
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Timezone*
+                        </label>
+                        <select
+                          name="time_zone"
+                          disabled={!isEmailVerified.isVerify}
+                          className="form-control form-select apply_timezone"
+                          {...register("time_zone", {
+                            required: "Timezone is required",
+                          })}
+                        >
+                          <option value="">Select Timezone</option>
+                          <option value="-09:00">(GMT -9:00) Alaska</option>
+                          <option value="+05:50">
+                            (GMT +5:30) Bombay, Calcutta, Madras, New Delhi
+                          </option>
+                          <option value="+04:50">(GMT +4:30) Kabul</option>
+                          <option value="+00:00">
+                            (GMT) Western Europe Time, London, Lisbon,
+                            Casablanca
+                          </option>
+                        </select>
+                      </div>
+                      {errors.time_zone && (
+                        <ErrorMsg error={errors.time_zone.message} />
+                      )}
+                    </Col>
+
+                    <Col lg={6}>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="exampleInputPassword1"
+                          className="form-label"
+                        >
+                          Zipcode*
+                        </label>
+                        <input
+                          type="text"
+                          name="zip_code"
+                          disabled={!isEmailVerified.isVerify}
+                          className="form-control apply_zipcode"
+                          placeholder="Enter Zipcode"
+                          {...register("zip_code", {
+                            required: "Zipcode is required",
+                          })}
+                        />
+                      </div>
+                      {errors.zip_code && (
+                        <ErrorMsg error={errors.zip_code.message} />
+                      )}
+                    </Col>
+                  </Row>
 
                   <div className="questions-listing">
                     {jobDetails?.screening_questions?.map((res, index) => (
@@ -640,6 +740,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                           <input
                             type="text"
                             placeholder="Enter Answer"
+                            disabled={!isEmailVerified.isVerify}
                             {...register(`question_${index}`)}
                           />
                         ) : res.web_type === "radio" ? (
@@ -649,6 +750,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                                 type="radio"
                                 id={`yes_${index}`}
                                 name={`radio_${index}`}
+                                disabled={!isEmailVerified.isVerify}
+                                {...register(`question_${index}`)}
                                 value="yes"
                               />
                               <label
@@ -663,6 +766,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                                 type="radio"
                                 id={`no_${index}`}
                                 name={`radio_${index}`}
+                                disabled={!isEmailVerified.isVerify}
+                                {...register(`question_${index}`)}
                                 value="no"
                               />
                               <label
@@ -675,6 +780,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                           </div>
                         ) : res.web_type === "range" ? (
                           <Form.Range
+                            {...register(`question_${index}`)}
+                            disabled={!isEmailVerified.isVerify}
                             value={rangeValue}
                             onChange={handleRange}
                             className="custom-slider"
@@ -732,24 +839,31 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                   <div className="form-group">
                     <label className="form-label">Application Letter</label>
                     <textarea
-                      name="letter"
+                      name="application_letter_text"
                       placeholder="Enter a short application text (max 1500 characters)"
-                      {...register("name", {
+                      {...register("application_letter_text", {
                         required: "Application Letter is required",
                       })}
                       maxLength={1500}
                       className="application-textarea"
                     />
                     {}
-                    {errors?.name && <ErrorMsg error={errors.name.message} />}
+                    {errors?.application_letter_text && (
+                      <ErrorMsg
+                        error={errors.application_letter_text.message}
+                      />
+                    )}
                   </div>
 
-                  <div className="form-group checkbox-group">
-                    <label className="form-label">
-                      <input type="checkbox" />I confirm that I have read and
-                      agree to the <a href="#">User Agreement</a>,{" "}
-                      <a href="#">Privacy Policy</a>, and{" "}
-                      <a href="#">Cookie Notice</a>.
+                  <div className="form-group checkbox-group ">
+                    <label className="form-label d-flex align-items-center gap-3">
+                      <input type="checkbox" className="w-auto" />
+                      <div>
+                        I confirm that I have read and agree to the{" "}
+                        <a href="#">User Agreement</a>,{" "}
+                        <a href="#">Privacy Policy</a>, and{" "}
+                        <a href="#">Cookie Notice</a>.
+                      </div>
                     </label>
                   </div>
 
