@@ -282,19 +282,24 @@ const Page = () => {
       `;
       jobListParent.insertBefore(sortBar, firstJobCard);
 
+      debugger;
+      
       // Update the sidebar only the first time
-      const jobTypeFilter = doc.getElementById("job_type_filter");
+      const workTypeFilter = doc.getElementById("work_type_filter");
       const jobSkillFilter = doc.getElementById("job_skill_set_filter");
-      jobTypeFilter.innerHTML = "";
-      jobSkillFilter.innerHTML = "";
+      const contractTypeFilter = doc.getElementById("contract_type_filter");
 
-      filterList?.jobType?.forEach((item) => {
+      workTypeFilter.innerHTML = "";
+      jobSkillFilter.innerHTML = "";
+      contractTypeFilter.innerHTML = "";
+
+      filterList?.workTypes?.forEach((item) => {
         const listItem = doc.createElement("li");
         listItem.innerHTML = `
           <input type="checkbox" id="${item.originalName}">
           <label for="${item.originalName}">${item.type} (${item.count})</label>
         `;
-        jobTypeFilter.appendChild(listItem);
+        workTypeFilter.appendChild(listItem);
       });
 
       filterList?.skills?.forEach((item) => {
@@ -304,6 +309,15 @@ const Page = () => {
           <label for="${item.skill}">${item.skill} (${item.count})</label>
         `;
         jobSkillFilter.appendChild(listItem);
+      });
+
+      filterList?.contractTypes?.forEach((item) => {
+        const listItem = doc.createElement("li");
+        listItem.innerHTML = `
+          <input type="checkbox" id="${item.type}">
+          <label for="${item.type}">${item.type} (${item.count})</label>
+        `;
+        contractTypeFilter.appendChild(listItem);
       });
 
       // Remove existing job cards
