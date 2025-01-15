@@ -63,6 +63,8 @@ const Page = () => {
       );
       setHtmlContent(response?.data?.data["mycustom-html"]);
 
+      // updateFilterSection(response?.data?.data["mycustom-html"]);
+
       setWebsite(response?.data?.data);
       if (
         response?.data?.data &&
@@ -78,6 +80,8 @@ const Page = () => {
       console.error("Error fetching website data:", error);
     }
   };
+
+
   useEffect(() => {
     const sideBarFilterBtn = document.getElementById("filter_btn");
     const sideBarResetBtn = document.getElementById("reset_btn");
@@ -207,10 +211,12 @@ const Page = () => {
         "/web/career/career-page-filters"
       );
       setFilterList(response.data.data);
+      displayJobTypes(response.data.data)
     } catch (err) {
       console.log(err);
     }
   };
+
 
   function handleResetForm() {
     const jobTypeFilterCheckboxes = document.querySelectorAll(

@@ -87,6 +87,15 @@ const JobDetails = () => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
     const jobCardDetails = doc.getElementById("job_card_details");
+
+    const jobDetailsLink = jobCardDetails.querySelector("a");
+    if (jobDetailsLink) {
+      jobDetailsLink.setAttribute("href", `/`);
+    } else {
+      console.warn("Anchor tag not found in job_card_details.");
+    }
+
+
     jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
       jobDetails.title;

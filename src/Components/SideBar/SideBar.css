@@ -169,3 +169,22 @@
   padding: 0 17px;
   margin-bottom: 10px;
 }
+
+.showDisabled{
+  position: relative;
+}
+
+.showDisabled .row {
+  position: relative;
+  z-index: 0;
+}
+
+.showDisabled:before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #ffffff21;
+  z-index: 1;
+  backdrop-filter: blur(2px);
+}
