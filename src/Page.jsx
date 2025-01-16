@@ -211,7 +211,7 @@ const Page = () => {
         "/web/career/career-page-filters"
       );
       setFilterList(response.data.data);
-      displayJobTypes(response.data.data)
+      // displayJobTypes(response.data.data)
     } catch (err) {
       console.log(err);
     }

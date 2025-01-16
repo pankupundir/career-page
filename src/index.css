@@ -43,3 +43,30 @@
   visibility: visible;
   opacity: 1;
 }
+.autocomplete-dropdown {
+  z-index: 9999; /* Ensure it's on top of other elements */
+}
+
+.offcanvas {
+  z-index: 1050; /* Ensure offcanvas is below the dropdown */
+}
+
+.offcanvas .autocomplete-dropdown {
+  z-index: 9999; /* Ensure the autocomplete dropdown is on top */
+}
+
+.offcanvas {
+  display: none;
+}
+
+.offcanvas.visiblity {
+  display: block;
+}
+
+.offcanvas.visiblity {
+  visibility: visible;
+}
+.pac-container{
+  z-index: 99999999 !important;
+}
+

@@ -9,8 +9,11 @@ import { toast } from "react-toastify";
 import Header from "./Components/Header";
 import Sidebar from "./Components/SideBar/SideBar";
 import ScreenLoader from "./ScreenLoader";
+import LocationField from "./Components/common/LocationField";
+import { useForm } from "react-hook-form";
 
 const JobDetails = () => {
+  const formConfig = useForm();
   const [website, setWebsite] = useState({
     css: "",
     html: "",
@@ -94,7 +97,6 @@ const JobDetails = () => {
     } else {
       console.warn("Anchor tag not found in job_card_details.");
     }
-
 
     jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
