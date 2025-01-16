@@ -282,7 +282,6 @@ const Page = () => {
       `;
       jobListParent.insertBefore(sortBar, firstJobCard);
 
-      debugger;
       
       // Update the sidebar only the first time
       const workTypeFilter = doc.getElementById("work_type_filter");
@@ -293,14 +292,17 @@ const Page = () => {
       jobSkillFilter.innerHTML = "";
       contractTypeFilter.innerHTML = "";
 
-      filterList?.workTypes?.forEach((item) => {
-        const listItem = doc.createElement("li");
-        listItem.innerHTML = `
-          <input type="checkbox" id="${item.originalName}">
-          <label for="${item.originalName}">${item.type} (${item.count})</label>
-        `;
-        workTypeFilter.appendChild(listItem);
-      });
+  
+      if(filterList?.workTypes.length > 0) {
+        filterList?.workTypes?.forEach((item) => {
+          const listItem = doc.createElement("li");
+          listItem.innerHTML = `
+            <input type="checkbox" id="${item.originalName}">
+            <label for="${item.originalName}">${item.type} (${item.count})</label>
+          `;
+          workTypeFilter.appendChild(listItem);
+        });
+      }
 
       filterList?.skills?.forEach((item) => {
         const listItem = doc.createElement("li");
@@ -319,6 +321,17 @@ const Page = () => {
         `;
         contractTypeFilter.appendChild(listItem);
       });
+
+      if(workTypeFilter.length == 0){
+        workTypeFilter.innerHTML = "";
+      }
+      if(jobSkillFilter.length == 0){
+        jobSkillFilter.innerHTML = "";
+      }
+      if(contractTypeFilter == 0){
+        contractTypeFilter.innerHTML = "";
+      }
+
 
       // Remove existing job cards
       for (let i = 1; i < 2; i++) {
