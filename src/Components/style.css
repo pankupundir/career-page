@@ -280,6 +280,27 @@ button.close-btn:hover {
   font-size: 14px;
 }
 
+.upload-video-box {
+  border: 2px dashed #00b7a8;
+  border-radius: 8px;
+  padding: 30px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.upload-video-box:hover {
+  background-color: #e6f7f5;
+  border-color: #00a08c;
+}
+
+.upload-video-box span {
+  color: #00b7a8;
+  font-weight: bold;
+  font-size: 14px;
+}
+
 .verify-mail-career {
   position: absolute;
   bottom: 19px;

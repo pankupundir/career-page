@@ -9,6 +9,7 @@ import {
   openAPIBuilderInstance,
   updatedURLInstance,
   webSiteBuilderFormInstance,
+  GOOGLE_MAP_API_KEY
 } from "../../config/webBuilder";
 import { EMAIL_REGEX } from "../../Constant/Constant";
 import OTPModal from "../OTPModal";
@@ -20,6 +21,7 @@ import "react-phone-input-2/lib/bootstrap.css";
 import parsePhoneNumberFromString from "libphonenumber-js";
 import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
+import VideoRecorder from "../common/VideoRecorder";
 
 
 
@@ -39,7 +41,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   });
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState({
-    isVerify: false,
+    isVerify: true,
     external_id: "",
   });
   const [showVerifyEmailError, setShowVerifyEmailError] = useState(false);
@@ -68,12 +70,64 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     { label: "Swedsih", value: "Swedsih" },
   ];
 
+  const options= ['establishment', 'geocode'];
+
   const nextPage = () => {
     if (!isEmailVerified.isVerify) {
       setShowVerifyEmailError(true);
       return;
     }
     handleSubmit(() => setShowNext(false))();
+  };
+
+  const handlePlaceSelected = async (place) => {
+    setValue(fieldName, place?.formatted_address);
+
+    const addressComponents = place?.address_components;
+    const zipCodeObj = addressComponents?.find((component) =>
+      component.types.includes('postal_code')
+    );
+
+    const countryObj = addressComponents?.find((component) =>
+      component.types.includes('country')
+    );
+    const country = countryObj ? countryObj.long_name : null;
+    setValue(`country_code`, country);
+
+    const zipCode = zipCodeObj ? zipCodeObj.long_name : null;
+    setValue('passcode', zipCode);
+
+    const { lat, lng } = place.geometry.location;
+
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/timezone/json?location=${lat()},${lng()}&timestamp=${Math.floor(
+          Date.now() / 1000
+        )}&key=${GOOGLE_MAP_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.status === 'OK') {
+        const rawOffset = data.rawOffset;
+        const dstOffset = data.dstOffset;
+        const totalOffset = rawOffset + dstOffset;
+
+        const hours = Math.floor(totalOffset / 3600);
+        const minutes = Math.abs((totalOffset % 3600) / 60);
+
+        const sign = hours >= 0 ? '+' : '-';
+        const utcOffsetString = `UTC ${sign}${Math.abs(hours)}:${
+          minutes === 0 ? '00' : minutes
+        }`;
+
+        const timezone = data.timeZoneId;
+        const formattedResponse = `${timezone} ${utcOffsetString}`;
+        setValue('time_zone', formattedResponse);
+      } else {
+        console.error('Error fetching timezone data: ', data.status);
+      }
+    } catch (error) {
+      console.error('Error calling Google Timezone API: ', error);
+    }
   };
 
   const handleFileUpload = (event) => {
@@ -723,25 +777,33 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             >
                               Timezone*
                             </label>
-                            <select
-                              name="time_zone"
-                              disabled={!isEmailVerified.isVerify}
-                              className="form-control form-select apply_timezone"
-                              {...register("time_zone", {
-                                required: "Timezone is required",
-                              })}
-                            >
-                              <option value="">Select Timezone</option>
-                              <option value="-09:00">(GMT -9:00) Alaska</option>
-                              <option value="+05:50">
-                                (GMT +5:30) Bombay, Calcutta, Madras, New Delhi
-                              </option>
-                              <option value="+04:50">(GMT +4:30) Kabul</option>
-                              <option value="+00:00">
-                                (GMT) Western Europe Time, London, Lisbon,
-                                Casablanca
-                              </option>
-                            </select>
+
+                            <Controller
+                              name="{time_zone}"
+                              control={control}
+                              render={({ field }) => (
+                                <Autocomplete
+                                  {...field}
+                                  apiKey={GOOGLE_MAP_API_KEY}
+                                  debounce={1000}
+                                  onPlaceSelected={handlePlaceSelected}
+                                  disabled={!isEmailVerified.isVerify}
+                                  onChange={e => {
+                                    debugger
+                                    setValue("time_zone", e.target.value);
+                                  }}
+                                  options={{
+                                    types: ['establishment', 'geocode'],
+                                  }}
+                                  renderInput={(params) => (
+                                    <TextField
+                                      {...params}
+                                      label="Select Time Zone"
+                                    />
+                                  )}
+                                />
+                              )}
+                            />
                           </div>
                           {errors.time_zone && (
                             <ErrorMsg error={errors.time_zone.message} />
@@ -854,6 +916,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                     {videoUploadError?.show && (
                       <ErrorMsg error={videoUploadError.msg} />
                     )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Upload Video</label>
+                    <div className="upload-video-box">
+                      <VideoRecorder />
+                    </div>
                   </div>
 
                   <div className="form-group">
