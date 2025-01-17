@@ -1,7 +1,12 @@
 import React, { useState, useRef } from "react";
 import RecordRTC from "recordrtc";
+import PlayArrow from "../../../public/Play.svg";
+import PauseArrow from "../../../public/Pause.svg";
+import ResetArrow from "../../../public/Reset.svg";
+import Stop from "../../../public/Stop.svg";
+import "./VideoRecorder.css";
 
-const VideoRecorder = () => {
+const VideoRecorder = ({ onRecordingComplete }) => {
   const [recorder, setRecorder] = useState(null);
   const [videoStream, setVideoStream] = useState(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -45,24 +50,33 @@ const VideoRecorder = () => {
 
   const stopRecording = () => {
     clearInterval(timerRef.current);
-
+  
     if (recorder) {
       recorder.stopRecording(() => {
         const blob = recorder.getBlob();
-        setRecordedBlob(blob);
-        videoPreviewRef.current.srcObject = null;
-        videoPreviewRef.current.src = URL.createObjectURL(blob);
-        videoPreviewRef.current.controls = true;
-        videoPreviewRef.current.play();
+        onRecordingComplete(blob);
+  
+        // Stop camera feed in the video preview
+        if (videoPreviewRef.current) {
+          videoPreviewRef.current.srcObject = null;
+          videoPreviewRef.current.src = URL.createObjectURL(blob);
+          videoPreviewRef.current.controls = true;
+          videoPreviewRef.current.play();
+        }
       });
-
-      videoStream.getTracks().forEach((track) => track.stop());
+  
+      // Stop all video and audio tracks to turn off the camera and microphone
+      if (videoStream) {
+        videoStream.getTracks().forEach((track) => track.stop());
+      }
+      // Reset state
       setVideoStream(null);
       setRecorder(null);
       setIsRecording(false);
       setIsPaused(false);
     }
   };
+  
 
   const pauseRecording = () => {
     if (isPaused) {
@@ -88,18 +102,29 @@ const VideoRecorder = () => {
     setIsPaused(false);
   };
 
-  const uploadVideo = () => {
-    if (recordedBlob) {
-      const file = new File([recordedBlob], "recorded-video.webm", { type: "video/webm" });
-      // Handle file upload logic here
-      console.log("Video file ready for upload:", file);
-    }
-  };
+  // const uploadVideo = async () => {
+  //   if (recordedBlob) {
+  //     const file = new File([recordedBlob], "recorded-video.webm", { type: "video/webm" });
+  //     try {
+  //       // Upload Recording
+  //       const resumeResponse = await webSiteBuilderFormInstance.post(
+  //         "/web/upload-file",
+  //         {
+  //           file: file,
+  //         }
+  //       );
+        
+  //     }
+  //     catch(error) {
+  //       console.log('error', error)
+  //     }
+  //   }
+  // };
 
   return (
-    <div>
+    <div className="video_portview">
       <h1>Record Video with Pause/Resume</h1>
-      <div style={{ position: "relative", display: "inline-block" }}>
+      <div style={{ position: "relative", display: "inline-block" }} className="w-100">
         <video ref={videoPreviewRef} style={{ width: "320px", height: "140px" }} autoPlay muted></video>
         {isRecording && (
           <div
@@ -125,22 +150,29 @@ const VideoRecorder = () => {
         </div>
       )}
 
-      <div style={{ marginTop: "10px" }}>
+      <div style={{ marginTop: "10px" }} className="custom_btn">
         {!isRecording && (
-          <button onClick={startRecording}>Start Recording</button>
+          // <button onClick={startRecording}>Start Recording</button>
+          <img onClick={startRecording} src={PlayArrow} alt="arrow" className="" />
         )}
 
         {isRecording && (
           <>
-            <button onClick={stopRecording}>Stop Recording</button>
+            
+            {/* <button onClick={stopRecording}>Stop Recording</button>
             <button onClick={pauseRecording}>{isPaused ? "Resume Recording" : "Pause Recording"}</button>
             <button onClick={resetRecording}>Reset</button>
+             */}
+            <img onClick={stopRecording} src={Stop} alt="arrow" className="" />   
+            <img onClick={pauseRecording} src={isPaused ? PlayArrow : PauseArrow} alt="arrow" className="" />
+            <img onClick={resetRecording} src={ResetArrow} alt="arrow" className="" />
+
           </>
         )}
 
-        {recordedBlob && (
+        {/* {recordedBlob && (
           <button onClick={uploadVideo}>Upload Video</button>
-        )}
+        )} */}
       </div>
     </div>
   );

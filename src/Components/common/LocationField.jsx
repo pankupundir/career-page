@@ -1,5 +1,6 @@
 import React from "react";
 import Autocomplete from "react-google-autocomplete";
+import ErrorMsg from "../ErrorMsg";
 // import ErrorMessage from "../Components/Common/ErrorMessage";
 // add this inside env
 const GOOGLE_MAP_API_KEY = "AIzaSyCA-pKaniZ4oeXOpk34WX5CMZ116zBvy-g";
@@ -12,6 +13,7 @@ const LocationField = ({
   className = "commonInput",
   placeholder,
   rules,
+  callBack,
 }) => {
   const {
     register,
@@ -28,6 +30,12 @@ const LocationField = ({
       <Autocomplete
         {...register(fieldName, {
           ...rules,
+          validate: (value) => {
+            if (!value || (typeof value === "string" && value.trim() === "")) {
+              return rules?.required || "This field is required";
+            }
+            return true;
+          },
           onChange: (e) => {
             setValue(fieldName, e.target.value);
             clearErrors(fieldName);
@@ -37,20 +45,16 @@ const LocationField = ({
         apiKey="AIzaSyDRb_BGMWY3XocACa_K976a0g6y-5QwkqU"
 
         onPlaceSelected={(place) => {
+            callBack(place);
           setValue(fieldName, place);
         }}
-        value={address?.formatted_address || address} //in case of create/post the value will contain formatted_address key but a normal string in case of edit
+        value={address?.formatted_address || address}
         options={options}
         placeholder={placeholder}
         onBlur={(e) => {
           if (typeof address !== "object" || !address?.formatted_address) {
             setValue(fieldName, "");
-            // Optionally, show an error if the address is not valid
-            // clearErrors(fieldName);
-            // setError(fieldName, {
-            //   type: "manual",
-            //   message: "Please select a valid address from the dropdown.",
-            // });
+            
           }
         }}
         onKeyDown={(e) => {
@@ -60,7 +64,10 @@ const LocationField = ({
         }}
         className={className}
       />
-      {/* <ErrorMessage fieldName={fieldName} errors={errors} /> */}
+      {errors[fieldName] && (
+        <ErrorMsg error={errors[fieldName]?.message}
+        />
+      )}
     </div>
   );
 };

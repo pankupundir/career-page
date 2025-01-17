@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./SideBar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   } = formConfig;
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState({
-    isVerify: true,
+    isVerify: false,
     external_id: "",
   });
   const [showVerifyEmailError, setShowVerifyEmailError] = useState(false);
@@ -60,12 +60,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const [loader, setLoader] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [rangeValue, setRangeValue] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState(null);
 
-  const workTypeOptions = [
-    { label: "Onsite", value: "onsite" },
-    { label: "Remote", value: "remote" },
-    { label: "Hybrid", value: "hybrid" },
-  ];
+  // const workTypeOptions = [
+  //   { label: "Onsite", value: "onsite" },
+  //   { label: "Remote", value: "remote" },
+  //   { label: "Hybrid", value: "hybrid" },
+  // ];
 
   const language_preference = [
     { label: "English", value: "English" },
@@ -82,55 +83,17 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     handleSubmit(() => setShowNext(false))();
   };
 
-  const handlePlaceSelected = async (place) => {
-    setValue(fieldName, place?.formatted_address);
-
-    const addressComponents = place?.address_components;
-    const zipCodeObj = addressComponents?.find((component) =>
-      component.types.includes("postal_code")
-    );
-
-    const countryObj = addressComponents?.find((component) =>
-      component.types.includes("country")
-    );
-    const country = countryObj ? countryObj.long_name : null;
-    setValue(`country_code`, country);
-
-    const zipCode = zipCodeObj ? zipCodeObj.long_name : null;
-    setValue("passcode", zipCode);
-
-    const { lat, lng } = place.geometry.location;
-
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/timezone/json?location=${lat()},${lng()}&timestamp=${Math.floor(
-          Date.now() / 1000
-        )}&key=${GOOGLE_MAP_API_KEY}`
+  const fillAddress = async (address) =>{
+    const addressInfo = await returnAddressInfo(
+        address?.address_components,
+        address?.geometry
       );
-      const data = await response.json();
-      if (data.status === "OK") {
-        const rawOffset = data.rawOffset;
-        const dstOffset = data.dstOffset;
-        const totalOffset = rawOffset + dstOffset;
 
-        const hours = Math.floor(totalOffset / 3600);
-        const minutes = Math.abs((totalOffset % 3600) / 60);
+    setValue("country",addressInfo.country)
+    setValue("zip_code",addressInfo.zip)
+    setValue("time_zone",addressInfo.timezone)
+  }
 
-        const sign = hours >= 0 ? "+" : "-";
-        const utcOffsetString = `UTC ${sign}${Math.abs(hours)}:${
-          minutes === 0 ? "00" : minutes
-        }`;
-
-        const timezone = data.timeZoneId;
-        const formattedResponse = `${timezone} ${utcOffsetString}`;
-        setValue("time_zone", formattedResponse);
-      } else {
-        console.error("Error fetching timezone data: ", data.status);
-      }
-    } catch (error) {
-      console.error("Error calling Google Timezone API: ", error);
-    }
-  };
 
   const handleFileUpload = (event) => {
     const allowedTypes = [
@@ -258,11 +221,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   const onSubmit = async (data) => {
     console.log(data?.address, "log this is address data");
     setLoader(true);
-    const addressInfo = await returnAddressInfo(
-      data?.address?.address_components,
-      data?.address?.geometry
-    );
-    console.log(addressInfo, "this is address info");
+
     try {
       // Upload Resume
       const resumeResponse = await webSiteBuilderFormInstance.post(
@@ -284,16 +243,30 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
           }
         );
         videoLocation = videoResponse.data.data.Location;
-        console.log(videoLocation, "Video Uploaded Location");
       }
+
+      // Upload Recording video
+      let recordingLocation = null;
+      if (recordedBlob) {
+        const file = new File([recordedBlob], "recorded-video.webm", { type: "video/webm" });
+        try {
+          const recordingResponse = await webSiteBuilderFormInstance.post("/web/upload-file", {
+            file: file,
+          });
+          recordingLocation = recordingResponse.data.data.Location;
+        } catch (error) {
+          console.error("Error uploading video:", error);
+        }
+      }
+
+
       // Construct payload
       const payload = {
         email: data.email,
         name: data.firstName + data.lastName,
-        // country_code: data.country_code,
         phone_number: data.phone_number.replace(/[^\d]/g, ""),
         profession: data.profession,
-        work_type: data.work_type,
+        // work_type: data.work_type,
         language_preference: data.language_preference,
         experience: data.experience,
         address: data.address,
@@ -304,6 +277,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
         job_id: jobDetails.job_external_id,
         resume_file: resumeLocation,
         video_file: videoLocation,
+        recording_file: recordingLocation,
         screeing_questions_answers: jobDetails.screening_questions?.map(
           (question, index) => ({
             question_id: question?.id,
@@ -442,7 +416,6 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
               className="close_btn btn-close text-reset"
               onClick={handleOnCloseSidebar}
             >
-              &times;
             </button>
           </div>
           <div className="career-sidebar-heading">
@@ -454,7 +427,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
             <form onSubmit={beforeHandleSUbmit}>
               {showNext ? (
                 <div>
-                  <div className="form-group position-relative">
+                  {/* <div className="form-group position-relative">
                     <label className="form-label">Email *</label>
                     <div className="input-group">
                       <input
@@ -481,7 +454,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                       </span>
                     </div>
                     {errors.email && <ErrorMsg error={errors.email.message} />}
-                  </div>
+                  </div> */}
                   <div
                     className={!isEmailVerified.isVerify ? "showDisabled" : ""}
                   >
@@ -523,72 +496,36 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">Phone Number *</label>
-                        {/* <PhoneInput
-                            disabled={isEmailVerified.isVerify}
-                            placeholder="Enter Your phone number"
-                            defaultCountry="SW"
-                            country="SW"
-                            value={watch("phone_number")}
-                            inputProps={
-                              ({
-                                name: "phone_number",
-                                required: true,
-                              },
-                              {
-                                ...register("phone_number", {
-                                  required: "Phone number is required",
-                                }),
-                              })
-                            }
-                          />
-                          {errors.phone_number && (
-                            <ErrorMsg error={errors.phone_number.message} />
-                          )} */}
                         <Controller
-                          name={"phone_numer"}
+                          name="phone_number" 
                           control={control}
-                          // rules={{ validate: validatePhoneNumber }}
-                          render={({ field: { onChange, ref, ...field } }) => (
-                            <PhoneInput
-                              {...field}
-                              inputProps={{
-                                ref,
-                                required: true,
-                                autoFocus: true,
-                              }}
-                              country={"SW"}
-                              placeholder={"Enter Your phone number"}
-                              onChange={(phone, code) => {
-                                const numberValue = phone.replace(
-                                  /[^0-9]/g,
-                                  ""
-                                );
-                                setValue("phone_number", numberValue);
-                                // setValue("country_code", code?.countryCode);
-                              }}
-                              disabled={!isEmailVerified.isVerify}
-                              disableCountryGuess={false}
-                            />
+                          rules={{
+                            required: "Phone number is required",
+                          }}
+                          render={({ field: { onChange, ref, ...field }, fieldState: { error } }) => (
+                            <>
+                              <PhoneInput
+                                {...field}
+                                inputProps={{
+                                  ref,
+                                  required: true,
+                                  autoFocus: true,
+                                }}
+                                country={"SW"}
+                                placeholder={"Enter Your phone number"}
+                                onChange={(phone, code) => {
+                                  const numberValue = phone.replace(/[^0-9]/g, "");
+                                  onChange(numberValue); // Update the form state
+                                  setValue("phone_number", numberValue); // Update manually
+                                }}
+                                disabled={!isEmailVerified.isVerify}
+                                disableCountryGuess={false}
+                              />
+                              {/* Display error message if any */}
+                              {error && <ErrorMsg error={error.message} />}
+                            </>
                           )}
                         />
-                        {/* <input
-                            type="text"
-                            name="phone_number"
-                            placeholder="+1"
-                            {...register("phone_number", {
-                              required: "Phone number is required",
-                              onChange: (e) => {
-                                const numberValue = e.target.value.replace(
-                                  /[^0-9]/g,
-                                  ""
-                                );
-                                setValue("phone_number", numberValue);
-                              },
-                            })}
-                          /> */}
-                        {errors.phone_number && (
-                          <ErrorMsg error={errors.phone_number.message} />
-                        )}
                       </div>
                     </div>
                     <div className="form-row">
@@ -621,6 +558,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                           options={{
                             types: ["address"],
                           }}
+                          callBack={fillAddress}
                         />
                       </Col>
 
@@ -645,10 +583,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                                 getOptionLabel={(option) => option.label}
                                 disabled={!isEmailVerified.isVerify}
                                 onChange={(language_preference, value) => {
-                                  setValue(
-                                    "language_preference",
-                                    language_preference
-                                  );
+                                  let lang = value.map((res) => res.value).join(',');
+                                  setValue("language_preference", lang);
                                 }}
                                 renderInput={(params) => (
                                   <TextField
@@ -665,57 +601,6 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             error={errors.language_preference.message}
                           />
                         )}
-                      </Col>
-
-                      <Col lg={6}>
-                        <div className="mb-3">
-                          <label
-                            htmlFor="exampleInputPassword1"
-                            className="form-label"
-                          >
-                            Experience*
-                          </label>
-                          <select
-                            name="experience"
-                            className="form-control form-select apply_experiance"
-                            disabled={!isEmailVerified.isVerify}
-                            {...register("experience", {
-                              required: "Experience is required",
-                            })}
-                          >
-                            <option value="">Select Experience</option>
-                            <option value="1 Year">1 Year</option>
-                            <option value="2 Year">2 Year</option>
-                          </select>
-                        </div>
-                        {errors.experience && (
-                          <ErrorMsg error={errors.experience.message} />
-                        )}
-                      </Col>
-
-                      <Col lg={6}>
-                        {/* uncomment this */}
-                        {/* <div className="mb-3">
-                          <label
-                            htmlFor="exampleInputPassword1"
-                            className="form-label"
-                          >
-                            Address*
-                          </label>
-                          <input
-                            type="text"
-                            name="address"
-                            disabled={!isEmailVerified.isVerify}
-                            className="form-control apply_address"
-                            placeholder="Enter address"
-                            {...register("address", {
-                              required: "Address is required",
-                            })}
-                          />
-                          {errors.address && (
-                            <ErrorMsg error={errors.address.message} />
-                          )}
-                        </div> */}
                       </Col>
 
                       <Col lg={6}>
@@ -766,7 +651,33 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                         )}
                       </Col>
 
-                      <Col lg={12}>
+                      <Col lg={6}>
+                        <div className="mb-3">
+                          <label
+                            htmlFor="exampleInputPassword1"
+                            className="form-label"
+                          >
+                            Experience*
+                          </label>
+                          <select
+                            name="experience"
+                            className="form-control form-select apply_experiance"
+                            disabled={!isEmailVerified.isVerify}
+                            {...register("experience", {
+                              required: "Experience is required",
+                            })}
+                          >
+                            <option value="">Select Experience</option>
+                            <option value="1 Year">1 Year</option>
+                            <option value="2 Year">2 Year</option>
+                          </select>
+                        </div>
+                        {errors.experience && (
+                          <ErrorMsg error={errors.experience.message} />
+                        )}
+                      </Col>
+
+                      <Col lg={6}>
                         <div className="mb-3">
                           <label
                             htmlFor="exampleInputPassword1"
@@ -775,43 +686,30 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                             Timezone*
                           </label>
 
-                          {/* <Controller
-                            name="{time_zone}"
-                            control={control}
-                            render={({ field }) => (
-                              <Autocomplete
-                                {...field}
-                                apiKey={GOOGLE_MAP_API_KEY}
-                                debounce={1000}
-                                onPlaceSelected={handlePlaceSelected}
-                                disabled={!isEmailVerified.isVerify}
-                                onChange={(e) => {
-                                  debugger;
-                                  setValue("time_zone", e.target.value);
-                                }}
-                                options={{
-                                  types: ["establishment", "geocode"],
-                                }}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    label="Select Time Zone"
-                                  />
-                                )}
-                              />
-                            )}
-                          /> */}
+                          <input
+                            type="text"
+                            name="time_zone"
+                            disabled={!isEmailVerified.isVerify}
+                            className="form-control"
+                            placeholder="Enter Time Zone"
+                            {...register("time_zone", {
+                              required: "time_zone is required",
+                            })}
+                          />
                         </div>
-                        {errors.time_zone && (
+                        {/* {errors.time_zone && (
                           <ErrorMsg error={errors.time_zone.message} />
-                        )}
+                        )} */}
                       </Col>
                     </Row>
 
                     <div className="questions-listing">
                       {jobDetails?.screening_questions?.map((res, index) => (
                         <div key={index} className="form-group">
-                          <label className="form-label">{res.question}</label>
+                          <label className="form-label">
+                          {res.question} {res.is_required ? <span className="required-star">*</span> : null}
+                        </label>
+
                           {res.web_type === "input" ? (
                             <input
                               type="text"
@@ -854,15 +752,26 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                                 </label>
                               </div>
                             </div>
-                          ) : res.web_type === "range" ? (
-                            <Form.Range
-                              {...register(`question_${index}`)}
-                              disabled={!isEmailVerified.isVerify}
-                              value={rangeValue}
-                              onChange={handleRange}
-                              className="custom-slider"
-                            />
-                          ) : null}
+                            ) : res.web_type === "range" ? (
+                              <div className="range-container">
+                                <Form.Range
+                                  {...register(`question_${index}`)}
+                                  disabled={!isEmailVerified.isVerify}
+                                  value={rangeValue}
+                                  onChange={(e) => {
+                                    handleRange(e);
+                                    setRangeValue(e.target.value); 
+                                  }}
+                                  className="custom-slider"
+                                  min={res.min}
+                                  max={res.max}
+                                />
+                                 <div className="range-values">
+                                  <span>Current: {rangeValue}</span>
+                                </div>
+                              </div>
+                            ) : null}
+  
                         </div>
                       ))}
                     </div>
@@ -906,7 +815,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                       <span>Upload Video / Create Video</span>
                     </div>
                     {videoUploadError?.file && (
-                      <span>videoUploadError.file.name </span>
+                      <span>{videoUploadError.file.name} </span>
                     )}
                     {videoUploadError?.show && (
                       <ErrorMsg error={videoUploadError.msg} />
@@ -915,8 +824,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
 
                   <div className="form-group">
                     <label className="form-label">Upload Video</label>
-                    <div className="upload-video-box">
-                      <VideoRecorder />
+                    <div className="upload-video-box custom_video_Recorder">
+                      <VideoRecorder onRecordingComplete={setRecordedBlob} />
                     </div>
                   </div>
 

@@ -1,0 +1,28 @@
+.custom_btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.custom_btn img {
+  max-width: 34px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid #d1d1d1;
+  border-radius: 4px;
+}
+.video_portview h1 {
+  font-size: 20px;
+}
+
+.video_portview video {
+  width: 100% !important;
+  object-fit: cover;
+  min-height: 250px;
+  border-radius: 10px;
+}
+
+.upload-video-box.custom_video_Recorder {
+  padding: 10px;
+}

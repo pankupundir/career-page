@@ -188,3 +188,69 @@
   z-index: 1;
   backdrop-filter: blur(2px);
 }
+
+
+.career-sidebar-input input {
+  background: #F1F1F1;
+  height: 40px;
+  border-radius: .25rem !important;
+  padding: 0 17px;
+  margin-bottom: 10px;
+  border: none !important;
+}
+
+.career-sidebar-input .MuiInputBase-colorPrimary {
+  border: none !important;
+  background: #F1F1F1;
+  padding: 0;
+  height: 40px;
+}
+
+.career-sidebar-input .MuiInputBase-colorPrimary input {
+  padding: 0 !important;
+  margin: 0;
+  height: auto;
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon label {
+  transform: translate(14px, 10px) scale(1);
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon label.MuiInputLabel-shrink {
+  transform: translate(16px, -8px) scale(.6);
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon .MuiAutocomplete-tag {
+  margin: 0 3px;
+  height: 25px;
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon .MuiAutocomplete-tag span.MuiChip-label {
+  font-size: 12px;
+  padding: 0 9px;
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon .MuiAutocomplete-tag svg {
+  margin: 0 2px 0 0;
+}
+
+.career-sidebar-input .MuiAutocomplete-hasPopupIcon fieldset {
+    border: none;
+}
+
+.career-sidebar-input select {
+  background-color: #F1F1F1;
+  height: 40px;
+  border: none;
+  border-radius: .25rem !important;
+  padding: 0 17px;
+  margin-bottom: 10px;
+}
+
+.radio-options input {
+  margin: 0;
+}
+
+.career-sidebar-input .form-range {
+  background: transparent !important;
+}

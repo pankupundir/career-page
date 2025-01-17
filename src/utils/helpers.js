@@ -33,8 +33,8 @@ export const returnAddressInfo = async (addressComponents, geometry) => {
     const timezone = await getTimezone(lat, lng);
   
     return {
-      country: countryObj?.short_name || null,
-      state: stateObj?.short_name || "Unknown State", // Fallback to a placeholder value
+      country: countryObj?.long_name || null,
+      state: stateObj?.long_name || "Unknown State", // Fallback to a placeholder value
       city: cityObj?.long_name || "Unknown City", // Fallback to a placeholder value
       zip: zipObj?.long_name || null, // Return null if postal code is not found
       lat,
