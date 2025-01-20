@@ -58,8 +58,11 @@ const Page = () => {
       await fetchJobData();
       await fetchFilterList();
       const landingPage = pageId || DEFAULT_LADING_PAGE;
+      // const response = await webSiteBuilderInstance.get(
+      //   `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
+      // );
       const response = await webSiteBuilderInstance.get(
-        `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
+        `/api/pages/activeTemplatePage`
       );
       setHtmlContent(response?.data?.data["mycustom-html"]);
 
@@ -80,7 +83,6 @@ const Page = () => {
       console.error("Error fetching website data:", error);
     }
   };
-
 
   useEffect(() => {
     const sideBarFilterBtn = document.getElementById("filter_btn");
@@ -217,7 +219,6 @@ const Page = () => {
     }
   };
 
-
   function handleResetForm() {
     const jobTypeFilterCheckboxes = document.querySelectorAll(
       '#job_type_filter input[type="checkbox"]'
@@ -282,7 +283,6 @@ const Page = () => {
       `;
       jobListParent.insertBefore(sortBar, firstJobCard);
 
-      
       // Update the sidebar only the first time
       const workTypeFilter = doc.getElementById("work_type_filter");
       const jobSkillFilter = doc.getElementById("job_skill_set_filter");
@@ -292,8 +292,7 @@ const Page = () => {
       jobSkillFilter.innerHTML = "";
       contractTypeFilter.innerHTML = "";
 
-  
-      if(filterList?.workTypes.length > 0) {
+      if (filterList?.workTypes.length > 0) {
         filterList?.workTypes?.forEach((item) => {
           const listItem = doc.createElement("li");
           listItem.innerHTML = `
@@ -322,16 +321,15 @@ const Page = () => {
         contractTypeFilter.appendChild(listItem);
       });
 
-      if(workTypeFilter.length == 0){
+      if (workTypeFilter.length == 0) {
         workTypeFilter.innerHTML = "";
       }
-      if(jobSkillFilter.length == 0){
+      if (jobSkillFilter.length == 0) {
         jobSkillFilter.innerHTML = "";
       }
-      if(contractTypeFilter == 0){
+      if (contractTypeFilter == 0) {
         contractTypeFilter.innerHTML = "";
       }
-
 
       // Remove existing job cards
       for (let i = 1; i < 2; i++) {
