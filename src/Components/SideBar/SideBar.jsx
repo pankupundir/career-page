@@ -26,7 +26,7 @@ import LocationField from "../common/LocationField";
 import { CleaningServices } from "@mui/icons-material";
 import { returnAddressInfo } from "../../utils/helpers";
 
-const Sidebar = ({ isOpen, onClose, jobDetails }) => {
+const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
   const formConfig = useForm({
     mode: "onChange",
   });
@@ -57,20 +57,22 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     file: "",
   });
   const [showNext, setShowNext] = useState(true);
-  const [loader, setLoader] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [rangeValue, setRangeValue] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState(null);
 
-  // const workTypeOptions = [
-  //   { label: "Onsite", value: "onsite" },
-  //   { label: "Remote", value: "remote" },
-  //   { label: "Hybrid", value: "hybrid" },
-  // ];
-
   const language_preference = [
     { label: "English", value: "English" },
-    { label: "Swedsih", value: "Swedsih" },
+    { label: "Swedish", value: "Swedish" },
+    { label: "Danish", value: "Danish" },
+    { label: "Norwegian", value: "Norwegian" },
+    { label: "German", value: "German" },
+    { label: "Dutch", value: "Dutch" },
+    { label: "French", value: "French" },
+    { label: "Spanish", value: "Spanish" },
+    { label: "Italian", value: "Italian" },
+    { label: "Portuguese", value: "Portuguese" },
+    { label: "Russian", value: "Russian" },
   ];
 
   const options = ["establishment", "geocode"];
@@ -88,6 +90,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
         address?.address_components,
         address?.geometry
       );
+
+    console.log(addressInfo, "addressInfo");
 
     setValue("country",addressInfo.country)
     setValue("zip_code",addressInfo.zip)
@@ -197,15 +201,15 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
     if (!resumeUploadError.file) {
       setResumeUploadError({ show: true, msg: "Please Enter the file" });
     }
-    if (!videoUploadError.file) {
-      setVideoUploadError({
-        ...videoUploadError,
-        show: true,
-        msg: "Video file is required",
-      });
-      trigger();
-      return;
-    }
+    // if (!videoUploadError.file) {
+    //   setVideoUploadError({
+    //     ...videoUploadError,
+    //     show: true,
+    //     msg: "Video file is required",
+    //   });
+    //   trigger();
+    //   return;
+    // }
     handleSubmit(onSubmit)();
   };
 
@@ -220,7 +224,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
 
   const onSubmit = async (data) => {
     console.log(data?.address, "log this is address data");
-    setLoader(true);
+    setScreenLoader(true);
 
     try {
       // Upload Resume
@@ -294,11 +298,11 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
       await submitApplyJob(payload);
       toast.success("Job application submitted successfully!");
 
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
       handleOnCloseSidebar();
     } catch (error) {
       console.error(error, "Error occurred during submission!");
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
       const message =
         error?.response?.data?.message ||
         "Something went wrong. Please try again.";
@@ -333,7 +337,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
       trigger("email");
       return;
     }
-    setLoader(true);
+    setScreenLoader(true);
     try {
       const response = await updatedURLInstance.post(
         `/web/career/get-email-otp`,
@@ -342,13 +346,13 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
         }
       );
       setShowVerifyEmailError(false);
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
       const message = response.data.message || "Applied successfully";
       toast.success(message);
       setShowOTPModal(true);
       console.log(response, "response");
     } catch (err) {
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
       console.log(err, "error !!!!!!!!!!");
       const message = err.message || "Something went wrong";
       toast.error(message);
@@ -356,7 +360,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
   };
 
   const handleConnect = async () => {
-    setLoader(true);
+    setScreenLoader(true);
     try {
       const response = await updatedURLInstance.get(
         `/web/career/connect/${isEmailVerified.external_id}`
@@ -367,12 +371,12 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
         "We have sent connection email please check your email";
       toast.success(message);
       console.log(response, "response");
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
       const message = err.message || "Something went wrong";
       toast.error(message);
-      setLoader((prev) => !prev);
+      setScreenLoader((prev) => !prev);
     }
   };
 
@@ -422,7 +426,6 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
             <p>Application</p>
             <h5>{jobDetails?.title}</h5>
           </div>
-          {loader && <ScreenLoader />}
           <div className="career-sidebar-input mt-3">
             <form onSubmit={beforeHandleSUbmit}>
               {showNext ? (
@@ -812,7 +815,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                         className="file-input"
                         accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
                       />
-                      <span>Upload Video / Create Video</span>
+                      <span>Upload Video</span>
                     </div>
                     {videoUploadError?.file && (
                       <span>{videoUploadError.file.name} </span>
@@ -823,7 +826,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Upload Video</label>
+                    <label className="form-label">Create / Record Video</label>
                     <div className="upload-video-box custom_video_Recorder">
                       <VideoRecorder onRecordingComplete={setRecordedBlob} />
                     </div>
@@ -834,9 +837,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                     <textarea
                       name="application_letter_text"
                       placeholder="Enter a short application text (max 1500 characters)"
-                      {...register("application_letter_text", {
-                        required: "Application Letter is required",
-                      })}
+                      {...register("application_letter_text")}
                       maxLength={1500}
                       className="application-textarea"
                     />

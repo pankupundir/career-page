@@ -62,16 +62,10 @@ const Page = () => {
       await fetchJobData();
       await fetchFilterList();
       const landingPage = pageId || DEFAULT_LADING_PAGE;
-      // const response = await webSiteBuilderInstance.get(
-      //   `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
-      // );
       const response = await webSiteBuilderInstance.get(
         `/api/pages/activeTemplatePage/`
       );
       setHtmlContent(response?.data?.data["mycustom-html"]);
-
-      // updateFilterSection(response?.data?.data["mycustom-html"]);
-
       setWebsite(response?.data?.data);
       if (
         response?.data?.data &&
@@ -102,11 +96,9 @@ const Page = () => {
     }
     if (shortByFilter) {
       shortByFilter.addEventListener("change", function () {
-        // reset the sidebar form
         const jobSkillSetFilterCheckboxes = document.querySelectorAll(
           '#skill_set_list input[type="checkbox"]'
         );
-        const selectedJobType = [];
         const selectedSkillSet = [];
         jobSkillSetFilterCheckboxes.forEach((checkbox) => {
           if (checkbox.checked) {
@@ -215,7 +207,7 @@ const Page = () => {
       fromResult.innerText = start;
       toResult.innerText = end;
     }
-  }, [paginationData]); // Ensure it runs whenever paginationData changes
+  }, [paginationData]);
 
   function uncheckAll(checkboxes) {
     checkboxes.forEach((checkbox) => {
@@ -231,7 +223,6 @@ const Page = () => {
         "/web/career/career-page-filters"
       );
       setFilterList(response.data.data);
-      // displayJobTypes(response.data.data)
     } catch (err) {
       console.log(err);
     }
@@ -249,12 +240,10 @@ const Page = () => {
       '#work_type_list input[type="checkbox"]'
     );
 
-    // Uncheck all checkboxes
     uncheckAll(skillSetFilterCheckboxes);
     uncheckAll(contractTypeFilterCheckboxes);
     uncheckAll(workTypeFilterCheckboxes);
 
-    // Reset selected filters
     setSelectedFilter({
       contract_type: "",
       skill_name: "",
@@ -262,13 +251,8 @@ const Page = () => {
       sortBy: "",
     });
 
-    // Reset filter activation
     setFilterActivate(false);
-
-    // Reset pagination to the first page
     onPageChange(1);
-
-    // Fetch job data again to refresh the job list
     fetchJobData();
   }
 
@@ -292,7 +276,6 @@ const Page = () => {
       firstJobCard = initialJobCard;
     }
 
-
     const jobListParent = firstJobCard.parentNode;
     const copyFirstNode = firstJobCard.cloneNode(true);
 
@@ -303,8 +286,7 @@ const Page = () => {
       const previousSortBar = doc.getElementById("sort_bar");
       if (previousSortBar) previousSortBar.remove();
 
-
-      // Insert sort-bar before job listings
+      // Create sort bar
       const sortBar = document.createElement("div");
       sortBar.id = "sort_bar";
       sortBar.className =
@@ -318,7 +300,16 @@ const Page = () => {
                 </select>
             </div>
         `;
-      jobListParent.insertBefore(sortBar, firstJobCard);
+
+      // Check if job-card-view exists and insert sort bar accordingly
+      const jobCardView = doc.getElementById("job_card_view");
+      if (jobCardView) {
+        // Insert sort bar before job-card-view
+        jobCardView.parentNode.insertBefore(sortBar, jobCardView);
+      } else {
+        // If job-card-view doesn't exist, insert before first job card
+        jobListParent.insertBefore(sortBar, firstJobCard);
+      }
 
       // Update the sidebar only the first time
       const workTypeFilter = doc.getElementById("work_type_list");
@@ -358,7 +349,6 @@ const Page = () => {
         contractTypeFilter?.appendChild(listItem);
       });
 
-      // Remove existing job cards
       doc.querySelectorAll("#job_card").forEach((job) => job.remove());
     }
 
@@ -367,7 +357,6 @@ const Page = () => {
       return doc.body.innerHTML;
     }
 
-    // If no jobs found, show "No Jobs Found" message
     if (jobData.length === 0) {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
@@ -377,7 +366,6 @@ const Page = () => {
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
-      // Loop through jobData and append new job cards
       jobData.forEach((job) => {
         const newJobCard = copyFirstNode.cloneNode(true);
 
