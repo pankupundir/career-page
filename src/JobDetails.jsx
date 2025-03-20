@@ -33,7 +33,7 @@ const JobDetails = () => {
         setJobDetails(jobDetails);
         if (jobDetails && Object.keys(jobDetails).length > 0) {
           const response = await webSiteBuilderInstance.get(
-            `/api/pages/${DEFAULT_TEMPLATE_ID}/job-details/content`
+            `/api/pages/activeTemplatePage/job-details`
           );
 
           if (response?.data?.data) {

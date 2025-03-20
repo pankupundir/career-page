@@ -427,7 +427,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
             <form onSubmit={beforeHandleSUbmit}>
               {showNext ? (
                 <div>
-                  {/* <div className="form-group position-relative">
+                  <div className="form-group position-relative">
                     <label className="form-label">Email *</label>
                     <div className="input-group">
                       <input
@@ -454,7 +454,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails }) => {
                       </span>
                     </div>
                     {errors.email && <ErrorMsg error={errors.email.message} />}
-                  </div> */}
+                  </div>
                   <div
                     className={!isEmailVerified.isVerify ? "showDisabled" : ""}
                   >

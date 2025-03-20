@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
 import RecordRTC from "recordrtc";
-import PlayArrow from "../../../public/Play.svg";
-import PauseArrow from "../../../public/Pause.svg";
-import ResetArrow from "../../../public/Reset.svg";
-import Stop from "../../../public/Stop.svg";
+import PlayArrow from "/Play.svg";
+import PauseArrow from "/public/Pause.svg";
+import ResetArrow from "/public/Reset.svg";
+import Stop from "/public/Stop.svg";
 import "./VideoRecorder.css";
 
 const VideoRecorder = ({ onRecordingComplete }) => {

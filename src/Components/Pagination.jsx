@@ -4,6 +4,7 @@ const Pagination = ({ onPageChange, totalData, itemsPerPage, currentPage }) => {
   // if API returns total data then calculate page count by the following way otherwise page count (total Pages will be provided in the APi itself)
   const totalPages = Math.ceil(totalData / itemsPerPage);
   const shouldShowPagination = totalData > itemsPerPage;
+  console.log(totalData, itemsPerPage, currentPage, "currentPage");
   return (
     <>
       {shouldShowPagination && (

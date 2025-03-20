@@ -10,7 +10,7 @@ const Header = ({ setLoader, loader }) => {
 
   useEffect(() => {
     webSiteBuilderInstance
-      .get(`/api/section/${DEFAULT_TEMPLATE_ID}/header/content`)
+      .get(`/api/section/activeTemplateHeader/header`)
       .then((res) => {
         // console.log(res.data);
         setHeaderSectionData(res.data?.data);

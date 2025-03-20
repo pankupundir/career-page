@@ -66,7 +66,14 @@
 .offcanvas.visiblity {
   visibility: visible;
 }
-.pac-container{
+.pac-container {
   z-index: 99999999 !important;
 }
 
+.no-jobs {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff4c4c;
+  padding: 20px;
+}

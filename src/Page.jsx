@@ -13,6 +13,7 @@ import moment from "moment";
 import Header from "./Components/Header";
 import usePagination from "./Hooks/usePaginantion";
 import Pagination from "./Components/Pagination";
+import { initializeAccordion } from "./Components/AccordionInit";
 
 const Page = () => {
   const [website, setWebsite] = useState({
@@ -26,14 +27,14 @@ const Page = () => {
   const [jobList, setJobList] = useState([]);
   const [isFilterActivate, setFilterActivate] = useState(false);
   const [filterList, setFilterList] = useState({
-    job_type: [],
+    work_type: [],
+    contract_type: [],
     job_skills: [],
     job_location: [],
     job_category: [],
-    contract_type: [],
   });
   const [selectedFilter, setSelectedFilter] = useState({
-    job_type: "",
+    contract_type: "",
     skill_name: "",
     search: "",
     sortBy: "",
@@ -46,7 +47,10 @@ const Page = () => {
     current_page: 0,
     per_page: 0,
   });
+
+  const [initialJobCard, setInitialJobCard] = useState(null);
   const ITEMS_PER_PAGE = 2;
+
 
   useEffect(() => {
     setFilterActivate(false);
@@ -62,7 +66,7 @@ const Page = () => {
       //   `/api/pages/${DEFAULT_TEMPLATE_ID}/${landingPage}/content`
       // );
       const response = await webSiteBuilderInstance.get(
-        `/api/pages/activeTemplatePage`
+        `/api/pages/activeTemplatePage/`
       );
       setHtmlContent(response?.data?.data["mycustom-html"]);
 
@@ -99,25 +103,16 @@ const Page = () => {
     if (shortByFilter) {
       shortByFilter.addEventListener("change", function () {
         // reset the sidebar form
-        const jobTypeFilterCheckboxes = document.querySelectorAll(
-          '#job_type_filter input[type="checkbox"]'
-        );
         const jobSkillSetFilterCheckboxes = document.querySelectorAll(
-          '#job_skill_set_filter input[type="checkbox"]'
+          '#skill_set_list input[type="checkbox"]'
         );
         const selectedJobType = [];
         const selectedSkillSet = [];
-        jobTypeFilterCheckboxes.forEach((checkbox) => {
-          if (checkbox.checked) {
-            selectedJobType.push(checkbox.id);
-          }
-        });
         jobSkillSetFilterCheckboxes.forEach((checkbox) => {
           if (checkbox.checked) {
             selectedSkillSet.push(checkbox.id);
           }
         });
-        uncheckAll(jobTypeFilterCheckboxes);
         uncheckAll(jobSkillSetFilterCheckboxes);
         const selectedValue = shortByFilter.value;
         setSelectedFilter({
@@ -126,8 +121,9 @@ const Page = () => {
         });
         setFilterActivate(true);
         fetchJobData(
-          selectedFilter.job_type,
+          selectedFilter.contract_type,
           selectedFilter.skill_name,
+          selectedFilter.work_type,
           selectedFilter.search,
           selectedValue
         );
@@ -152,14 +148,17 @@ const Page = () => {
     if (paginationComponent) {
       const root = createRoot(paginationComponent);
       root.render(
-        <Pagination
-          onPageChange={onPageChange}
-          itemsPerPage={ITEMS_PER_PAGE}
-          totalData={paginationData.totalData}
-          currentPage={page}
-        />
+        <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
+          <Pagination
+            onPageChange={onPageChange}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalData={paginationData.totalData}
+            currentPage={page}
+          />
+        </div>
       );
     }
+    initializeAccordion();
   }, [htmlContent]);
 
   useEffect(() => {
@@ -168,7 +167,7 @@ const Page = () => {
   }, [page]);
 
   useEffect(() => {
-    if (jobList.length > 0 && website["mycustom-html"]) {
+    if (website["mycustom-html"]) {
       const updateJObList = async () => {
         try {
           const updatedHTML = await updateJobListContent(htmlContent, jobList);
@@ -199,6 +198,25 @@ const Page = () => {
     }
   }, [jobList, website]);
 
+  useEffect(() => {
+    const totalResult = document.getElementById("result-total");
+    const fromResult = document.getElementById("result-from");
+    const toResult = document.getElementById("result-to");
+
+    if (totalResult && fromResult && toResult) {
+      const start =
+        (paginationData.current_page - 1) * paginationData.per_page + 1;
+      const end = Math.min(
+        paginationData.current_page * paginationData.per_page,
+        paginationData.totalData
+      );
+
+      totalResult.innerText = paginationData.totalData;
+      fromResult.innerText = start;
+      toResult.innerText = end;
+    }
+  }, [paginationData]); // Ensure it runs whenever paginationData changes
+
   function uncheckAll(checkboxes) {
     checkboxes.forEach((checkbox) => {
       if (checkbox.checked) {
@@ -220,30 +238,38 @@ const Page = () => {
   };
 
   function handleResetForm() {
-    const jobTypeFilterCheckboxes = document.querySelectorAll(
-      '#job_type_filter input[type="checkbox"]'
+    console.log("handleResetForm");
+    const skillSetFilterCheckboxes = document.querySelectorAll(
+      '#skill_set_list input[type="checkbox"]'
     );
-    const jobSkillSetFilterCheckboxes = document.querySelectorAll(
-      '#job_skill_set_filter input[type="checkbox"]'
+    const contractTypeFilterCheckboxes = document.querySelectorAll(
+      '#contract_type_list input[type="checkbox"]'
     );
-    const selectedJobType = [];
-    const selectedSkillSet = [];
-    jobTypeFilterCheckboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        selectedJobType.push(checkbox.id);
-      }
-    });
-    jobSkillSetFilterCheckboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        selectedSkillSet.push(checkbox.id);
-      }
+    const workTypeFilterCheckboxes = document.querySelectorAll(
+      '#work_type_list input[type="checkbox"]'
+    );
+
+    // Uncheck all checkboxes
+    uncheckAll(skillSetFilterCheckboxes);
+    uncheckAll(contractTypeFilterCheckboxes);
+    uncheckAll(workTypeFilterCheckboxes);
+
+    // Reset selected filters
+    setSelectedFilter({
+      contract_type: "",
+      skill_name: "",
+      search: "",
+      sortBy: "",
     });
 
-    setSelectedFilter({ job_type: "", skill_name: "", search: "", sortBy: "" });
+    // Reset filter activation
+    setFilterActivate(false);
 
-    if (selectedSkillSet.length > 0 || selectedJobType.length > 0) {
-      fetchJobData();
-    }
+    // Reset pagination to the first page
+    onPageChange(1);
+
+    // Fetch job data again to refresh the job list
+    fetchJobData();
   }
 
   async function updateJobListContent(htmlString, jobData) {
@@ -255,95 +281,85 @@ const Page = () => {
       doc = parser.parseFromString(htmlString, "text/html");
     }
 
-    const firstJobCard = doc.getElementById("job_card");
-
-    if (!firstJobCard) {
+    let firstJobCard = doc.getElementById("job_card");
+    console.log(firstJobCard, "firstJobCard");
+    if (firstJobCard) setInitialJobCard(firstJobCard);
+    if (!firstJobCard && !initialJobCard) {
       console.error("No first job card found.");
       return;
     }
+    if (initialJobCard && !firstJobCard) {
+      firstJobCard = initialJobCard;
+    }
+
 
     const jobListParent = firstJobCard.parentNode;
     const copyFirstNode = firstJobCard.cloneNode(true);
 
     if (isFilterActivate) {
       const jobCards = doc.querySelectorAll("#job_card");
-      jobCards.forEach((job) => {
-        job.remove();
-      });
+      jobCards.forEach((job) => job.remove());
     } else {
+      const previousSortBar = doc.getElementById("sort_bar");
+      if (previousSortBar) previousSortBar.remove();
+
+
       // Insert sort-bar before job listings
       const sortBar = document.createElement("div");
-      sortBar.className = "sort-bar";
+      sortBar.id = "sort_bar";
+      sortBar.className =
+        "d-flex align-items-center justify-content-between mb-3 showing-text-sec";
       sortBar.innerHTML = `
-        <p>Showing <span id="result-from">1</span>–<span id="result-to">10</span> of <span id="result-total">10<span> results</p>
-        <select class="form-select" id="short_by_filter">
-          <option value="DESC">Sort by: Oldest Job</option>
-          <option value="ASC">Sort by: Latest Job</option>
-        </select>
-      `;
+            <h4 class="showing-text">Showing <span id="result-from">1</span>–<span id="result-to">10</span> of <span id="result-total">${jobData.length}</span> results</h4>
+            <div class="d-flex align-items-center justify-content-between filter-sort">
+                <select class="form-select" id="short_by_filter">
+                    <option value="DESC">Sort by: Oldest Job</option>
+                    <option value="ASC">Sort by: Latest Job</option>
+                </select>
+            </div>
+        `;
       jobListParent.insertBefore(sortBar, firstJobCard);
 
       // Update the sidebar only the first time
-      const workTypeFilter = doc.getElementById("work_type_filter");
-      const jobSkillFilter = doc.getElementById("job_skill_set_filter");
-      const contractTypeFilter = doc.getElementById("contract_type_filter");
+      const workTypeFilter = doc.getElementById("work_type_list");
+      const jobSkillFilter = doc.getElementById("skill_set_list");
+      const contractTypeFilter = doc.getElementById("contract_type_list");
 
-      workTypeFilter.innerHTML = "";
-      jobSkillFilter.innerHTML = "";
-      contractTypeFilter.innerHTML = "";
+      if (workTypeFilter) workTypeFilter.innerHTML = "";
+      if (jobSkillFilter) jobSkillFilter.innerHTML = "";
+      if (contractTypeFilter) contractTypeFilter.innerHTML = "";
 
-      if (filterList?.workTypes.length > 0) {
-        filterList?.workTypes?.forEach((item) => {
-          const listItem = doc.createElement("li");
+      if (filterList?.workTypes?.length > 0) {
+        filterList.workTypes.forEach((item) => {
+          const listItem = document.createElement("li");
           listItem.innerHTML = `
-            <input type="checkbox" id="${item.originalName}">
-            <label for="${item.originalName}">${item.type} (${item.count})</label>
-          `;
-          workTypeFilter.appendChild(listItem);
+                    <input type="checkbox" id="${item.originalName}">
+                    <label for="${item.originalName}">${item.type} (${item.count})</label>
+                `;
+          workTypeFilter?.appendChild(listItem);
         });
       }
 
       filterList?.skills?.forEach((item) => {
-        const listItem = doc.createElement("li");
+        const listItem = document.createElement("li");
         listItem.innerHTML = `
-          <input type="checkbox" id="${item.skill}">
-          <label for="${item.skill}">${item.skill} (${item.count})</label>
-        `;
-        jobSkillFilter.appendChild(listItem);
+                <input type="checkbox" id="${item.skill}">
+                <label for="${item.skill}">${item.skill} (${item.count})</label>
+            `;
+        jobSkillFilter?.appendChild(listItem);
       });
 
       filterList?.contractTypes?.forEach((item) => {
-        const listItem = doc.createElement("li");
+        const listItem = document.createElement("li");
         listItem.innerHTML = `
-          <input type="checkbox" id="${item.type}">
-          <label for="${item.type}">${item.type} (${item.count})</label>
-        `;
-        contractTypeFilter.appendChild(listItem);
+                <input type="checkbox" id="${item.type}">
+                <label for="${item.type}">${item.type} (${item.count})</label>
+            `;
+        contractTypeFilter?.appendChild(listItem);
       });
 
-      if (workTypeFilter.length == 0) {
-        workTypeFilter.innerHTML = "";
-      }
-      if (jobSkillFilter.length == 0) {
-        jobSkillFilter.innerHTML = "";
-      }
-      if (contractTypeFilter == 0) {
-        contractTypeFilter.innerHTML = "";
-      }
-
       // Remove existing job cards
-      for (let i = 1; i < 2; i++) {
-        let jobCard;
-        if (i === 1) {
-          jobCard = firstJobCard; // This is the first card
-        } else {
-          jobCard = doc.querySelector(`#job_card-${i}`);
-        }
-        if (!jobCard) {
-          break;
-        }
-        jobCard.remove();
-      }
+      doc.querySelectorAll("#job_card").forEach((job) => job.remove());
     }
 
     if (!jobListParent) {
@@ -351,80 +367,109 @@ const Page = () => {
       return doc.body.innerHTML;
     }
 
-    // Loop through jobData and append new job cards
-    jobData.forEach((job) => {
-      const newJobCard = copyFirstNode.cloneNode(true);
-      newJobCard.querySelector(`#job_card_title`).innerText = job.title;
-      newJobCard.querySelector(`#job_company_name`).innerText =
-        job.company_name;
-      newJobCard.querySelector(`#job-post-time`).innerText = moment(
-        job.created_at
-      ).fromNow();
-      newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
-      newJobCard.querySelector(`#job_contract_type`).innerText =
-        job.contract_type;
-      if (newJobCard.querySelector(`#job_pay`))
-        newJobCard.querySelector(`#job_pay`).innerText = job.pay;
-      if (newJobCard.querySelector(`#job_currency`))
-        newJobCard.querySelector(`#job_currency`).innerText = job.currency;
-      if (newJobCard.querySelector("#job-details-btn")) {
-        newJobCard
-          .querySelector("#job-details-btn")
-          .setAttribute("href", `/job-details/${job.job_external_id}`);
-      }
+    // If no jobs found, show "No Jobs Found" message
+    if (jobData.length === 0) {
+      const noJobsMessage = document.createElement("div");
+      noJobsMessage.id = "no_jobs";
+      noJobsMessage.className = "no-jobs";
+      noJobsMessage.innerHTML = `<p>No Jobs Found</p>`;
+      jobListParent.appendChild(noJobsMessage);
+    } else {
+      const noJobsMessage = document.getElementById("no_jobs");
+      if (noJobsMessage) noJobsMessage.remove();
+      // Loop through jobData and append new job cards
+      jobData.forEach((job) => {
+        const newJobCard = copyFirstNode.cloneNode(true);
 
-      jobListParent.appendChild(newJobCard);
-    });
+        newJobCard.querySelector(`#job_card_title`).innerText = job.title;
+        newJobCard.querySelector(`#job_company_name`).innerText =
+          job.company_name;
+        newJobCard.querySelector(`#job-post-time`).innerText = moment(
+          job.created_at
+        ).fromNow();
+        newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
+        newJobCard.querySelector(`#job_contract_type`).innerText =
+          job.contract_type;
+        if (newJobCard.querySelector(`#job_pay`))
+          newJobCard.querySelector(`#job_pay`).innerText = job.pay;
+        if (newJobCard.querySelector(`#job_currency`))
+          newJobCard.querySelector(`#job_currency`).innerText = job.currency;
+        if (newJobCard.querySelector("#job-details-btn")) {
+          newJobCard
+            .querySelector("#job-details-btn")
+            .setAttribute("href", `/job-details/${job.job_external_id}`);
+        }
+        jobListParent.appendChild(newJobCard);
+      });
+    }
 
     if (!isFilterActivate) return doc.body.innerHTML;
   }
 
   function handleFormSubmit(event) {
     event.preventDefault();
-    const jobTypeFilterCheckboxes = document.querySelectorAll(
-      '#job_type_filter input[type="checkbox"]'
-    );
     const jobSkillSetFilterCheckboxes = document.querySelectorAll(
-      '#job_skill_set_filter input[type="checkbox"]'
+      '#skill_set_list input[type="checkbox"]'
+    );
+    const contractTypeFilterCheckboxes = document.querySelectorAll(
+      '#contract_type_list input[type="checkbox"]'
+    );
+    const workTypeFilterCheckboxes = document.querySelectorAll(
+      '#work_type_list input[type="checkbox"]'
     );
 
     document.getElementById("short_by_filter").value = "DESC";
 
-    const selectedJobType = [];
+    const selectedContractType = [];
     const selectedSkillSet = [];
-    jobTypeFilterCheckboxes.forEach((checkbox) => {
-      if (checkbox.checked) {
-        selectedJobType.push(checkbox.id);
-      }
-    });
+    const selectedWorkType = [];
     jobSkillSetFilterCheckboxes.forEach((checkbox) => {
       if (checkbox.checked) {
         selectedSkillSet.push(checkbox.id);
       }
     });
-    const job_type = selectedJobType.join(",");
+    contractTypeFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedContractType.push(checkbox.id);
+      }
+    });
+    workTypeFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedWorkType.push(checkbox.id);
+      }
+    });
+    const contract_type = selectedContractType.join(",");
     const skill_name = selectedSkillSet.join(",");
+    const work_type = selectedWorkType.join(",");
     const search = document.getElementById("search_job_title")?.value;
     setFilterActivate(true);
     setSelectedFilter({
       ...selectedFilter,
-      job_type,
+      contract_type,
       skill_name,
+      work_type,
       search,
     });
-    fetchJobData(job_type, skill_name, search, selectedFilter.sortBy);
+    fetchJobData(
+      contract_type,
+      skill_name,
+      work_type,
+      search,
+      selectedFilter.sortBy
+    );
   }
 
   async function fetchJobData(
-    job_type = "",
+    contract_type = "",
     skill_name = "",
+    work_type = "",
     search = "",
     sortBy = ""
   ) {
     setLoader(() => true);
     try {
       const response = await openAPIBuilderInstance.get(
-        `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&job_type=${job_type}&skill_name=${skill_name}&search=${search}&sort_order=${sortBy}`
+        `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&contract_type=${contract_type}&skill_name=${skill_name}&work_type=${work_type}&search=${search}&sort_order=${sortBy}`
       );
       setPaginationData({
         totalData: response.data.data.total_items,
@@ -438,6 +483,7 @@ const Page = () => {
       console.log(err);
     }
   }
+  console.log(paginationData, "");
 
   return (
     <div>
