@@ -26,7 +26,7 @@ import LocationField from "../common/LocationField";
 import { CleaningServices } from "@mui/icons-material";
 import { returnAddressInfo } from "../../utils/helpers";
 
-const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
+const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmailVerified, setIsEmailVerified }) => {
   const formConfig = useForm({
     mode: "onChange",
   });
@@ -42,10 +42,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
     control,
   } = formConfig;
   const [showOTPModal, setShowOTPModal] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState({
-    isVerify: false,
-    external_id: "",
-  });
+  
   const [showVerifyEmailError, setShowVerifyEmailError] = useState(false);
   const [videoUploadError, setVideoUploadError] = useState({
     show: false,
@@ -273,7 +270,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
         // work_type: data.work_type,
         language_preference: data.language_preference,
         experience: data.experience,
-        address: data.address,
+        address: data.address?.formatted_address,
         country: data.country,
         time_zone: data.time_zone,
         zip_code: data.zip_code,
@@ -292,14 +289,16 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
         ),
         application_letter_text: data.application_letter_text,
       };
+
+      if(!videoLocation){
+        delete payload.video_file;
+      }
       console.log(payload, "Payload for Job Application");
 
       // Submit Job Application
       await submitApplyJob(payload);
-      toast.success("Job application submitted successfully!");
-
       setScreenLoader((prev) => !prev);
-      handleOnCloseSidebar();
+      
     } catch (error) {
       console.error(error, "Error occurred during submission!");
       setScreenLoader((prev) => !prev);
@@ -314,7 +313,6 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
     if (!isEmailVerified) {
       setShowVerifyEmailError(true);
     }
-    setShowThankYouModal(true);
     try {
       const response = await openAPIBuilderInstance.post(
         `/web/career/apply-on-job`,
@@ -322,6 +320,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
       );
       const message = response.data.message || "Applied successfully";
       toast.success(message);
+      setShowThankYouModal(true);
       console.log(response, "response");
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
@@ -372,6 +371,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader }) => {
       toast.success(message);
       console.log(response, "response");
       setScreenLoader((prev) => !prev);
+      setIsEmailVerified({ isVerify: false });
+      handleOnCloseSidebar();
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
       const message = err.message || "Something went wrong";

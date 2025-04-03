@@ -24,6 +24,11 @@ const JobDetails = () => {
   const [jobDetails, setJobDetails] = useState({});
   const [loader, setLoader] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [screenLoader, setScreenLoader] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState({
+    isVerify: false,
+    external_id: "",
+  });
   const { jobId } = useParams();
 
   useEffect(() => {
@@ -162,6 +167,7 @@ const JobDetails = () => {
   function handleApplyJob() {
     console.log("job");
     setSidebarOpen(true);
+    setIsEmailVerified({ isVerify: false });
   }
 
   const handleCloseSidebar = () => {
@@ -185,6 +191,7 @@ const JobDetails = () => {
         <ScreenLoader />
       ) : (
         <>
+          {screenLoader && <ScreenLoader />}
           <div className={sidebarOpen ? "overlay" : ""}></div>
           <Header setLoader={setLoader} />
           <style>{website.css}</style>
@@ -194,6 +201,10 @@ const JobDetails = () => {
             isOpen={sidebarOpen}
             onClose={handleCloseSidebar}
             jobDetails={jobDetails}
+            setScreenLoader={setScreenLoader}
+            loader={screenLoader}
+            isEmailVerified={isEmailVerified}
+            setIsEmailVerified={setIsEmailVerified}
           />
         </>
       )}

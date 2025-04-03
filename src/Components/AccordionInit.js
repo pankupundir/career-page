@@ -2,14 +2,14 @@ export function initializeAccordion() {
   const filterGroups = [
     {
       group: "work_type_group",
-      header: "work_type_header",
+      header: "work_type_header", 
       list: "work_type_list",
       arrow: "work_type_arrow",
     },
     {
       group: "contract_type_group",
       header: "contract_type_header",
-      list: "contract_type_list",
+      list: "contract_type_list", 
       arrow: "contract_type_arrow",
     },
     {
@@ -27,6 +27,11 @@ export function initializeAccordion() {
     const arrow = document.getElementById(ids.arrow);
 
     if (header && list && arrow) {
+      // Set initial state to open
+      group.setAttribute("data-active", true);
+      list.style.display = "block";
+      arrow.style.transform = "rotate(-180deg)";
+
       header.addEventListener("click", function () {
         // Toggle active state
         const isActive = group.getAttribute("data-active") === "true";
@@ -35,10 +40,10 @@ export function initializeAccordion() {
         // Toggle visibility
         if (!isActive) {
           list.style.display = "block";
-          arrow.style.transform = "rotate(-135deg)";
+          arrow.style.transform = "rotate(-180deg)";
         } else {
           list.style.display = "none";
-          arrow.style.transform = "rotate(45deg)";
+          arrow.style.transform = "rotate(0deg)";
         }
       });
     }
