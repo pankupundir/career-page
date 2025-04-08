@@ -135,26 +135,27 @@ const Page = () => {
       fromResult.innerText = start;
       toResult.innerText = end;
     }
-    renderPagination();
+    const paginationComponent = document.getElementById("job_list_pagination");
+
+    if (paginationComponent) {
+      const root = createRoot(paginationComponent);
+      root.render(
+        <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
+          <Pagination
+            onPageChange={onPageChange}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalData={paginationData.totalData}
+            currentPage={page}
+          />
+        </div>
+      );
+    }
     initializeAccordion();
-  }, [htmlContent, paginationData]);
+  }, [htmlContent]);
 
   useEffect(() => {
-    if (isFilterActivate) {
-      fetchJobData(
-        selectedFilter.contract_type,
-        selectedFilter.skill_name,
-        selectedFilter.work_type,
-        selectedFilter.search,
-        selectedFilter.sortBy
-      ).then(() => {
-        renderPagination();
-      });
-    } else {
-      fetchJobData("", "", "", "", "DESC").then(() => {
-        renderPagination();
-      });
-    }
+    setFilterActivate(true);
+    fetchJobData();
   }, [page]);
 
   useEffect(() => {
@@ -164,12 +165,28 @@ const Page = () => {
           const updatedHTML = await updateJobListContent(htmlContent, jobList);
           if (updatedHTML) setHtmlContent(updatedHTML);
           setLoader(false);
+          setFilterActivate(false);
         } catch (err) {
           setLoader(false);
           console.log(err);
         }
       };
       updateJObList();
+    }
+
+    const totalResult = document.getElementById("result-total");
+    const fromResult = document.getElementById("result-from");
+    const toResult = document.getElementById("result-to");
+    if (totalResult || fromResult || toResult) {
+      const start =
+        (paginationData.current_page - 1) * paginationData.per_page + 1;
+      const end = Math.min(
+        paginationData.current_page * paginationData.per_page,
+        paginationData.totalData
+      );
+      totalResult.innerText = paginationData.totalData;
+      fromResult.innerText = start;
+      toResult.innerText = end;
     }
   }, [jobList, website]);
 
@@ -212,6 +229,7 @@ const Page = () => {
   };
 
   function handleResetForm() {
+    console.log("handleResetForm");
     const skillSetFilterCheckboxes = document.querySelectorAll(
       '#skill_set_list input[type="checkbox"]'
     );
@@ -226,25 +244,16 @@ const Page = () => {
     uncheckAll(contractTypeFilterCheckboxes);
     uncheckAll(workTypeFilterCheckboxes);
 
-    const searchField = document.getElementById("search_job_title");
-    if (searchField) searchField.value = "";
-
-    const sortDropdown = document.getElementById("short_by_filter");
-    if (sortDropdown) sortDropdown.value = "DESC";
-
     setSelectedFilter({
       contract_type: "",
       skill_name: "",
-      work_type: "",
       search: "",
-      sortBy: "DESC",
+      sortBy: "",
     });
 
+    setFilterActivate(false);
     onPageChange(1);
-    
-    fetchJobData().then(() => {
-      setFilterActivate(false);
-    });
+    fetchJobData();
   }
 
   async function updateJobListContent(htmlString, jobData) {
@@ -369,10 +378,21 @@ const Page = () => {
         newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
         newJobCard.querySelector(`#job_contract_type`).innerText =
           job.contract_type;
-        if (newJobCard.querySelector(`#job_pay`))
-          newJobCard.querySelector(`#job_pay`).innerText = job.pay;
-        if (newJobCard.querySelector(`#job_currency`))
-          newJobCard.querySelector(`#job_currency`).innerText = job.currency;
+        if (job.show_pay) {
+          if (newJobCard.querySelector(`#job_pay`))
+            newJobCard.querySelector(`#job_pay`).innerText = job.pay;
+          if (newJobCard.querySelector(`#job_currency`))
+            newJobCard.querySelector(`#job_currency`).innerText = job.currency;
+        } else {
+
+          if (newJobCard.querySelector(`#job_pay`)) {
+            const payElement = newJobCard.querySelector(`#job_pay`);
+            const payLiElement = payElement.closest('li');
+            if (payLiElement) {
+              payLiElement.remove();
+            }
+          }
+        }
         if (newJobCard.querySelector("#job-details-btn")) {
           newJobCard
             .querySelector("#job-details-btn")
@@ -421,22 +441,21 @@ const Page = () => {
     const skill_name = selectedSkillSet.join(",");
     const work_type = selectedWorkType.join(",");
     const search = document.getElementById("search_job_title")?.value;
-    const sortBy = document.getElementById("short_by_filter").value;
-    
-    onPageChange(1);
-    
     setFilterActivate(true);
     setSelectedFilter({
+      ...selectedFilter,
       contract_type,
       skill_name,
       work_type,
       search,
-      sortBy,
     });
-    
-    fetchJobData(contract_type, skill_name, work_type, search, sortBy).then(() => {
-      renderPagination();
-    });
+    fetchJobData(
+      contract_type,
+      skill_name,
+      work_type,
+      search,
+      selectedFilter.sortBy
+    );
   }
 
   async function fetchJobData(
@@ -446,65 +465,23 @@ const Page = () => {
     search = "",
     sortBy = ""
   ) {
-    setLoader(true);
+    setLoader(() => true);
     try {
       const response = await openAPIBuilderInstance.get(
-        `web/jobs/published?page=${page || 1}&per_page=${ITEMS_PER_PAGE}&contract_type=${contract_type}&skill_name=${skill_name}&work_type=${work_type}&search=${search}&sort_order=${sortBy}`
+        `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&contract_type=${contract_type}&skill_name=${skill_name}&work_type=${work_type}&search=${search}&sort_order=${sortBy}`
       );
-      
-      const { total_items, current_page, per_page, jobs } = response.data.data;
-      
       setPaginationData({
-        totalData: total_items,
-        current_page: current_page,
-        per_page: per_page,
+        totalData: response.data.data.total_items,
+        current_page: response.data.data.current_page,
+        per_page: response.data.data.per_page,
       });
-      
-      setJobList(jobs);
-      
-      updateResultsDisplay(total_items, current_page, per_page, jobs.length);
-      
-      setLoader(false);
-      return response;
+      setJobList(response.data.data.jobs);
+      setLoader(() => false);
     } catch (err) {
+      setLoader(() => false);
       console.log(err);
-      setLoader(false);
-      throw err;
     }
   }
-
-  function updateResultsDisplay(totalItems, currentPage, perPage, jobsLength) {
-    const totalResult = document.getElementById("result-total");
-    const fromResult = document.getElementById("result-from");
-    const toResult = document.getElementById("result-to");
-    
-    if (totalResult && fromResult && toResult) {
-      const start = jobsLength > 0 ? (currentPage - 1) * perPage + 1 : 0;
-      const end = Math.min(currentPage * perPage, totalItems);
-      
-      totalResult.innerText = totalItems;
-      fromResult.innerText = start;
-      toResult.innerText = end;
-    }
-  }
-
-  const renderPagination = () => {
-    const paginationComponent = document.getElementById("job_list_pagination");
-    if (paginationComponent) {
-      const root = createRoot(paginationComponent);
-      root.render(
-        <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
-          <Pagination
-            onPageChange={onPageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalData={paginationData.totalData}
-            currentPage={page}
-          />
-        </div>
-      );
-    }
-  };
-
   console.log(paginationData, "");
 
   return (
