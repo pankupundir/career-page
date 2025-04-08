@@ -51,7 +51,6 @@ const Page = () => {
   const [initialJobCard, setInitialJobCard] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
-
   useEffect(() => {
     setFilterActivate(false);
     fetchWebsite();
@@ -384,10 +383,9 @@ const Page = () => {
           if (newJobCard.querySelector(`#job_currency`))
             newJobCard.querySelector(`#job_currency`).innerText = job.currency;
         } else {
-
           if (newJobCard.querySelector(`#job_pay`)) {
             const payElement = newJobCard.querySelector(`#job_pay`);
-            const payLiElement = payElement.closest('li');
+            const payLiElement = payElement.closest("li");
             if (payLiElement) {
               payLiElement.remove();
             }
