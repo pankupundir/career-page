@@ -70,6 +70,10 @@
   z-index: 99999999 !important;
 }
 
+.job-card ul li p {
+  margin: 0;
+}
+
 .no-jobs {
   text-align: center;
   font-size: 18px;
