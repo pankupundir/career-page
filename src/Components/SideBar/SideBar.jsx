@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     setValue("zip_code",addressInfo.zip)
     setValue("time_zone",addressInfo.timezone)
   }
-
+console.log(jobDetails,"jobDetails")
 
   const handleFileUpload = (event) => {
     const allowedTypes = [
@@ -353,7 +353,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     } catch (err) {
       setScreenLoader((prev) => !prev);
       console.log(err, "error !!!!!!!!!!");
-      const message = err.message || "Something went wrong";
+      const message = err?.response?.data?.message || "Something went wrong";
       toast.error(message);
     }
   };
@@ -361,8 +361,11 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const handleConnect = async () => {
     setScreenLoader(true);
     try {
-      const response = await updatedURLInstance.get(
-        `/web/career/connect/${isEmailVerified.external_id}`
+      const response = await updatedURLInstance.post(
+        `/web/career/connect`,{
+          id:isEmailVerified.external_id,
+          job_id: jobDetails.job_external_id
+        }
       );
       setShowThankYouModal(false);
       const message =

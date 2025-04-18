@@ -91,6 +91,20 @@ const JobDetails = () => {
     }
   }, [htmlContent]);
 
+  useEffect(() => {
+    const applyBtn = document.getElementById("apply_btn");
+    if (applyBtn) {
+      applyBtn.style.position = "fixed";
+      applyBtn.style.bottom = "20px";
+      applyBtn.style.left = "50%";
+      applyBtn.style.transform = "translateX(-50%)";
+      applyBtn.style.width = "250px";
+      applyBtn.style.padding = "12px 0";
+      applyBtn.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, .1)";
+      applyBtn.style.zIndex = "9999999";
+    }
+  }, [htmlContent]);
+
   async function updateJobDetailsContent(htmlString, jobDetails) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
