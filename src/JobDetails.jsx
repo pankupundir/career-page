@@ -105,6 +105,15 @@ const JobDetails = () => {
     }
   }, [htmlContent]);
 
+  useEffect(() => {
+    const applyBtn = document.getElementById("apply_btn");
+    if (sidebarOpen && applyBtn) {
+      applyBtn.style.display = "none";
+    } else if (!sidebarOpen && applyBtn) {
+      applyBtn.style.display = "block";
+    }
+  }, [sidebarOpen]);
+
   async function updateJobDetailsContent(htmlString, jobDetails) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
