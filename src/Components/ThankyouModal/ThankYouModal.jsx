@@ -3,7 +3,8 @@ import "./thankyouModal.css";
 
 import Modal from "react-modal";
 
-Modal.setAppElement("#root"); // Set the app element for accessibility
+// Set the app element for accessibility
+Modal.setAppElement("#root");
 const ThankYouModal = ({
   isOpen,
   onClose,
@@ -29,6 +30,8 @@ const ThankYouModal = ({
       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
     },
   };
+  console.log("ThankYouModal render - isOpen:", isOpen);
+  
   return (
     <Modal
       isOpen={isOpen}

@@ -5,6 +5,9 @@ import { updatedURLInstance } from "../config/webBuilder";
 import { toast } from "react-toastify";
 import ScreenLoader from "../ScreenLoader";
 
+// Set the app element for accessibility
+Modal.setAppElement("#root");
+
 const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
   const [otp, setOtpValue] = useState("");
   const [error, setError] = useState("");
@@ -67,6 +70,8 @@ const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
     }
   };
 
+  console.log("OTPModal render - modalIsOpen:", modalIsOpen);
+  
   return (
     <Modal
       isOpen={modalIsOpen}

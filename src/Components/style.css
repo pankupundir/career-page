@@ -1,6 +1,12 @@
 /* General modal styles */
 .ReactModal__Overlay {
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  background-color: rgba(0, 0, 0, 0.75) !important; /* Semi-transparent background */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 999999 !important;
 }
 
 .ReactModal__Content {
@@ -12,6 +18,7 @@
   position: relative;
   text-align: center;
   font-family: "Arial", sans-serif;
+  z-index: 999999 !important;
 }
 
 /* Heading inside the modal */
@@ -446,4 +453,116 @@ div#job_list_pagination ul.pagination-container li.active-link a {
   background: #008873;
   border-color: #008873;
   color: #fff
+}
+
+/* Account Type Tabs Styles */
+.account-type-section {
+  margin-bottom: 20px;
+}
+
+.account-type-tabs {
+  display: flex;
+  gap: 20px;
+}
+
+.account-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* .account-tab:hover {
+  color: #008873;
+}
+
+.account-tab.active {
+  color: #008873;
+} */
+
+/* .account-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #008873;
+} */
+
+/* Login Form Section Styles */
+.login-form-section {
+  margin-top: 20px;
+}
+
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-option {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.login-option:hover {
+  border-color: #008873;
+  box-shadow: 0 4px 12px rgba(0, 136, 115, 0.1);
+}
+
+.login-option h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.login-option p {
+  margin: 0 0 16px 0;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.signup-text {
+  color: #008873 !important;
+  font-weight: 500;
+  margin-bottom: 8px !important;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.signup-text:hover {
+  color: #006d5a !important;
+}
+
+.btn-login-option {
+  background: linear-gradient(90deg, #00b7a8, #36d1dc);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-login-option:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 136, 115, 0.2);
 }

@@ -64,7 +64,15 @@ const Page = () => {
       const response = await webSiteBuilderInstance.get(
         `/api/pages/activeTemplatePage/`
       );
-      setHtmlContent(response?.data?.data["mycustom-html"]);
+      let html = response?.data?.data["mycustom-html"];
+      // Manipulate the number in <span class="number"> to 45
+      if (html) {
+        const parser = new window.DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        setHtmlContent(doc.body.innerHTML);
+      } else {
+        setHtmlContent(html);
+      }
       setWebsite(response?.data?.data);
       if (
         response?.data?.data &&
@@ -208,6 +216,13 @@ const Page = () => {
     }
   }, [paginationData]);
 
+  useEffect(() => {
+    const numberSpan = document.querySelector(".number");
+    if (numberSpan) {
+      numberSpan.textContent = paginationData.totalData;
+    }
+  }, [paginationData.totalData, htmlContent]);
+
   function uncheckAll(checkboxes) {
     checkboxes.forEach((checkbox) => {
       if (checkbox.checked) {
@@ -285,19 +300,14 @@ const Page = () => {
       const previousSortBar = doc.getElementById("sort_bar");
       if (previousSortBar) previousSortBar.remove();
 
+      
       // Create sort bar
       const sortBar = document.createElement("div");
       sortBar.id = "sort_bar";
       sortBar.className =
         "d-flex align-items-center justify-content-between mb-3 showing-text-sec";
       sortBar.innerHTML = `
-            <h4 class="showing-text">Showing <span id="result-from">1</span>–<span id="result-to">10</span> of <span id="result-total">${jobData.length}</span> results</h4>
-            <div class="d-flex align-items-center justify-content-between filter-sort">
-                <select class="form-select" id="short_by_filter">
-                    <option value="DESC">Sort by: Oldest Job</option>
-                    <option value="ASC">Sort by: Latest Job</option>
-                </select>
-            </div>
+         
         `;
 
       // Check if job-card-view exists and insert sort bar accordingly
@@ -374,9 +384,20 @@ const Page = () => {
         newJobCard.querySelector(`#job-post-time`).innerText = moment(
           job.created_at
         ).fromNow();
-        newJobCard.querySelector(`#job-time-zone`).innerText = job.time_zone;
         newJobCard.querySelector(`#job_contract_type`).innerText =
           job.contract_type;
+        
+        // Add location display if location field exists
+        if (job.job_location && newJobCard.querySelector(`#job_location`)) {
+          newJobCard.querySelector(`#job_location`).innerText = job.job_location;
+        }
+        
+        // Add created_at display in a more readable format
+        if (newJobCard.querySelector(`#job_created_at`)) {
+          newJobCard.querySelector(`#job_created_at`).innerText = moment(
+            job.created_at
+          ).format('MMM DD, YYYY');
+        }
         if (job.show_pay) {
           if (newJobCard.querySelector(`#job_pay`))
             newJobCard.querySelector(`#job_pay`).innerText = job.pay;
@@ -480,7 +501,7 @@ const Page = () => {
       console.log(err);
     }
   }
-  console.log(paginationData, "");
+  console.log(paginationData, "paginationData");
 
   return (
     <div>

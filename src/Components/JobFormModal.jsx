@@ -53,7 +53,14 @@ import { useForm } from "react-hook-form";
 import ErrorMsg from "./ErrorMsg";
 import { toast } from "react-toastify";
 
+// Set the app element for accessibility
+Modal.setAppElement("#root");
+
 const customStyles = {
+  overlay: {
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    zIndex: 999999,
+  },
   content: {
     top: "50%",
     left: "50%",
@@ -61,6 +68,11 @@ const customStyles = {
     bottom: "auto",
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
+    zIndex: 999999,
+    width: "500px",
+    padding: "40px",
+    borderRadius: "15px",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
   },
 };
 

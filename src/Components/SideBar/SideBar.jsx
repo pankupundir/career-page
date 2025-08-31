@@ -320,7 +320,9 @@ console.log(jobDetails,"jobDetails")
       );
       const message = response.data.message || "Applied successfully";
       toast.success(message);
+      console.log("Opening Thank You Modal...");
       setShowThankYouModal(true);
+      console.log("Thank You Modal state after setting:", true);
       console.log(response, "response");
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
@@ -348,7 +350,9 @@ console.log(jobDetails,"jobDetails")
       setScreenLoader((prev) => !prev);
       const message = response.data.message || "Applied successfully";
       toast.success(message);
+      console.log("Opening OTP Modal...");
       setShowOTPModal(true);
+      console.log("OTP Modal state after setting:", true);
       console.log(response, "response");
     } catch (err) {
       setScreenLoader((prev) => !prev);
@@ -888,6 +892,13 @@ console.log(jobDetails,"jobDetails")
               handleConnect={handleConnect}
               loader={loader}
             />
+          )}
+          {/* Debug info */}
+          {process.env.NODE_ENV === 'development' && (
+            <div style={{ position: 'fixed', top: '10px', right: '10px', background: 'white', padding: '10px', zIndex: 9999999, border: '1px solid black' }}>
+              <div>OTP Modal: {showOTPModal ? 'Open' : 'Closed'}</div>
+              <div>Thank You Modal: {showThankYouModal ? 'Open' : 'Closed'}</div>
+            </div>
           )}
         </div>
       </div>

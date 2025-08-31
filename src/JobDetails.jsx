@@ -145,8 +145,8 @@ const JobDetails = () => {
       jobDetails.job_location;
     jobCardDetails.querySelector(`#contact_person_name`).innerText =
       jobDetails.publishedBy?.name;
-    jobCardDetails.querySelector(`#contact_person_profession`).innerText =
-      jobDetails.publishedBy?.profession;
+    jobCardDetails.querySelector(`#contact_person_email`).innerText =
+      jobDetails.publishedBy?.email;
 
     const contactPersonImg = jobCardDetails.querySelector(
       `#contact_person_profile`
