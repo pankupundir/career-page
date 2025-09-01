@@ -41,14 +41,14 @@ const Header = ({ setLoader, loader }) => {
   const handleLoginOption = (type) => {
     console.log(`Login as ${type}`);
     if (type === 'user') {
-      window.location.href = 'http://localhost:5174/';
+      window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/';
     } else if (type === 'candidate-login') {
-      window.location.href = 'http://localhost:5174/';
+      window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/';
     }
   };
 
   const handleSignupRedirect = () => {
-    window.location.href = 'http://localhost:5174/talent-registration';
+    window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/talent-registration';
   };
 
   useEffect(() => {
