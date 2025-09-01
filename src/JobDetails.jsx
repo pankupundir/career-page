@@ -95,13 +95,25 @@ const JobDetails = () => {
     const applyBtn = document.getElementById("apply_btn");
     if (applyBtn) {
       applyBtn.style.position = "fixed";
-      applyBtn.style.bottom = "20px";
       applyBtn.style.left = "50%";
       applyBtn.style.transform = "translateX(-50%)";
       applyBtn.style.width = "250px";
       applyBtn.style.padding = "12px 0";
       applyBtn.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, .1)";
       applyBtn.style.zIndex = "9999999";
+      applyBtn.style.borderRadius = "8px";
+      
+      // Responsive bottom positioning
+      if (window.innerWidth <= 768) {
+        applyBtn.style.bottom = "80px"; // More space from bottom on mobile
+        applyBtn.style.width = "calc(100% - 40px)"; // Full width with margins on mobile
+        applyBtn.style.maxWidth = "350px";
+        applyBtn.style.left = "20px";
+        applyBtn.style.right = "20px";
+        applyBtn.style.transform = "none";
+      } else {
+        applyBtn.style.bottom = "20px";
+      }
     }
   }, [htmlContent]);
 

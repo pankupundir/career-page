@@ -7,15 +7,149 @@
 .sidebar-container {
   position: fixed;
   top: 0;
-  right: -600px; /* Start off-screen on the right */
-  width: 600px;
+  right: 0;
+  width: min(600px, 100vw);
   height: 100vh;
   background-color: #ffff;
-  transition: right 0.3s ease-in-out; /* Transition the right property */
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1); /* Shadow on the left side */
+  transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   padding: 20px;
   overflow: auto;
+}
+
+/* Mobile responsive sidebar */
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 100%;
+    padding: 15px;
+  }
+  
+  /* Mobile form styling */
+  .career-sidebar-heading h5 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .career-sidebar-input input[type="text"] {
+    height: 45px;
+    font-size: 16px;
+    padding: 0 15px;
+  }
+  
+  .career-sidebar-input input {
+    height: 45px;
+    font-size: 16px;
+    padding: 0 15px;
+  }
+  
+  .career-sidebar-input select {
+    height: 45px;
+    font-size: 16px;
+    padding: 0 15px;
+  }
+  
+  .form-label {
+    font-size: 14px !important;
+    margin-bottom: 8px;
+  }
+  
+  .next-btn,
+  .submit-btn {
+    padding: 16px;
+    font-size: 16px;
+    margin-top: 25px;
+  }
+  
+  .upload-box {
+    padding: 20px;
+    height: 100px;
+  }
+  
+  .application-textarea {
+    height: 120px;
+    font-size: 16px;
+    padding: 15px;
+  }
+  
+  .react-tel-input .form-control {
+    font-size: 16px !important;
+    height: 45px !important;
+    padding: 12px 65px !important;
+  }
+  
+  .verify-mail-career {
+    bottom: 22px;
+    right: 15px;
+    font-size: 13px;
+  }
+  
+  .career-sidebar-input .MuiInputBase-colorPrimary {
+    height: 45px;
+  }
+  
+  .close_btn {
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  
+  .questions-listing .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .radio-options {
+    gap: 20px;
+  }
+  
+  .radio-options > div {
+    margin-bottom: 10px;
+  }
+}
+
+/* Additional mobile improvements for very small screens */
+@media (max-width: 480px) {
+  .sidebar-container {
+    padding: 10px;
+  }
+  
+  .career-sidebar-heading h5 {
+    font-size: 18px;
+  }
+  
+  .career-sidebar-input input[type="text"],
+  .career-sidebar-input input,
+  .career-sidebar-input select {
+    height: 50px;
+    font-size: 16px;
+  }
+  
+  .react-tel-input .form-control {
+    height: 50px !important;
+    font-size: 16px !important;
+  }
+  
+  .next-btn,
+  .submit-btn {
+    padding: 18px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  
+  .upload-box {
+    padding: 15px;
+    height: 80px;
+  }
+  
+  .application-textarea {
+    height: 100px;
+    font-size: 16px;
+  }
+  
+  .checkbox-group label {
+    font-size: 13px;
+  }
 }
 
 .visiblity {
@@ -23,7 +157,19 @@
 }
 
 .sidebar-container.open {
-  right: 400px; /* Bring the sidebar into view */
+  transform: translateX(0);
+}
+
+/* Neutralize Bootstrap offcanvas styles on this wrapper to avoid conflicts */
+.ofcanvas-width.offcanvas {
+  position: static;
+  inset: auto;
+  transform: none !important;
+  visibility: visible !important;
+  width: auto;
+  max-width: none;
+  height: auto;
+  z-index: auto;
 }
 
 .sidebar_section {
@@ -39,10 +185,26 @@
   margin-bottom: 20px;
   cursor: pointer;
   border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close_btn:hover {
   background-color: #f70a0a;
+}
+
+/* Ensure the SVG icon inside the close button is visible and sized */
+.close_btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+/* Remove Bootstrap's default close background image to avoid double icons */
+.close_btn.btn-close {
+  background-image: none !important;
+  opacity: 1;
 }
 
 .form-data {
@@ -129,7 +291,7 @@
 .submit-btn {
   width: 100%;
   padding: 14px;
-  background-color: #28a745;
+  background :linear-gradient(to right, #FF6868, #C0A9FF) ;
   color: #fff;
   font-weight: bold;
   border: none;

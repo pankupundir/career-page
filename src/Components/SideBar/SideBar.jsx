@@ -57,6 +57,16 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [rangeValue, setRangeValue] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState(null);
+  
+  // Loading states for individual uploads
+  const [cvUploadLoading, setCvUploadLoading] = useState(false);
+  const [videoUploadLoading, setVideoUploadLoading] = useState(false);
+  const [recordingUploadLoading, setRecordingUploadLoading] = useState(false);
+  
+  // URLs for uploaded files
+  const [uploadedCvUrl, setUploadedCvUrl] = useState(null);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState(null);
+  const [uploadedRecordingUrl, setUploadedRecordingUrl] = useState(null);
 
   const language_preference = [
     { label: "English", value: "English" },
@@ -82,6 +92,10 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     handleSubmit(() => setShowNext(false))();
   };
 
+  const goBackToForm = () => {
+    setShowNext(true);
+  };
+
   const fillAddress = async (address) =>{
     const addressInfo = await returnAddressInfo(
         address?.address_components,
@@ -96,7 +110,26 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   }
 console.log(jobDetails,"jobDetails")
 
-  const handleFileUpload = (event) => {
+  const uploadCvFile = async (file) => {
+    setCvUploadLoading(true);
+    try {
+      const response = await webSiteBuilderFormInstance.post("/web/upload-file", {
+        file: file,
+      });
+      const fileUrl = response.data.data.Location;
+      setUploadedCvUrl(fileUrl);
+      toast.success("CV uploaded successfully!");
+      return fileUrl;
+    } catch (error) {
+      console.error("Error uploading CV:", error);
+      toast.error("Failed to upload CV. Please try again.");
+      throw error;
+    } finally {
+      setCvUploadLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (event) => {
     const allowedTypes = [
       "application/pdf",
       "application/msword",
@@ -133,6 +166,16 @@ console.log(jobDetails,"jobDetails")
 
       // If file type and size are valid
       setResumeUploadError({ show: false, msg: "", file: file });
+      
+      // Upload the file immediately
+      try {
+        await uploadCvFile(file);
+      } catch (error) {
+        setResumeUploadError({
+          show: true,
+          msg: "Failed to upload CV. Please try again.",
+        });
+      }
     } else {
       // Handle case when no file is selected
       event.target.value = "";
@@ -143,7 +186,26 @@ console.log(jobDetails,"jobDetails")
     }
   };
 
-  const handleVideoUpload = (event) => {
+  const uploadVideoFile = async (file) => {
+    setVideoUploadLoading(true);
+    try {
+      const response = await webSiteBuilderFormInstance.post("/web/upload-file", {
+        file: file,
+      });
+      const fileUrl = response.data.data.Location;
+      setUploadedVideoUrl(fileUrl);
+      toast.success("Video uploaded successfully!");
+      return fileUrl;
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast.error("Failed to upload video. Please try again.");
+      throw error;
+    } finally {
+      setVideoUploadLoading(false);
+    }
+  };
+
+  const handleVideoUpload = async (event) => {
     // Define allowed video file types
     const allowedTypes = [
       "video/mp4",
@@ -183,6 +245,16 @@ console.log(jobDetails,"jobDetails")
 
       // If file type and size are valid
       setVideoUploadError({ show: false, msg: "", file: file });
+      
+      // Upload the file immediately
+      try {
+        await uploadVideoFile(file);
+      } catch (error) {
+        setVideoUploadError({
+          show: true,
+          msg: "Failed to upload video. Please try again.",
+        });
+      }
     } else {
       // Handle case when no file is selected
       event.target.value = "";
@@ -193,20 +265,42 @@ console.log(jobDetails,"jobDetails")
     }
   };
 
+  const uploadRecordingFile = async (blob) => {
+    setRecordingUploadLoading(true);
+    try {
+      const file = new File([blob], "recorded-video.webm", { type: "video/webm" });
+      const response = await webSiteBuilderFormInstance.post("/web/upload-file", {
+        file: file,
+      });
+      const fileUrl = response.data.data.Location;
+      setUploadedRecordingUrl(fileUrl);
+      toast.success("Recording uploaded successfully!");
+      return fileUrl;
+    } catch (error) {
+      console.error("Error uploading recording:", error);
+      toast.error("Failed to upload recording. Please try again.");
+      throw error;
+    } finally {
+      setRecordingUploadLoading(false);
+    }
+  };
+
+  const handleRecordingComplete = async (blob) => {
+    setRecordedBlob(blob);
+    // Upload the recording immediately
+    try {
+      await uploadRecordingFile(blob);
+    } catch (error) {
+      console.error("Failed to upload recording:", error);
+    }
+  };
+
   const beforeHandleSUbmit = (event) => {
     event.preventDefault();
-    if (!resumeUploadError.file) {
-      setResumeUploadError({ show: true, msg: "Please Enter the file" });
+    if (!uploadedCvUrl) {
+      setResumeUploadError({ show: true, msg: "Please upload your CV first" });
+      return;
     }
-    // if (!videoUploadError.file) {
-    //   setVideoUploadError({
-    //     ...videoUploadError,
-    //     show: true,
-    //     msg: "Video file is required",
-    //   });
-    //   trigger();
-    //   return;
-    // }
     handleSubmit(onSubmit)();
   };
 
@@ -214,6 +308,15 @@ console.log(jobDetails,"jobDetails")
     setShowOTPModal(false);
     setShowThankYouModal(false);
     setShowVerifyEmailError(false);
+    setResumeUploadError({ show: false, msg: "", file: "" });
+    setVideoUploadError({ show: false, msg: "" });
+    setRecordedBlob(null);
+    setUploadedCvUrl(null);
+    setUploadedVideoUrl(null);
+    setUploadedRecordingUrl(null);
+    setCvUploadLoading(false);
+    setVideoUploadLoading(false);
+    setRecordingUploadLoading(false);
     reset();
     setShowNext(true);
     onClose();
@@ -224,50 +327,12 @@ console.log(jobDetails,"jobDetails")
     setScreenLoader(true);
 
     try {
-      // Upload Resume
-      const resumeResponse = await webSiteBuilderFormInstance.post(
-        "/web/upload-file",
-        {
-          file: resumeUploadError.file,
-        }
-      );
-      const resumeLocation = resumeResponse.data.data.Location;
-      console.log(resumeLocation, "Resume Uploaded Location");
-
-      // Upload Video (if applicable)
-      let videoLocation = null;
-      if (videoUploadError?.file) {
-        const videoResponse = await webSiteBuilderFormInstance.post(
-          "/web/upload-file",
-          {
-            file: videoUploadError.file,
-          }
-        );
-        videoLocation = videoResponse.data.data.Location;
-      }
-
-      // Upload Recording video
-      let recordingLocation = null;
-      if (recordedBlob) {
-        const file = new File([recordedBlob], "recorded-video.webm", { type: "video/webm" });
-        try {
-          const recordingResponse = await webSiteBuilderFormInstance.post("/web/upload-file", {
-            file: file,
-          });
-          recordingLocation = recordingResponse.data.data.Location;
-        } catch (error) {
-          console.error("Error uploading video:", error);
-        }
-      }
-
-
-      // Construct payload
+      // Construct payload using pre-uploaded file URLs
       const payload = {
         email: data.email,
         name: data.firstName + data.lastName,
         phone_number: data.phone_number.replace(/[^\d]/g, ""),
         profession: data.profession,
-        // work_type: data.work_type,
         language_preference: data.language_preference,
         experience: data.experience,
         address: data.address?.formatted_address,
@@ -276,9 +341,7 @@ console.log(jobDetails,"jobDetails")
         zip_code: data.zip_code,
         external_id: isEmailVerified.external_id,
         job_id: jobDetails.job_external_id,
-        resume_file: resumeLocation,
-        video_file: videoLocation,
-        recording_file: recordingLocation,
+        resume_file: uploadedCvUrl,
         screeing_questions_answers: jobDetails.screening_questions?.map(
           (question, index) => ({
             question_id: question?.id,
@@ -290,9 +353,16 @@ console.log(jobDetails,"jobDetails")
         application_letter_text: data.application_letter_text,
       };
 
-      if(!videoLocation){
-        delete payload.video_file;
+      // Add video file URL if uploaded
+      if (uploadedVideoUrl) {
+        payload.video_file = uploadedVideoUrl;
       }
+
+      // Add recording file URL if uploaded
+      if (uploadedRecordingUrl) {
+        payload.recording_file = uploadedRecordingUrl;
+      }
+
       console.log(payload, "Payload for Job Application");
 
       // Submit Job Application
@@ -427,10 +497,35 @@ console.log(jobDetails,"jobDetails")
             <button
               className="close_btn btn-close text-reset"
               onClick={handleOnCloseSidebar}
+              aria-label="Close"
+              type="button"
             >
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           </div>
           <div className="career-sidebar-heading">
+            {!showNext && (
+              <button 
+                type="button" 
+                className="back-btn" 
+                onClick={goBackToForm}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #ccc',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  marginBottom: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '14px'
+                }}
+              >
+                ← Back
+              </button>
+            )}
             <p>Application</p>
             <h5>{jobDetails?.title}</h5>
           </div>
@@ -597,6 +692,7 @@ console.log(jobDetails,"jobDetails")
                                   let lang = value.map((res) => res.value).join(',');
                                   setValue("language_preference", lang);
                                 }}
+                                
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
@@ -679,8 +775,10 @@ console.log(jobDetails,"jobDetails")
                             })}
                           >
                             <option value="">Select Experience</option>
-                            <option value="1 Year">1 Year</option>
-                            <option value="2 Year">2 Year</option>
+                            <option value="1-2 Year">1-2 Year</option>
+                            <option value="3-4 Year">3-4 Year</option>
+                            <option value="5+ Year">5+ Year</option>
+                          
                           </select>
                         </div>
                         {errors.experience && (
@@ -714,6 +812,12 @@ console.log(jobDetails,"jobDetails")
                       </Col>
                     </Row>
 
+                    {jobDetails?.screening_questions?.length > 0 && (
+                      <div className="form-group">
+                        <label className="form-label">Job Screening Questions</label>
+                        <div className="form-text">Answer these to help us match you better.</div>
+                      </div>
+                    )}
                     <div className="questions-listing">
                       {jobDetails?.screening_questions?.map((res, index) => (
                         <div key={index} className="form-group">
@@ -805,9 +909,13 @@ console.log(jobDetails,"jobDetails")
                         className="file-input"
                       />
                       <span>Upload Document</span>
+                      {cvUploadLoading && <span className="loader-wrapper" style={{marginLeft: '10px'}}></span>}
                     </div>
                     {resumeUploadError?.file && (
                       <span>{resumeUploadError.file.name} </span>
+                    )}
+                    {uploadedCvUrl && (
+                      <span style={{color: 'green'}}>✓ CV uploaded successfully</span>
                     )}
                     {resumeUploadError?.show && (
                       <ErrorMsg error={resumeUploadError.msg} />
@@ -824,9 +932,13 @@ console.log(jobDetails,"jobDetails")
                         accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
                       />
                       <span>Upload Video</span>
+                      {videoUploadLoading && <span className="loader-wrapper" style={{marginLeft: '10px'}}></span>}
                     </div>
                     {videoUploadError?.file && (
                       <span>{videoUploadError.file.name} </span>
+                    )}
+                    {uploadedVideoUrl && (
+                      <span style={{color: 'green'}}>✓ Video uploaded successfully</span>
                     )}
                     {videoUploadError?.show && (
                       <ErrorMsg error={videoUploadError.msg} />
@@ -836,7 +948,17 @@ console.log(jobDetails,"jobDetails")
                   <div className="form-group">
                     <label className="form-label">Create / Record Video</label>
                     <div className="upload-video-box custom_video_Recorder">
-                      <VideoRecorder onRecordingComplete={setRecordedBlob} />
+                      <VideoRecorder onRecordingComplete={handleRecordingComplete} />
+                      {recordingUploadLoading && (
+                        <div style={{marginTop: '10px'}}>
+                          <span className="loader-wrapper"></span>
+                        </div>
+                      )}
+                      {uploadedRecordingUrl && (
+                        <div style={{marginTop: '10px', color: 'green'}}>
+                          ✓ Recording uploaded successfully
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -893,13 +1015,7 @@ console.log(jobDetails,"jobDetails")
               loader={loader}
             />
           )}
-          {/* Debug info */}
-          {process.env.NODE_ENV === 'development' && (
-            <div style={{ position: 'fixed', top: '10px', right: '10px', background: 'white', padding: '10px', zIndex: 9999999, border: '1px solid black' }}>
-              <div>OTP Modal: {showOTPModal ? 'Open' : 'Closed'}</div>
-              <div>Thank You Modal: {showThankYouModal ? 'Open' : 'Closed'}</div>
-            </div>
-          )}
+    
         </div>
       </div>
     </div>

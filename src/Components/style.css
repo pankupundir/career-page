@@ -64,11 +64,11 @@ form button[type="submit"]:hover {
 /* Close button styling */
 button.close-btn {
   background-color: #ccc;
-  color: #333;
+  color: #dddbdb;
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 6px;
   cursor: pointer;
   margin-top: 10px;
   transition: background-color 0.3s ease-in-out;
@@ -84,6 +84,312 @@ button.close-btn:hover {
     width: 90%;
     padding: 20px;
   }
+}
+
+/* Menu Modal Styles */
+#menu-modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  overflow: hidden;
+  transition: width 0.3s ease-in-out;
+}
+
+#menu-modal.active {
+  width: 100%;
+}
+
+#menu-modal .menu-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 400px;
+  height: 100%;
+  background-color: white;
+  padding: 20px;
+  box-sizing: border-box;
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
+}
+
+#menu-modal.active .menu-content {
+  transform: translateX(0);
+}
+
+#menu-modal .menu-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* Menu Header Styles */
+.menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Menu Title Section */
+.menu-title-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.menu-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.menu-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Account Type Section */
+.account-type-section {
+  margin-bottom: 30px;
+}
+
+.account-type-tabs {
+  display: flex;
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.account-tab {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  background: none;
+
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.account-tab.active {
+  border-bottom: 3px solid pink;
+  color: rgb(15, 15, 15);
+}
+
+.account-tab:hover:not(.active) {
+  background-color: #e9ecef;
+}
+
+/* Login Form Section */
+.login-form-section {
+  margin-bottom: 30px;
+}
+
+.login-options {
+  text-align: center;
+}
+
+.login-option h3 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.login-option p {
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.signup-text {
+  color: #007bff;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.btn-login-option {
+  background: linear-gradient(to right, #FF6868, #C0A9FF);
+  color: white !important;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 12px !important;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 100%;
+  max-width: 200px;
+}
+
+.btn-login-option:hover {
+  background-color: #0056b3;
+}
+
+/* Menu Footer */
+.menu-footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.menu-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.footer-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: #007bff;
+}
+
+/* Menu Toggle Button */
+.menu-toggle-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+  z-index: 1001;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.menu-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #menu-modal .menu-content {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    height: 100vh;
+  }
+  
+  .menu-title {
+    font-size: 24px;
+  }
+  
+  .menu-subtitle {
+    font-size: 14px;
+  }
+  
+  .account-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .btn-login-option {
+    padding: 10px 20px;
+    font-size: 12px !important;
+  }
+  
+  .menu-footer-links {
+    gap: 10px;
+  }
+  
+  .footer-link {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  #menu-modal .menu-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px;
+    margin: 0;
+    border-radius: 0;
+    height: 100vh;
+  }
+  
+  .menu-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+  }
+  
+  .menu-title-section {
+    margin-bottom: 20px;
+  }
+  
+  .account-type-section {
+    margin-bottom: 20px;
+  }
+  
+  .login-form-section {
+    margin-bottom: 20px;
+  }
+}
+
+/* Additional mobile improvements for overlay */
+@media (max-width: 768px) {
+  .overlay {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 999 !important;
+  }
+}
+
+/* Menu close button */
+#menu-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+#menu-close:hover {
+  color: #666;
+}
+
+/* Menu icon styles */
+.menu-icon {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.menu-icon:hover {
+  opacity: 0.8;
 }
 
 .errorMsg {
@@ -189,7 +495,7 @@ button.close-btn:hover {
 .otpSubmitButton {
   width: 100%;
   padding: 12px 0;
-  background: linear-gradient(90deg, #28a745, #1abc9c);
+  background: linear-gradient(to right, #FF6868, #C0A9FF);
   border: none;
   border-radius: 35px;
   color: white;
@@ -361,7 +667,7 @@ button.close-btn:hover {
   width: 100%;
   padding: 15px;
   font-size: 16px;
-  background: linear-gradient(90deg, #00b7a8, #36d1dc);
+  background: linear-gradient(to right, #FF6868, #C0A9FF);
   color: white;
   border: none;
   border-radius: 25px;
@@ -535,25 +841,26 @@ div#job_list_pagination ul.pagination-container li.active-link a {
 }
 
 .signup-text {
-  color: #008873 !important;
+  color: #007bff !important;
   font-weight: 500;
   margin-bottom: 8px !important;
   cursor: pointer;
   text-decoration: underline;
   transition: color 0.3s ease;
+  font-size: 14px;
 }
 
 .signup-text:hover {
-  color: #006d5a !important;
+  color: #0056b3 !important;
 }
 
 .btn-login-option {
-  background: linear-gradient(90deg, #00b7a8, #36d1dc);
-  color: white;
+  background: linear-gradient(to right, #FF6868, #C0A9FF);
+  color: white !important;
   border: none;
   padding: 12px 24px;
   border-radius: 25px;
-  font-size: 14px;
+  font-size: 12px !important;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;

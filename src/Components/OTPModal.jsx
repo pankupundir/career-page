@@ -120,7 +120,7 @@ const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
           disabled={isSubmitting || otp.length < 6 || error}
           className="otpSubmitButton"
           style={{
-            backgroundColor: otp.length === 6 ? "#4caf50" : "#ccc",
+            background: otp.length === 6 ? "linear-gradient(to right, #FF6868, #C0A9FF)" : "#ccc",
             color: otp.length === 6 ? "#fff" : "#666",
             cursor: otp.length === 6 ? "pointer" : "not-allowed",
           }}

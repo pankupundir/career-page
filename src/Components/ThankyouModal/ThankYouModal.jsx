@@ -54,7 +54,7 @@ const ThankYouModal = ({
         </p>
         <div className="modal-actions">
           <button className="otpSubmitButton" onClick={handleConnect}>
-            Connect
+           Engage
           </button>
           <button className="backToCareerButton" onClick={onClose}>
             Back To Career

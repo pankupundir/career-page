@@ -39,7 +39,7 @@ export const returnAddressInfo = async (addressComponents, geometry) => {
       zip: zipObj?.long_name || null, // Return null if postal code is not found
       lat,
       lng,
-      timezone, // Timezone info
+      timezone, // Timezone info (e.g., "America/Los_Angeles UTC +7:00")
     };
   };
   
@@ -56,7 +56,20 @@ export const returnAddressInfo = async (addressComponents, geometry) => {
       const data = await response.json();
   
       if (data.status === "OK") {
-        return data.timeZoneId;
+        const rawOffset = data.rawOffset || 0; // seconds
+        const dstOffset = data.dstOffset || 0; // seconds
+        const totalOffset = rawOffset + dstOffset; // seconds
+
+        const totalOffsetHours = totalOffset / 3600; // may be negative
+        const hours = Math.trunc(totalOffsetHours);
+        const minutes = Math.abs(Math.round((totalOffsetHours - hours) * 60));
+
+        const sign = hours >= 0 ? "+" : "-";
+        const hh = String(Math.abs(hours)).padStart(2, "0");
+        const mm = String(minutes).padStart(2, "0");
+        const utcOffsetString = `UTC ${sign}${hh}:${mm}`;
+        const timezone = data.timeZoneId;
+        return `${timezone} ${utcOffsetString}`;
       } else {
         return null;
       }
