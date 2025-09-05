@@ -111,7 +111,7 @@ const JobDetails = () => {
         applyBtn.style.right = "20px";
         applyBtn.style.transform = "none";
       } else {
-        applyBtn.style.bottom = "50px";
+        applyBtn.style.bottom = "25px";
       }
     }
   }, [htmlContent]);
