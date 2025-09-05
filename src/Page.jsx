@@ -60,6 +60,7 @@ const Page = () => {
     if (import.meta.hot) {
       // Toggle the state when everything is painted
       setHmrToggleState(prevState => !prevState);
+      console.log('HMR detected - state toggled:', hmrToggleState);
     }
   }, [htmlContent, jobList, paginationData]); // Dependencies for when content changes
 
