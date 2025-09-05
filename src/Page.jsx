@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useLayoutEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   webSiteBuilderInstance,
@@ -51,7 +51,17 @@ const Page = () => {
 
   const [initialJobCard, setInitialJobCard] = useState(null);
   const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
+  const [hmrToggleState, setHmrToggleState] = useState(false);
   const ITEMS_PER_PAGE = 5;
+
+  // useLayoutEffect to handle HMR state toggle when everything is painted
+  useLayoutEffect(() => {
+    // Check if we're in HMR mode (development with hot reloading)
+    if (import.meta.hot) {
+      // Toggle the state when everything is painted
+      setHmrToggleState(prevState => !prevState);
+    }
+  }, [htmlContent, jobList, paginationData]); // Dependencies for when content changes
 
   useEffect(() => {
     setFilterActivate(false);
@@ -186,6 +196,7 @@ const Page = () => {
   }, [page]);
 
   console.log(jobList,"jobb")
+  console.log('HMR Toggle State:', hmrToggleState)
 
   useEffect(() => {
     if (website["mycustom-html"]) {
