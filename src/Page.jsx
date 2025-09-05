@@ -56,11 +56,16 @@ const Page = () => {
 
   // useLayoutEffect to handle HMR state toggle when everything is painted
   useLayoutEffect(() => {
-    // Check if we're in HMR mode (development with hot reloading)
-    if (import.meta.hot) {
-      // Toggle the state when everything is painted
+    // Check if we're in HMR mode (development with hot reloading) or production
+    const isHmrAvailable = import.meta.hot;
+    const isDevelopment = import.meta.env.DEV;
+    
+    // Toggle the state when everything is painted
+    // In development: only when HMR is available
+    // In production: always toggle when content changes
+    if (isHmrAvailable || !isDevelopment) {
       setHmrToggleState(prevState => !prevState);
-      console.log('HMR detected - state toggled:', hmrToggleState);
+      console.log('State toggled - HMR available:', !!isHmrAvailable, 'Development:', isDevelopment, 'New state:', !hmrToggleState);
     }
   }, [htmlContent, jobList, paginationData]); // Dependencies for when content changes
 
