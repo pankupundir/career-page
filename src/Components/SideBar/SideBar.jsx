@@ -442,14 +442,12 @@ console.log(jobDetails,"jobDetails")
         }
       );
       setShowThankYouModal(false);
-      const message =
-        response.data.message ||
-        "We have sent connection email please check your email";
-      toast.success(message);
+      
       console.log(response, "response");
       setScreenLoader((prev) => !prev);
       setIsEmailVerified({ isVerify: false });
       handleOnCloseSidebar();
+      window.location.href = response.data.data.url;
     } catch (err) {
       console.log(err, "error !!!!!!!!!!");
       const message = err.message || "Something went wrong";
@@ -501,7 +499,7 @@ console.log(jobDetails,"jobDetails")
               type="button"
             >
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
@@ -908,8 +906,10 @@ console.log(jobDetails,"jobDetails")
                         onChange={handleFileUpload}
                         className="file-input"
                       />
-                      <span>Upload Document</span>
-                      {cvUploadLoading && <span className="loader-wrapper" style={{marginLeft: '10px'}}></span>}
+                   
+                      {cvUploadLoading ? <span className="loader-wrapper" style={{marginLeft: '10px'}}></span> :
+                       <span>Upload Document</span> 
+                    }
                     </div>
                     {resumeUploadError?.file && (
                       <span>{resumeUploadError.file.name} </span>

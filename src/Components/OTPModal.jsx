@@ -17,6 +17,7 @@ const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
   const customStyles = {
     overlay: {
       backgroundColor: "rgb(16 14 14 / 75%)",
+      padding: "20px",
     },
     content: {
       top: "50%",
@@ -26,10 +27,14 @@ const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
       zIndex: 999999,
-      width: "500px",
-      padding: "60px",
+      width: "90%",
+      maxWidth: "500px",
+      minWidth: "320px",
+      padding: "30px",
       borderRadius: "15px",
       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+      maxHeight: "90vh",
+      overflow: "auto",
     },
   };
 

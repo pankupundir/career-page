@@ -9,7 +9,6 @@ const Header = ({ setLoader, loader }) => {
   const [headerSectionData, setHeaderSectionData] = useState("");
   const [isHeaderActive, setIsHeaderActive] = useState(false);
   const [activeAccountType, setActiveAccountType] = useState("user");
-  const [candidateFormType, setCandidateFormType] = useState("login");
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
 
   useEffect(() => {
@@ -116,7 +115,7 @@ const Header = ({ setLoader, loader }) => {
                 onClick={() => handleAccountTypeChange('user')}
                 data-type="user"
               >
-                User
+                Login
               </button>
               <button 
                 className={`account-tab ${activeAccountType === 'candidate' ? 'active' : ''}`} 
@@ -132,14 +131,13 @@ const Header = ({ setLoader, loader }) => {
           <div className="login-form-section" style={{ display: activeAccountType === 'user' ? 'block' : 'none' }}>
             <div className="login-options">
               <div className="login-option">
-                <h3>User Login</h3>
-                <p>Access your dashboard and manage your account</p>
+              <p>Login with your Client or Employee account to access your dashboard</p>
                 <button 
                   className="btn btn-login-option" 
                   onClick={() => handleLoginOption('user')}
                   data-type="user"
                 >
-                  Login as User
+                  Login 
                 </button>
               </div>
             </div>
@@ -149,7 +147,6 @@ const Header = ({ setLoader, loader }) => {
           <div className="login-form-section" style={{ display: activeAccountType === 'candidate' ? 'block' : 'none' }}>
             <div >
               <div className="login-option">
-                <h3>Candidate Login</h3>
                 <p>Access your candidate dashboard and manage your applications</p>
                 <p className="signup-text" onClick={handleSignupRedirect}>
                   Want to sign up?

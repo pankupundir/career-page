@@ -81,3 +81,8 @@
   color: #ff4c4c;
   padding: 20px;
 }
+
+/* Remove border radius from all buttons */
+.btn, button, input[type="button"], input[type="submit"] {
+  border-radius: 0 !important;
+}

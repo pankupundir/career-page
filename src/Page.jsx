@@ -41,14 +41,16 @@ const Page = () => {
   });
 
   let { pageId } = useParams();
-  const { page, onPageChange } = usePagination();
+  const { page, onPageChange, setPage } = usePagination();
   const [paginationData, setPaginationData] = useState({
     totalData: 0,
     current_page: 0,
     per_page: 0,
+    total_pages: 0,
   });
 
   const [initialJobCard, setInitialJobCard] = useState(null);
+  const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
@@ -94,39 +96,29 @@ const Page = () => {
     const sideBarResetBtn = document.getElementById("reset_btn");
     const sideBarFilterForm = document.getElementById("side_filter_form");
     const shortByFilter = document.getElementById("short_by_filter");
+    
+    // Clean up existing event listeners
+    if (sideBarFilterForm) {
+      sideBarFilterForm.removeEventListener("submit", handleFormSubmit);
+    }
+    if (sideBarResetBtn) {
+      sideBarResetBtn.removeEventListener("click", handleResetForm);
+    }
+    if (shortByFilter) {
+      shortByFilter.removeEventListener("change", handleSortByChange);
+    }
+    
     if (sideBarFilterBtn) {
       sideBarFilterBtn.setAttribute("type", "submit");
-      sideBarFilterForm.addEventListener("submit", handleFormSubmit);
+      if (sideBarFilterForm) {
+        sideBarFilterForm.addEventListener("submit", handleFormSubmit);
+      }
     }
     if (sideBarResetBtn) {
       sideBarResetBtn.addEventListener("click", handleResetForm);
     }
     if (shortByFilter) {
-      shortByFilter.addEventListener("change", function () {
-        const jobSkillSetFilterCheckboxes = document.querySelectorAll(
-          '#skill_set_list input[type="checkbox"]'
-        );
-        const selectedSkillSet = [];
-        jobSkillSetFilterCheckboxes.forEach((checkbox) => {
-          if (checkbox.checked) {
-            selectedSkillSet.push(checkbox.id);
-          }
-        });
-        uncheckAll(jobSkillSetFilterCheckboxes);
-        const selectedValue = shortByFilter.value;
-        setSelectedFilter({
-          ...selectedFilter,
-          sortBy: selectedValue,
-        });
-        setFilterActivate(true);
-        fetchJobData(
-          selectedFilter.contract_type,
-          selectedFilter.skill_name,
-          selectedFilter.work_type,
-          selectedFilter.search,
-          selectedValue
-        );
-      });
+      shortByFilter.addEventListener("change", handleSortByChange);
     }
     const totalResult = document.getElementById("result-total");
     const fromResult = document.getElementById("result-from");
@@ -146,24 +138,54 @@ const Page = () => {
 
     if (paginationComponent) {
       const root = createRoot(paginationComponent);
-      root.render(
-        <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
-          <Pagination
-            onPageChange={onPageChange}
-            itemsPerPage={ITEMS_PER_PAGE}
-            totalData={paginationData.totalData}
-            currentPage={page}
-          />
-        </div>
-      );
+      
+      console.log("Pagination Debug:", {
+        total_pages: paginationData.total_pages,
+        totalData: paginationData.totalData,
+        shouldShowPagination: paginationData.total_pages > 1
+      });
+      
+      // Only show pagination if there are multiple pages and total items > 0
+      if (paginationData.total_pages > 1 && paginationData.totalData > 0) {
+        console.log("Showing pagination - total_pages > 1 and totalData > 0");
+        root.render(
+          <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
+            <Pagination
+              onPageChange={onPageChange}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalData={paginationData.totalData}
+              currentPage={page}
+            />
+          </div>
+        );
+      } else {
+        console.log("Hiding pagination - total_pages:", paginationData.total_pages, "totalData:", paginationData.totalData);
+        // Hide pagination when total_pages is 0 or 1, or when there are no items
+        root.render(<div></div>);
+      }
     }
     initializeAccordion();
-  }, [htmlContent]);
+    
+    // Cleanup function
+    return () => {
+      if (sideBarFilterForm) {
+        sideBarFilterForm.removeEventListener("submit", handleFormSubmit);
+      }
+      if (sideBarResetBtn) {
+        sideBarResetBtn.removeEventListener("click", handleResetForm);
+      }
+      if (shortByFilter) {
+        shortByFilter.removeEventListener("change", handleSortByChange);
+      }
+    };
+  }, [htmlContent, paginationData]);
 
   useEffect(() => {
     setFilterActivate(true);
     fetchJobData();
   }, [page]);
+
+  console.log(jobList,"jobb")
 
   useEffect(() => {
     if (website["mycustom-html"]) {
@@ -171,6 +193,7 @@ const Page = () => {
         try {
           const updatedHTML = await updateJobListContent(htmlContent, jobList);
           if (updatedHTML) setHtmlContent(updatedHTML);
+          console.log(updatedHTML,"updatedHTML")
           setLoader(false);
           setFilterActivate(false);
         } catch (err) {
@@ -223,6 +246,14 @@ const Page = () => {
     }
   }, [paginationData.totalData, htmlContent]);
 
+  // Restore search input value from state
+  useEffect(() => {
+    const searchInput = document.getElementById("search_job_title");
+    if (searchInput && selectedFilter.search) {
+      searchInput.value = selectedFilter.search;
+    }
+  }, [selectedFilter.search, htmlContent]);
+
   function uncheckAll(checkboxes) {
     checkboxes.forEach((checkbox) => {
       if (checkbox.checked) {
@@ -230,6 +261,32 @@ const Page = () => {
       }
     });
   }
+
+  const handleSortByChange = (event) => {
+    const jobSkillSetFilterCheckboxes = document.querySelectorAll(
+      '#skill_set_list input[type="checkbox"]'
+    );
+    const selectedSkillSet = [];
+    jobSkillSetFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedSkillSet.push(checkbox.id);
+      }
+    });
+    uncheckAll(jobSkillSetFilterCheckboxes);
+    const selectedValue = event.target.value;
+    setSelectedFilter({
+      ...selectedFilter,
+      sortBy: selectedValue,
+    });
+    setFilterActivate(true);
+    fetchJobData(
+      selectedFilter.contract_type,
+      selectedFilter.skill_name,
+      selectedFilter.work_type,
+      selectedFilter.search,
+      selectedValue
+    );
+  };
 
   const fetchFilterList = async () => {
     try {
@@ -243,7 +300,8 @@ const Page = () => {
   };
 
   function handleResetForm() {
-    console.log("handleResetForm");
+    console.log("handleResetForm - Resetting all filters and fetching all jobs");
+    
     const skillSetFilterCheckboxes = document.querySelectorAll(
       '#skill_set_list input[type="checkbox"]'
     );
@@ -253,11 +311,25 @@ const Page = () => {
     const workTypeFilterCheckboxes = document.querySelectorAll(
       '#work_type_list input[type="checkbox"]'
     );
+    const searchInput = document.getElementById("search_job_title");
+    const shortByFilter = document.getElementById("short_by_filter");
 
+    // Uncheck all filter checkboxes
     uncheckAll(skillSetFilterCheckboxes);
     uncheckAll(contractTypeFilterCheckboxes);
     uncheckAll(workTypeFilterCheckboxes);
+    
+    // Clear the search input field
+    if (searchInput) {
+      searchInput.value = "";
+    }
+    
+    // Reset sort filter to default
+    if (shortByFilter) {
+      shortByFilter.value = "";
+    }
 
+    // Reset all filter state
     setSelectedFilter({
       contract_type: "",
       skill_name: "",
@@ -265,9 +337,133 @@ const Page = () => {
       sortBy: "",
     });
 
+    // Deactivate filter mode and reset to page 1
     setFilterActivate(false);
-    onPageChange(1);
-    fetchJobData();
+    setPage(1); // Directly set page to 1
+    onPageChange({ selected: 0 }); // Also call the pagination hook
+    
+    // Restore the original job card structure if it was lost
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      restoreJobCardStructure();
+    }, 100);
+    
+    // Fetch all jobs without any filters
+    console.log("Fetching all jobs after reset...");
+    
+    // Force a complete refresh by re-fetching the website content if needed
+    if (!originalJobCardHTML) {
+      console.log("No original card HTML stored, re-fetching website content");
+      fetchWebsite();
+    } else {
+      fetchJobData("", "", "", "", "");
+    }
+  }
+
+  function restoreJobCardStructure() {
+    console.log("restoreJobCardStructure called");
+    console.log("originalJobCardHTML exists:", !!originalJobCardHTML);
+    
+    // If we have the original card HTML and no job cards exist, restore the structure
+    if (originalJobCardHTML) {
+      const existingJobCard = document.getElementById("job_card");
+      const noJobsMessage = document.getElementById("no_jobs");
+      
+      console.log("existingJobCard:", !!existingJobCard);
+      console.log("noJobsMessage:", !!noJobsMessage);
+      
+      if (!existingJobCard && noJobsMessage) {
+        console.log("Removing no jobs message and restoring card structure");
+        // Remove the no jobs message
+        noJobsMessage.remove();
+        
+        // Find the job list parent container
+        const jobCardView = document.getElementById("job_card_view");
+        console.log("jobCardView found:", !!jobCardView);
+        
+        if (jobCardView) {
+          // Create a temporary div to parse the HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = originalJobCardHTML;
+          const restoredCard = tempDiv.firstElementChild;
+          
+          console.log("Restored card:", restoredCard);
+          
+          // Append the restored card to the container
+          jobCardView.appendChild(restoredCard);
+          
+          // Update the initial job card reference
+          setInitialJobCard(restoredCard);
+          console.log("Card structure restored successfully");
+        } else {
+          console.log("jobCardView not found, trying alternative approach");
+          // Try to find the correct container that should hold job cards
+          // Look for containers that are NOT buttons and have appropriate structure
+          const possibleContainers = document.querySelectorAll('div[class*="job"], div[id*="job"], div[class*="card"], div[id*="card"], section[class*="job"], section[id*="job"], main, .container, .row');
+          
+          // Filter out buttons and other inappropriate elements
+          const validContainers = Array.from(possibleContainers).filter(container => {
+            const tagName = container.tagName.toLowerCase();
+            const className = container.className || '';
+            const id = container.id || '';
+            
+            // Skip buttons, inputs, and other form elements
+            if (['button', 'input', 'select', 'textarea', 'a'].includes(tagName)) {
+              return false;
+            }
+            
+            // Skip elements that are clearly buttons or links
+            if (className.includes('btn') || className.includes('button') || className.includes('link')) {
+              return false;
+            }
+            
+            // Prefer containers that look like they should hold content
+            return true;
+          });
+          
+          console.log("Valid containers found:", validContainers.length);
+          
+          if (validContainers.length > 0) {
+            // Try to find the most appropriate container
+            let bestContainer = null;
+            
+            // First, look for containers with specific job-related IDs or classes
+            bestContainer = validContainers.find(container => 
+              container.id && (container.id.includes('job') || container.id.includes('card') || container.id.includes('list'))
+            );
+            
+            // If not found, look for containers with job-related classes
+            if (!bestContainer) {
+              bestContainer = validContainers.find(container => 
+                container.className && (container.className.includes('job') || container.className.includes('card') || container.className.includes('list'))
+              );
+            }
+            
+            // If still not found, use the first valid container
+            if (!bestContainer) {
+              bestContainer = validContainers[0];
+            }
+            
+            console.log("Selected container:", bestContainer);
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = originalJobCardHTML;
+            const restoredCard = tempDiv.firstElementChild;
+            bestContainer.appendChild(restoredCard);
+            setInitialJobCard(restoredCard);
+            console.log("Card structure restored to alternative container");
+          } else {
+            console.log("No valid containers found for job card restoration");
+          }
+        }
+      } else if (existingJobCard) {
+        console.log("Job card already exists, no need to restore");
+      } else {
+        console.log("No jobs message not found, might not need restoration");
+      }
+    } else {
+      console.log("No original job card HTML stored");
+    }
   }
 
   async function updateJobListContent(htmlString, jobData) {
@@ -281,16 +477,60 @@ const Page = () => {
 
     let firstJobCard = doc.getElementById("job_card");
     console.log(firstJobCard, "firstJobCard");
-    if (firstJobCard) setInitialJobCard(firstJobCard);
+    if (firstJobCard) {
+      setInitialJobCard(firstJobCard);
+      // Store the original HTML structure of the job card
+      if (!originalJobCardHTML) {
+        setOriginalJobCardHTML(firstJobCard.outerHTML);
+        console.log("Stored original job card HTML");
+      }
+    }
     if (!firstJobCard && !initialJobCard) {
       console.error("No first job card found.");
-      return;
+      // Try to restore from stored HTML if available
+      if (originalJobCardHTML) {
+        console.log("Attempting to restore job card from stored HTML");
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalJobCardHTML;
+        const restoredCard = tempDiv.firstElementChild;
+        if (restoredCard) {
+          firstJobCard = restoredCard;
+          setInitialJobCard(restoredCard);
+          console.log("Job card restored from stored HTML");
+        }
+      }
+      if (!firstJobCard) {
+        console.error("Still no job card available after restoration attempt");
+        return;
+      }
     }
     if (initialJobCard && !firstJobCard) {
       firstJobCard = initialJobCard;
     }
 
-    const jobListParent = firstJobCard.parentNode;
+    // Find the correct parent container for job cards
+    let jobListParent = firstJobCard.parentNode;
+    
+    // If the parent is a button or inappropriate element, find a better parent
+    if (jobListParent && (jobListParent.tagName.toLowerCase() === 'button' || 
+        (jobListParent.className && jobListParent.className.includes('btn')))) {
+      console.log("Parent is a button, finding better container");
+      
+      // Look for a more appropriate parent container
+      const betterContainers = document.querySelectorAll('div[class*="job"], div[id*="job"], div[class*="card"], div[id*="card"], section[class*="job"], section[id*="job"], main, .container, .row');
+      const validContainers = Array.from(betterContainers).filter(container => {
+        const tagName = container.tagName.toLowerCase();
+        const className = container.className || '';
+        return !['button', 'input', 'select', 'textarea', 'a'].includes(tagName) && 
+               !className.includes('btn') && !className.includes('button');
+      });
+      
+      if (validContainers.length > 0) {
+        jobListParent = validContainers[0];
+        console.log("Found better parent container:", jobListParent);
+      }
+    }
+    
     const copyFirstNode = firstJobCard.cloneNode(true);
 
     if (isFilterActivate) {
@@ -324,6 +564,29 @@ const Page = () => {
       const workTypeFilter = doc.getElementById("work_type_list");
       const jobSkillFilter = doc.getElementById("skill_set_list");
       const contractTypeFilter = doc.getElementById("contract_type_list");
+      const searchInput = doc.getElementById("search_job_title");
+
+      // Create search input if it doesn't exist
+      if (!searchInput) {
+        const searchContainer = doc.querySelector('.search-container') || doc.querySelector('.filter-container');
+        if (searchContainer) {
+          const searchInputElement = document.createElement("input");
+          searchInputElement.type = "text";
+          searchInputElement.id = "search_job_title";
+          searchInputElement.placeholder = "Search jobs...";
+          searchInputElement.className = "form-control mb-3";
+          // Set the current search value if it exists
+          if (selectedFilter.search) {
+            searchInputElement.value = selectedFilter.search;
+          }
+          searchContainer.insertBefore(searchInputElement, searchContainer.firstChild);
+        }
+      } else {
+        // If search input exists, make sure it has the current value
+        if (selectedFilter.search) {
+          searchInput.value = selectedFilter.search;
+        }
+      }
 
       if (workTypeFilter) workTypeFilter.innerHTML = "";
       if (jobSkillFilter) jobSkillFilter.innerHTML = "";
@@ -370,13 +633,26 @@ const Page = () => {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
       noJobsMessage.className = "no-jobs";
-      noJobsMessage.innerHTML = `<p>No Jobs Found</p>`;
+      noJobsMessage.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+          <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
+        </div>`;
       jobListParent.appendChild(noJobsMessage);
+      console.log("No jobs found - added no jobs message");
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
       jobData.forEach((job) => {
-        const newJobCard = copyFirstNode.cloneNode(true);
+        let newJobCard;
+        // Use original HTML structure if available, otherwise use the current card
+        if (originalJobCardHTML && !firstJobCard) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = originalJobCardHTML;
+          newJobCard = tempDiv.firstElementChild.cloneNode(true);
+        } else {
+          newJobCard = copyFirstNode.cloneNode(true);
+        }
 
         newJobCard.querySelector(`#job_card_title`).innerText = job.title;
         newJobCard.querySelector(`#job_company_name`).innerText =
@@ -417,7 +693,19 @@ const Page = () => {
             .querySelector("#job-details-btn")
             .setAttribute("href", `/job-details/${job.job_external_id}`);
         }
-        jobListParent.appendChild(newJobCard);
+        // Ensure we're not appending to a button or inappropriate element
+        if (jobListParent && jobListParent.tagName.toLowerCase() !== 'button' && 
+            !(jobListParent.className && jobListParent.className.includes('btn'))) {
+          jobListParent.appendChild(newJobCard);
+        } else {
+          console.error("Cannot append job card to button element:", jobListParent);
+          // Try to find a better parent
+          const betterParent = document.querySelector('div[class*="job"], div[id*="job"], div[class*="card"], div[id*="card"], section[class*="job"], section[id*="job"], main, .container, .row');
+          if (betterParent && betterParent.tagName.toLowerCase() !== 'button') {
+            betterParent.appendChild(newJobCard);
+            console.log("Appended to better parent:", betterParent);
+          }
+        }
       });
     }
 
@@ -426,6 +714,8 @@ const Page = () => {
 
   function handleFormSubmit(event) {
     event.preventDefault();
+    console.log("Form submitted - handleFormSubmit called");
+    
     const jobSkillSetFilterCheckboxes = document.querySelectorAll(
       '#skill_set_list input[type="checkbox"]'
     );
@@ -436,11 +726,15 @@ const Page = () => {
       '#work_type_list input[type="checkbox"]'
     );
 
-    document.getElementById("short_by_filter").value = "DESC";
+    const shortByFilter = document.getElementById("short_by_filter");
+    if (shortByFilter) {
+      shortByFilter.value = "DESC";
+    }
 
     const selectedContractType = [];
     const selectedSkillSet = [];
     const selectedWorkType = [];
+    
     jobSkillSetFilterCheckboxes.forEach((checkbox) => {
       if (checkbox.checked) {
         selectedSkillSet.push(checkbox.id);
@@ -456,10 +750,20 @@ const Page = () => {
         selectedWorkType.push(checkbox.id);
       }
     });
+    
     const contract_type = selectedContractType.join(",");
     const skill_name = selectedSkillSet.join(",");
     const work_type = selectedWorkType.join(",");
-    const search = document.getElementById("search_job_title")?.value;
+    const search = document.getElementById("search_job_title")?.value || "";
+    
+    console.log("Filter values:", {
+      contract_type,
+      skill_name,
+      work_type,
+      search,
+      sortBy: selectedFilter.sortBy
+    });
+    
     setFilterActivate(true);
     setSelectedFilter({
       ...selectedFilter,
@@ -468,6 +772,11 @@ const Page = () => {
       work_type,
       search,
     });
+    
+    // Reset to page 1 when applying filters
+    setPage(1); // Directly set page to 1
+    onPageChange({ selected: 0 }); // Also call the pagination hook
+    
     fetchJobData(
       contract_type,
       skill_name,
@@ -475,6 +784,14 @@ const Page = () => {
       search,
       selectedFilter.sortBy
     );
+    
+    // Restore the search input value after form submission
+    setTimeout(() => {
+      const searchInput = document.getElementById("search_job_title");
+      if (searchInput && search) {
+        searchInput.value = search;
+      }
+    }, 100);
   }
 
   async function fetchJobData(
@@ -486,29 +803,81 @@ const Page = () => {
   ) {
     setLoader(() => true);
     try {
-      const response = await openAPIBuilderInstance.get(
-        `web/jobs/published?page=${page}&per_page=${ITEMS_PER_PAGE}&contract_type=${contract_type}&skill_name=${skill_name}&work_type=${work_type}&search=${search}&sort_order=${sortBy}`
-      );
-      setPaginationData({
-        totalData: response.data.data.total_items,
-        current_page: response.data.data.current_page,
-        per_page: response.data.data.per_page,
+      // Encode parameters to handle special characters
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: ITEMS_PER_PAGE.toString(),
+        contract_type: contract_type || "",
+        skill_name: skill_name || "",
+        work_type: work_type || "",
+        search: search || "",
+        sort_order: sortBy || ""
       });
-      setJobList(response.data.data.jobs);
+      
+      const apiUrl = `web/jobs/published?${params.toString()}`;
+      console.log("API Call URL:", apiUrl);
+      console.log("Fetching jobs with parameters:", {
+        contract_type,
+        skill_name,
+        work_type,
+        search,
+        sortBy,
+        page
+      });
+      
+      const response = await openAPIBuilderInstance.get(apiUrl);
+      
+      console.log("API Response:", response.data);
+      
+      if (response.data && response.data.data) {
+        let list=response.data.data.jobs 
+        setJobList(list);
+        const newPaginationData = {
+          totalData: response.data.data.total_items || 0,
+          current_page: response.data.data.current_page || 1,
+          per_page: response.data.data.per_page || ITEMS_PER_PAGE,
+          total_pages: response.data.data.total_pages || 0,
+        };     
+        setPaginationData(newPaginationData);
+   
+      } else {
+        console.warn("Unexpected API response structure:", response.data);
+        setPaginationData({
+          totalData: 0,
+          current_page: 1,
+          per_page: ITEMS_PER_PAGE,
+          total_pages: 0,
+        });
+        setJobList([]);
+      }
       setLoader(() => false);
     } catch (err) {
       setLoader(() => false);
-      console.log(err);
+      console.error("Error fetching job data:", err);
+      console.error("Error details:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      // Set empty data on error
+      setPaginationData({
+        totalData: 0,
+        current_page: 1,
+        per_page: ITEMS_PER_PAGE,
+        total_pages: 0,
+      });
+      setJobList([]);
     }
   }
   console.log(paginationData, "paginationData");
 
   return (
+    
     <div>
-      {loader && <ScreenLoader />}
-      <>
-        {notFound ? (
-          <NoPageFound />
+      {
+        loader ? (
+          <ScreenLoader />
         ) : (
           <>
             <Header setLoader={setLoader} />
@@ -516,8 +885,9 @@ const Page = () => {
             <style>{website["mycustom-css"]}</style>
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           </>
-        )}
-      </>
+        )
+      }
+      
     </div>
   );
 };
