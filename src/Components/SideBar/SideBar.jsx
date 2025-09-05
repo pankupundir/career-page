@@ -323,7 +323,6 @@ console.log(jobDetails,"jobDetails")
     setCvUploadLoading(false);
     setVideoUploadLoading(false);
     setRecordingUploadLoading(false);
-    setIsAgreementChecked(false);
     reset();
     setShowNext(true);
     onClose();
@@ -490,7 +489,6 @@ console.log(jobDetails,"jobDetails")
       : "Invalid phone number";
   };
 
-  console.log(isAgreementChecked, "isAgreementChecked");
 
   return (
     <div
