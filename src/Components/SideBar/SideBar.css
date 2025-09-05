@@ -150,6 +150,17 @@
   .checkbox-group label {
     font-size: 13px;
   }
+  
+  .checkbox-group input[type="checkbox"] {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    z-index: 1 !important;
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 .visiblity {

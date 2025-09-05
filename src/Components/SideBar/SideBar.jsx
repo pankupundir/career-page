@@ -67,7 +67,8 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const [uploadedCvUrl, setUploadedCvUrl] = useState(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState(null);
   const [uploadedRecordingUrl, setUploadedRecordingUrl] = useState(null);
-  const [isAgreementChecked, setIsAgreementChecked] = useState(false);
+  // Watch the agreement checkbox value from React Hook Form
+  const isAgreementChecked = watch("agreement") || false;
 
   const language_preference = [
     { label: "English", value: "English" },
@@ -488,6 +489,8 @@ console.log(jobDetails,"jobDetails")
       ? true
       : "Invalid phone number";
   };
+
+  console.log(isAgreementChecked, "isAgreementChecked");
 
   return (
     <div
@@ -985,13 +988,17 @@ console.log(jobDetails,"jobDetails")
                     )}
                   </div>
 
-                  <div className="form-group checkbox-group ">
-                    <label className="form-label d-flex align-items-center gap-3">
+                  <div className="form-group checkbox-group">
+                    <label className="form-label d-flex align-items-center gap-3" style={{ cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         className="w-auto" 
-                        checked={isAgreementChecked}
-                        onChange={(e) => setIsAgreementChecked(e.target.checked)}
+                        style={{ 
+                          cursor: 'pointer',
+                          pointerEvents: 'auto',
+                          zIndex: 1,
+                          position: 'relative'
+                        }}
                         {...register("agreement", {
                           required: "You must agree to the terms and conditions"
                         })}

@@ -101,6 +101,7 @@ const JobDetails = () => {
       applyBtn.style.padding = "12px 0";
       applyBtn.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, .1)";
       applyBtn.style.zIndex = "9999999";
+      applyBtn.style.bottom = "25px";
       
       // Responsive bottom positioning
       if (window.innerWidth <= 768) {
