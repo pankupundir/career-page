@@ -5,7 +5,6 @@ import {
   openAPIBuilderInstance,
   DEFAULT_TEMPLATE_ID,
   DEFAULT_LADING_PAGE,
-  fetchFilterList,
 } from "./config/webBuilder";
 import { useParams } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
@@ -54,16 +53,16 @@ const Page = () => {
   const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
-  useEffect(() => {
+  useEffect( () => {
     setFilterActivate(false);
+     fetchFilterList();
+     fetchJobData();
     fetchWebsite();
   }, []);
 
   const fetchWebsite = async () => {
     try {
-      let filterList = await fetchFilterList();
-      setFilterList(filterList);
-      await fetchJobData();
+    
    
       const landingPage = pageId || DEFAULT_LADING_PAGE;
       const response = await webSiteBuilderInstance.get(
@@ -291,7 +290,16 @@ const Page = () => {
     );
   };
 
-
+  const fetchFilterList = async () => {
+    try {
+      const response = await openAPIBuilderInstance.get(
+        "/web/career/career-page-filters"
+      );
+      setFilterList(response.data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   function handleResetForm() {
     console.log("handleResetForm - Resetting all filters and fetching all jobs");
