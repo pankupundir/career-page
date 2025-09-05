@@ -67,6 +67,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const [uploadedCvUrl, setUploadedCvUrl] = useState(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState(null);
   const [uploadedRecordingUrl, setUploadedRecordingUrl] = useState(null);
+  const [isAgreementChecked, setIsAgreementChecked] = useState(false);
 
   const language_preference = [
     { label: "English", value: "English" },
@@ -301,6 +302,10 @@ console.log(jobDetails,"jobDetails")
       setResumeUploadError({ show: true, msg: "Please upload your CV first" });
       return;
     }
+    if (!isAgreementChecked) {
+      toast.error("Please agree to the terms and conditions");
+      return;
+    }
     handleSubmit(onSubmit)();
   };
 
@@ -317,6 +322,7 @@ console.log(jobDetails,"jobDetails")
     setCvUploadLoading(false);
     setVideoUploadLoading(false);
     setRecordingUploadLoading(false);
+    setIsAgreementChecked(false);
     reset();
     setShowNext(true);
     onClose();
@@ -981,7 +987,15 @@ console.log(jobDetails,"jobDetails")
 
                   <div className="form-group checkbox-group ">
                     <label className="form-label d-flex align-items-center gap-3">
-                      <input type="checkbox" className="w-auto" />
+                      <input 
+                        type="checkbox" 
+                        className="w-auto" 
+                        checked={isAgreementChecked}
+                        onChange={(e) => setIsAgreementChecked(e.target.checked)}
+                        {...register("agreement", {
+                          required: "You must agree to the terms and conditions"
+                        })}
+                      />
                       <div>
                         I confirm that I have read and agree to the{" "}
                         <a href="#">User Agreement</a>,{" "}
@@ -989,9 +1003,20 @@ console.log(jobDetails,"jobDetails")
                         <a href="#">Cookie Notice</a>.
                       </div>
                     </label>
+                    {errors.agreement && (
+                      <ErrorMsg error={errors.agreement.message} />
+                    )}
                   </div>
 
-                  <button className="submit-btn" type="submit">
+                  <button 
+                    className="submit-btn" 
+                    type="submit"
+                    disabled={!isAgreementChecked}
+                    style={{
+                      opacity: !isAgreementChecked ? 0.6 : 1,
+                      cursor: !isAgreementChecked ? 'not-allowed' : 'pointer'
+                    }}
+                  >
                     Apply Now
                   </button>
                 </div>

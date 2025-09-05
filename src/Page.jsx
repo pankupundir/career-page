@@ -608,7 +608,7 @@ const Page = () => {
         const listItem = document.createElement("li");
         listItem.innerHTML = `
                 <input type="checkbox" id="${item.skill}">
-                <label for="${item.skill}">${item.skill} (${item.count})</label>
+                <label for="${item.skill}">${item.skill.charAt(0).toUpperCase() + item.skill.slice(1)} (${item.count})</label>
             `;
         jobSkillFilter?.appendChild(listItem);
       });
