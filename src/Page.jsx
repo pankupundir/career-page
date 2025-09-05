@@ -110,6 +110,26 @@ const Page = () => {
       shortByFilter.removeEventListener("change", handleSortByChange);
     }
     
+    // Add event listener for btn-job-opening and register-btn classes
+    const jobOpeningButtons = document.querySelectorAll('.btn-job-opening');
+    const registerButtons = document.querySelectorAll('.register-btn');
+    const connectButtons = document.querySelectorAll('.btn-connect');
+    
+    jobOpeningButtons.forEach(button => {
+      button.removeEventListener('click', handleJobOpeningClick);
+      button.addEventListener('click', handleJobOpeningClick);
+    });
+    
+    registerButtons.forEach(button => {
+      button.removeEventListener('click', handleJobOpeningClick);
+      button.addEventListener('click', handleJobOpeningClick);
+    });
+    
+    connectButtons.forEach(button => {
+      button.removeEventListener('click', handleConnectClick);
+      button.addEventListener('click', handleConnectClick);
+    });
+    
     if (sideBarFilterBtn) {
       sideBarFilterBtn.setAttribute("type", "submit");
       if (sideBarFilterForm) {
@@ -179,6 +199,16 @@ const Page = () => {
       if (shortByFilter) {
         shortByFilter.removeEventListener("change", handleSortByChange);
       }
+      // Clean up job opening, register, and connect button event listeners
+      jobOpeningButtons.forEach(button => {
+        button.removeEventListener('click', handleJobOpeningClick);
+      });
+      registerButtons.forEach(button => {
+        button.removeEventListener('click', handleJobOpeningClick);
+      });
+      connectButtons.forEach(button => {
+        button.removeEventListener('click', handleConnectClick);
+      });
     };
   }, [htmlContent, paginationData]);
 
@@ -263,6 +293,28 @@ const Page = () => {
       }
     });
   }
+
+  const handleJobOpeningClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Redirect to the specified URL
+    window.open('http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/talent-registration', '_blank');
+  };
+
+  const handleConnectClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    // Find the job-openings div and scroll to it
+    const jobOpeningsDiv = document.querySelector('.job-openings') || document.getElementById('job-openings');
+    if (jobOpeningsDiv) {
+      jobOpeningsDiv.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    } else {
+      console.warn('job-openings div not found');
+    }
+  };
 
   const handleSortByChange = (event) => {
     const jobSkillSetFilterCheckboxes = document.querySelectorAll(
