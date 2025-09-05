@@ -53,16 +53,16 @@ const Page = () => {
   const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
   const ITEMS_PER_PAGE = 5;
 
-  useEffect( () => {
+  useEffect(() => {
     setFilterActivate(false);
+    fetchWebsite();
      fetchFilterList();
      fetchJobData();
-    fetchWebsite();
+ 
   }, []);
 
   const fetchWebsite = async () => {
     try {
-    
    
       const landingPage = pageId || DEFAULT_LADING_PAGE;
       const response = await webSiteBuilderInstance.get(
@@ -840,6 +840,7 @@ const Page = () => {
           total_pages: response.data.data.total_pages || 0,
         };     
         setPaginationData(newPaginationData);
+        fetchWebsite()
    
       } else {
         console.warn("Unexpected API response structure:", response.data);
