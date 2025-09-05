@@ -5,6 +5,7 @@ import {
   openAPIBuilderInstance,
   DEFAULT_TEMPLATE_ID,
   DEFAULT_LADING_PAGE,
+  fetchFilterList,
 } from "./config/webBuilder";
 import { useParams } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
@@ -51,23 +52,7 @@ const Page = () => {
 
   const [initialJobCard, setInitialJobCard] = useState(null);
   const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
-  const [hmrToggleState, setHmrToggleState] = useState(false);
   const ITEMS_PER_PAGE = 5;
-
-  // useLayoutEffect to handle HMR state toggle when everything is painted
-  useLayoutEffect(() => {
-    // Check if we're in HMR mode (development with hot reloading) or production
-    const isHmrAvailable = import.meta.hot;
-    const isDevelopment = import.meta.env.DEV;
-    
-    // Toggle the state when everything is painted
-    // In development: only when HMR is available
-    // In production: always toggle when content changes
-    if (isHmrAvailable || !isDevelopment) {
-      setHmrToggleState(prevState => !prevState);
-      console.log('State toggled - HMR available:', !!isHmrAvailable, 'Development:', isDevelopment, 'New state:', !hmrToggleState);
-    }
-  }, [htmlContent, jobList, paginationData]); // Dependencies for when content changes
 
   useEffect(() => {
     setFilterActivate(false);
@@ -76,8 +61,10 @@ const Page = () => {
 
   const fetchWebsite = async () => {
     try {
+      let filterList = await fetchFilterList();
+      setFilterList(filterList);
       await fetchJobData();
-      await fetchFilterList();
+   
       const landingPage = pageId || DEFAULT_LADING_PAGE;
       const response = await webSiteBuilderInstance.get(
         `/api/pages/activeTemplatePage/`
@@ -201,8 +188,7 @@ const Page = () => {
     fetchJobData();
   }, [page]);
 
-  console.log(jobList,"jobb")
-  console.log('HMR Toggle State:', hmrToggleState)
+
 
   useEffect(() => {
     if (website["mycustom-html"]) {
@@ -305,16 +291,7 @@ const Page = () => {
     );
   };
 
-  const fetchFilterList = async () => {
-    try {
-      const response = await openAPIBuilderInstance.get(
-        "/web/career/career-page-filters"
-      );
-      setFilterList(response.data.data);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+
 
   function handleResetForm() {
     console.log("handleResetForm - Resetting all filters and fetching all jobs");
@@ -396,7 +373,6 @@ const Page = () => {
         
         // Find the job list parent container
         const jobCardView = document.getElementById("job_card_view");
-        console.log("jobCardView found:", !!jobCardView);
         
         if (jobCardView) {
           // Create a temporary div to parse the HTML
