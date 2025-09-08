@@ -214,7 +214,14 @@ const Page = () => {
 
   useEffect(() => {
     setFilterActivate(true);
-    fetchJobData();
+    // Use current filter state when page changes
+    fetchJobData(
+      selectedFilter.contract_type,
+      selectedFilter.skill_name,
+      selectedFilter.work_type,
+      selectedFilter.search,
+      selectedFilter.sortBy
+    );
   }, [page]);
 
 
@@ -278,13 +285,50 @@ const Page = () => {
     }
   }, [paginationData.totalData, htmlContent]);
 
-  // Restore search input value from state
+  // Restore search input value and filter states from state
   useEffect(() => {
     const searchInput = document.getElementById("search_job_title");
     if (searchInput && selectedFilter.search) {
       searchInput.value = selectedFilter.search;
     }
-  }, [selectedFilter.search, htmlContent]);
+    
+    // Restore checkbox states for all filter types
+    if (selectedFilter.skill_name) {
+      const skillNames = selectedFilter.skill_name.split(',');
+      skillNames.forEach(skill => {
+        const checkbox = document.getElementById(skill);
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      });
+    }
+    
+    if (selectedFilter.contract_type) {
+      const contractTypes = selectedFilter.contract_type.split(',');
+      contractTypes.forEach(type => {
+        const checkbox = document.getElementById(type);
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      });
+    }
+    
+    if (selectedFilter.work_type) {
+      const workTypes = selectedFilter.work_type.split(',');
+      workTypes.forEach(type => {
+        const checkbox = document.getElementById(type);
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      });
+    }
+    
+    // Restore sort order
+    const sortSelect = document.getElementById("short_by_filter");
+    if (sortSelect && selectedFilter.sortBy) {
+      sortSelect.value = selectedFilter.sortBy;
+    }
+  }, [selectedFilter, htmlContent]);
 
   function uncheckAll(checkboxes) {
     checkboxes.forEach((checkbox) => {
@@ -320,24 +364,55 @@ const Page = () => {
     const jobSkillSetFilterCheckboxes = document.querySelectorAll(
       '#skill_set_list input[type="checkbox"]'
     );
+    const contractTypeFilterCheckboxes = document.querySelectorAll(
+      '#contract_type_list input[type="checkbox"]'
+    );
+    const workTypeFilterCheckboxes = document.querySelectorAll(
+      '#work_type_list input[type="checkbox"]'
+    );
+    
     const selectedSkillSet = [];
+    const selectedContractType = [];
+    const selectedWorkType = [];
+    
     jobSkillSetFilterCheckboxes.forEach((checkbox) => {
       if (checkbox.checked) {
         selectedSkillSet.push(checkbox.id);
       }
     });
-    uncheckAll(jobSkillSetFilterCheckboxes);
+    
+    contractTypeFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedContractType.push(checkbox.id);
+      }
+    });
+    
+    workTypeFilterCheckboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        selectedWorkType.push(checkbox.id);
+      }
+    });
+    
+    const contract_type = selectedContractType.join(",");
+    const skill_name = selectedSkillSet.join(",");
+    const work_type = selectedWorkType.join(",");
+    const search = document.getElementById("search_job_title")?.value || "";
     const selectedValue = event.target.value;
+    
     setSelectedFilter({
       ...selectedFilter,
+      contract_type,
+      skill_name,
+      work_type,
+      search,
       sortBy: selectedValue,
     });
     setFilterActivate(true);
     fetchJobData(
-      selectedFilter.contract_type,
-      selectedFilter.skill_name,
-      selectedFilter.work_type,
-      selectedFilter.search,
+      contract_type,
+      skill_name,
+      work_type,
+      search,
       selectedValue
     );
   };
@@ -837,14 +912,6 @@ const Page = () => {
       search,
       selectedFilter.sortBy
     );
-    
-    // Restore the search input value after form submission
-    setTimeout(() => {
-      const searchInput = document.getElementById("search_job_title");
-      if (searchInput && search) {
-        searchInput.value = search;
-      }
-    }, 100);
   }
 
   async function fetchJobData(
