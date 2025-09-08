@@ -102,6 +102,7 @@ const JobDetails = () => {
       applyBtn.style.boxShadow = "0px 0px 10px rgba(0, 0, 0, .1)";
       applyBtn.style.zIndex = "9999999";
       applyBtn.style.bottom = "25px";
+      applyBtn.style.borderRadius = "50px";
       
       // Responsive bottom positioning
       if (window.innerWidth <= 768) {
@@ -125,6 +126,33 @@ const JobDetails = () => {
       applyBtn.style.display = "block";
     }
   }, [sidebarOpen]);
+
+  // Effect to handle Google Map iframe with current coordinates
+  useEffect(() => {
+    const updateGoogleMapIframe = () => {
+      const googleMapIframe = document.getElementById("google_map");
+      
+      if (googleMapIframe && googleMapIframe.tagName === 'IFRAME') {
+        // Get coordinates from job details or use default
+        console.log("jobDetails", jobDetails);
+        const latitude = jobDetails.lat || 40.7484; // Default to Empire State Building
+        const longitude = jobDetails.long || -73.9857;
+        
+        // Generate new Google Maps embed URL with current coordinates
+        const embedUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.9663095343008!2d${longitude}!3d${latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c259a9b3117469%3A0xd134e199a405a163!2sJob%20Location!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus`;
+        
+        // Update the iframe src
+        googleMapIframe.src = embedUrl;
+        
+        console.log(`Google Map iframe updated with coordinates: ${latitude}, ${longitude}`);
+      }
+    };
+
+    // Run the map update function
+    updateGoogleMapIframe();
+  }, [htmlContent, jobDetails]);
+
+
 
   async function updateJobDetailsContent(htmlString, jobDetails) {
     const parser = new DOMParser();
@@ -220,6 +248,7 @@ const JobDetails = () => {
     return <div>Invalid job ID</div>;
   }
 
+
   return (
     <div>
       {loader ? (
@@ -229,8 +258,10 @@ const JobDetails = () => {
           {screenLoader && <ScreenLoader />}
           <div className={sidebarOpen ? "overlay" : ""}></div>
           <Header setLoader={setLoader} />
+          
           <style>{website.css}</style>
           <style>{website["mycustom-css"]}</style>
+      
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
           <Sidebar
             isOpen={sidebarOpen}

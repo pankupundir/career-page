@@ -23,7 +23,8 @@
 
 .modal-image {
   width: 160px;
-  margin-bottom: 16px;
+  margin: 0 auto 16px auto;
+  display: block;
 }
 
 .modal-content h2 {

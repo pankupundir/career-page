@@ -3,7 +3,7 @@ import Autocomplete from "react-google-autocomplete";
 import ErrorMsg from "../ErrorMsg";
 // import ErrorMessage from "../Components/Common/ErrorMessage";
 // add this inside env
-const GOOGLE_MAP_API_KEY = "AIzaSyCA-pKaniZ4oeXOpk34WX5CMZ116zBvy-g";
+const GOOGLE_MAP_API_KEY = "AIzaSyDRb_BGMWY3XocACa_K976a0g6y-5QwkqU";
 const LocationField = ({
   fieldName,
   options,
