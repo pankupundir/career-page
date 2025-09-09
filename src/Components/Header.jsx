@@ -104,7 +104,7 @@ const Header = ({ setLoader, loader }) => {
           </div>
           
           <div className="menu-title-section">
-            <h2 className="menu-title">Logisssn</h2>
+            <h2 className="menu-title">Login</h2>
             <p className="menu-subtitle">To begin, please choose your account type</p>
           </div>
             
