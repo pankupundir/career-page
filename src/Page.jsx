@@ -991,7 +991,6 @@ const Page = () => {
       setJobList([]);
     }
   }
-  console.log(paginationData, "paginationData");
 
   return (
     
