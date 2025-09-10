@@ -25,6 +25,7 @@ import VideoRecorder from "../common/VideoRecorder";
 import LocationField from "../common/LocationField";
 import { CleaningServices } from "@mui/icons-material";
 import { returnAddressInfo } from "../../utils/helpers";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmailVerified, setIsEmailVerified }) => {
   const formConfig = useForm({
@@ -42,6 +43,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     control,
   } = formConfig;
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const navigate=useNavigate()
   
   const [showVerifyEmailError, setShowVerifyEmailError] = useState(false);
   const [videoUploadError, setVideoUploadError] = useState({
@@ -1039,7 +1041,10 @@ console.log(jobDetails,"jobDetails")
           {showThankYouModal && (
             <ThankYouModal
               isOpen={showThankYouModal}
-              onClose={() => setShowThankYouModal(false)}
+              onClose={() => {
+                navigate("/")
+                setShowThankYouModal(false)
+              } }
               jobTitle={jobDetails.title}
               handleConnect={handleConnect}
               loader={loader}
