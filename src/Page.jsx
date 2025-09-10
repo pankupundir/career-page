@@ -23,6 +23,7 @@ const Page = () => {
   });
   const [notFound, setNotFound] = useState(false);
   const [loader, setLoader] = useState(true);
+  const [jobCardLoader, setJobCardLoader] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [jobList, setJobList] = useState([]);
   const [isFilterActivate, setFilterActivate] = useState(false);
@@ -757,6 +758,18 @@ const Page = () => {
       return doc.body.innerHTML;
     }
 
+    if(loader){
+      const noJobsMessage = document.createElement("div");
+      noJobsMessage.id = "no_jobs";
+      noJobsMessage.className = "no-jobs";
+      noJobsMessage.innerHTML = `
+        <div style="text-align: center; padding: 40px 20px;">
+          <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
+          <p style="font-size: 24px; color: #666; margin: 0;">Pelase wait Job is loading.........</p>
+        </div>`;
+      jobListParent.appendChild(noJobsMessage);
+    }
+
     if (jobData.length === 0) {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
@@ -767,7 +780,6 @@ const Page = () => {
           <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
         </div>`;
       jobListParent.appendChild(noJobsMessage);
-      console.log("No jobs found - added no jobs message");
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
