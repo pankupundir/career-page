@@ -27,6 +27,18 @@ import { CleaningServices } from "@mui/icons-material";
 import { returnAddressInfo } from "../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 
+// Utility function to trim file names
+const trimFileName = (fileName, maxLength = 30) => {
+  if (!fileName) return '';
+  if (fileName.length <= maxLength) return fileName;
+  
+  const extension = fileName.split('.').pop();
+  const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+  const trimmedName = nameWithoutExt.substring(0, maxLength - extension.length - 4) + '...';
+  
+  return `${trimmedName}.${extension}`;
+};
+
 const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmailVerified, setIsEmailVerified }) => {
   const formConfig = useForm({
     mode: "onChange",
@@ -1395,7 +1407,9 @@ console.log(jobDetails,"jobDetails")
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ fontSize: '16px' }}>📄</span>
                           <div>
-                            <div style={{ fontWeight: '500' }}>{selectedCvFile.name}</div>
+                            <div style={{ fontWeight: '500' }} title={selectedCvFile.name}>
+                              {trimFileName(selectedCvFile.name)}
+                            </div>
                             <div style={{ fontSize: '12px', color: '#666' }}>
                               {(selectedCvFile.size / 1024 / 1024).toFixed(2)} MB
                             </div>
@@ -1458,7 +1472,9 @@ console.log(jobDetails,"jobDetails")
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ fontSize: '16px' }}>📄</span>
                           <div>
-                            <div style={{ fontWeight: '500' }}>{selectedApplicationLetterFile.name}</div>
+                            <div style={{ fontWeight: '500' }} title={selectedApplicationLetterFile.name}>
+                              {trimFileName(selectedApplicationLetterFile.name)}
+                            </div>
                             <div style={{ fontSize: '12px', color: '#666' }}>
                               {(selectedApplicationLetterFile.size / 1024 / 1024).toFixed(2)} MB
                             </div>
@@ -1522,7 +1538,9 @@ console.log(jobDetails,"jobDetails")
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ fontSize: '16px' }}>🎥</span>
                           <div>
-                            <div style={{ fontWeight: '500' }}>{selectedVideoFile.name}</div>
+                            <div style={{ fontWeight: '500' }} title={selectedVideoFile.name}>
+                              {trimFileName(selectedVideoFile.name)}
+                            </div>
                             <div style={{ fontSize: '12px', color: '#666' }}>
                               {(selectedVideoFile.size / 1024 / 1024).toFixed(2)} MB
                             </div>
