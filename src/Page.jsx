@@ -36,6 +36,7 @@ const Page = () => {
     job_location: [],
     job_category: [],
   });
+  
   const [selectedFilter, setSelectedFilter] = useState({
     contract_type: "",
     skill_name: "",
