@@ -169,6 +169,23 @@ const JobDetails = () => {
     jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
       jobDetails.title;
+    
+    // Update banner job title
+    const bannerJobTitle = jobCardDetails.querySelector(`#banner_job_title`);
+    if (bannerJobTitle) {
+      bannerJobTitle.innerText = jobDetails.title;
+      console.log("Banner job title updated:", jobDetails.title);
+    } else {
+      console.log("Banner job title element not found in job_card_details");
+      // Try to find it in the entire document
+      const bannerJobTitleGlobal = doc.querySelector(`#banner_job_title`);
+      if (bannerJobTitleGlobal) {
+        bannerJobTitleGlobal.innerText = jobDetails.title;
+        console.log("Banner job title found globally and updated:", jobDetails.title);
+      } else {
+        console.log("Banner job title element not found anywhere in the document");
+      }
+    }
     jobCardDetails.querySelector(`#key_feature`).innerText =
       jobDetails.key_feature;
     jobCardDetails.querySelector(`#job_category`).innerText =

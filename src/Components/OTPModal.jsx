@@ -87,19 +87,7 @@ const OTPModal = ({ modalIsOpen, closeModal, email, setIsEmailVerified }) => {
     >
       {loader && <ScreenLoader />}
 
-      <button
-        onClick={closeModal}
-        style={{
-          position: "absolute",
-          top: "10px",
-          right: "10px",
-          fontSize: "20px",
-        }}
-        aria-label="Close"
-        className="close_btn"
-      >
-        &times;
-      </button>
+
       <h2>Enter Verification Code</h2>
       <p>
         Enter the verification code we sent to your E-mail Id.{" "}

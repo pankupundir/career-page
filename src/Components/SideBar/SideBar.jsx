@@ -55,6 +55,10 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     msg: "",
     file: "",
   });
+  const [applicationLetterUploadError, setApplicationLetterUploadError] = useState({
+    show: false,
+    msg: "",
+  });
   const [showNext, setShowNext] = useState(true);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [rangeValue, setRangeValue] = useState(0);
@@ -64,13 +68,167 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const [cvUploadLoading, setCvUploadLoading] = useState(false);
   const [videoUploadLoading, setVideoUploadLoading] = useState(false);
   const [recordingUploadLoading, setRecordingUploadLoading] = useState(false);
+  const [applicationLetterUploadLoading, setApplicationLetterUploadLoading] = useState(false);
   
   // URLs for uploaded files
   const [uploadedCvUrl, setUploadedCvUrl] = useState(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState(null);
   const [uploadedRecordingUrl, setUploadedRecordingUrl] = useState(null);
+  const [uploadedApplicationLetterUrl, setUploadedApplicationLetterUrl] = useState(null);
+  
+  // Selected files state
+  const [selectedCvFile, setSelectedCvFile] = useState(null);
+  const [selectedVideoFile, setSelectedVideoFile] = useState(null);
+  const [selectedApplicationLetterFile, setSelectedApplicationLetterFile] = useState(null);
+  
+  // Email verification state
+  const [emailVerificationStatus, setEmailVerificationStatus] = useState(() => {
+    // Check if email was previously verified in this session
+    const savedStatus = localStorage.getItem('emailVerificationStatus');
+    const savedEmail = localStorage.getItem('verifiedEmail');
+    const verificationTime = localStorage.getItem('emailVerificationTime');
+    
+    // Check if verification has expired (30 minutes = 1800000 ms)
+    const now = Date.now();
+    const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+    
+    if (savedStatus === 'verified' && savedEmail && verificationTime) {
+      const timeSinceVerification = now - parseInt(verificationTime);
+      
+      // If more than 30 minutes have passed, clear the verification
+      if (timeSinceVerification > thirtyMinutes) {
+        localStorage.removeItem('emailVerificationStatus');
+        localStorage.removeItem('verifiedEmail');
+        localStorage.removeItem('emailVerificationTime');
+        return 'unverified';
+      }
+      
+      return 'verified';
+    }
+    return 'unverified';
+  });
   // Watch the agreement checkbox value from React Hook Form
   const isAgreementChecked = watch("agreement") || false;
+
+  // Effect to handle email verification status persistence
+  useEffect(() => {
+    const currentEmail = watch("email");
+    if (emailVerificationStatus === 'verified' && currentEmail) {
+      localStorage.setItem('emailVerificationStatus', 'verified');
+      localStorage.setItem('verifiedEmail', currentEmail);
+      localStorage.setItem('emailVerificationTime', Date.now().toString());
+      // Update the parent component's verification status
+      setIsEmailVerified({ isVerify: true, external_id: localStorage.getItem('verifiedExternalId') });
+    } else if (emailVerificationStatus === 'unverified') {
+      localStorage.removeItem('emailVerificationStatus');
+      localStorage.removeItem('verifiedEmail');
+      localStorage.removeItem('emailVerificationTime');
+      localStorage.removeItem('verifiedExternalId');
+      setIsEmailVerified({ isVerify: false });
+    }
+  }, [emailVerificationStatus, watch, setIsEmailVerified]);
+
+  // Effect to check and restore verification status on component mount
+  useEffect(() => {
+    const savedStatus = localStorage.getItem('emailVerificationStatus');
+    const savedEmail = localStorage.getItem('verifiedEmail');
+    const savedExternalId = localStorage.getItem('verifiedExternalId');
+    const verificationTime = localStorage.getItem('emailVerificationTime');
+    
+    if (savedStatus === 'verified' && savedEmail && savedExternalId && verificationTime) {
+      const now = Date.now();
+      const thirtyMinutes = 30 * 60 * 1000;
+      const timeSinceVerification = now - parseInt(verificationTime);
+      
+      if (timeSinceVerification <= thirtyMinutes) {
+        setEmailVerificationStatus('verified');
+        setIsEmailVerified({ isVerify: true, external_id: savedExternalId });
+        // Always set the email in the form when verified
+        setValue("email", savedEmail);
+        // Trigger validation to clear any errors
+        setTimeout(() => trigger("email"), 100);
+      } else {
+        // Clear expired verification
+        localStorage.removeItem('emailVerificationStatus');
+        localStorage.removeItem('verifiedEmail');
+        localStorage.removeItem('emailVerificationTime');
+        localStorage.removeItem('verifiedExternalId');
+        setEmailVerificationStatus('unverified');
+        setIsEmailVerified({ isVerify: false });
+      }
+    }
+  }, [setIsEmailVerified, setValue, watch, trigger]);
+
+  // Effect to prefill email when sidebar is opened and email is verified
+  useEffect(() => {
+    if (isOpen && emailVerificationStatus === 'verified') {
+      const savedEmail = localStorage.getItem('verifiedEmail');
+      if (savedEmail) {
+        setValue("email", savedEmail);
+        // Trigger validation to clear any errors
+        setTimeout(() => trigger("email"), 100);
+      }
+    }
+  }, [isOpen, emailVerificationStatus, setValue, trigger]);
+
+  // Effect to restore email when going back to form
+  useEffect(() => {
+    if (showNext && emailVerificationStatus === 'verified') {
+      const savedEmail = localStorage.getItem('verifiedEmail');
+      if (savedEmail) {
+        setValue("email", savedEmail);
+        // Trigger validation to clear any errors
+        setTimeout(() => trigger("email"), 100);
+      }
+    }
+  }, [showNext, emailVerificationStatus, setValue, trigger]);
+
+  // Effect to reset verification status if email changes
+  useEffect(() => {
+    const currentEmail = watch("email");
+    const savedEmail = localStorage.getItem('verifiedEmail');
+    
+    if (savedEmail && currentEmail !== savedEmail && emailVerificationStatus === 'verified') {
+      setEmailVerificationStatus('unverified');
+      setIsEmailVerified({ isVerify: false });
+      localStorage.removeItem('emailVerificationStatus');
+      localStorage.removeItem('verifiedEmail');
+      localStorage.removeItem('emailVerificationTime');
+      localStorage.removeItem('verifiedExternalId');
+    }
+  }, [watch("email"), emailVerificationStatus, setIsEmailVerified]);
+
+  // Effect to check for verification expiration every minute
+  useEffect(() => {
+    if (emailVerificationStatus === 'verified') {
+      const checkExpiration = () => {
+        const verificationTime = localStorage.getItem('emailVerificationTime');
+        if (verificationTime) {
+          const now = Date.now();
+          const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+          const timeSinceVerification = now - parseInt(verificationTime);
+          
+          if (timeSinceVerification > thirtyMinutes) {
+            setEmailVerificationStatus('unverified');
+            setIsEmailVerified({ isVerify: false });
+            localStorage.removeItem('emailVerificationStatus');
+            localStorage.removeItem('verifiedEmail');
+            localStorage.removeItem('emailVerificationTime');
+            localStorage.removeItem('verifiedExternalId');
+            toast.info('Email verification has expired. Please verify again.');
+          }
+        }
+      };
+
+      // Check immediately
+      checkExpiration();
+      
+      // Check every minute
+      const interval = setInterval(checkExpiration, 60000); // 60000ms = 1 minute
+      
+      return () => clearInterval(interval);
+    }
+  }, [emailVerificationStatus, setIsEmailVerified]);
 
   const language_preference = [
     { label: "English", value: "English" },
@@ -89,7 +247,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
   const options = ["establishment", "geocode"];
 
   const nextPage = () => {
-    if (!isEmailVerified.isVerify) {
+    if (!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')) {
       setShowVerifyEmailError(true);
       return;
     }
@@ -98,6 +256,15 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
 
   const goBackToForm = () => {
     setShowNext(true);
+    // Always ensure email field is restored if it was verified
+    if (emailVerificationStatus === 'verified') {
+      const savedEmail = localStorage.getItem('verifiedEmail');
+      if (savedEmail) {
+        setValue("email", savedEmail);
+        // Trigger validation to clear any errors
+        setTimeout(() => trigger("email"), 100);
+      }
+    }
   };
 
   const fillAddress = async (address) =>{
@@ -168,17 +335,24 @@ console.log(jobDetails,"jobDetails")
         return;
       }
 
-      // If file type and size are valid
-      setResumeUploadError({ show: false, msg: "", file: file });
+      // Clear any previous errors and start loading
+      setResumeUploadError({ show: false, msg: "", file: "" });
+      setCvUploadLoading(true);
+      setSelectedCvFile(null); // Don't show selected file yet
       
       // Upload the file immediately
       try {
         await uploadCvFile(file);
+        // Only set selected file after successful upload
+        setSelectedCvFile(file);
       } catch (error) {
+        setCvUploadLoading(false);
         setResumeUploadError({
           show: true,
           msg: "Failed to upload CV. Please try again.",
         });
+        // Reset file input on error
+        event.target.value = "";
       }
     } else {
       // Handle case when no file is selected
@@ -247,17 +421,24 @@ console.log(jobDetails,"jobDetails")
         return;
       }
 
-      // If file type and size are valid
-      setVideoUploadError({ show: false, msg: "", file: file });
+      // Clear any previous errors and start loading
+      setVideoUploadError({ show: false, msg: "", file: "" });
+      setVideoUploadLoading(true);
+      setSelectedVideoFile(null); // Don't show selected file yet
       
       // Upload the file immediately
       try {
         await uploadVideoFile(file);
+        // Only set selected file after successful upload
+        setSelectedVideoFile(file);
       } catch (error) {
+        setVideoUploadLoading(false);
         setVideoUploadError({
           show: true,
           msg: "Failed to upload video. Please try again.",
         });
+        // Reset file input on error
+        event.target.value = "";
       }
     } else {
       // Handle case when no file is selected
@@ -289,6 +470,25 @@ console.log(jobDetails,"jobDetails")
     }
   };
 
+  const uploadApplicationLetterFile = async (file) => {
+    setApplicationLetterUploadLoading(true);
+    try {
+      const response = await webSiteBuilderFormInstance.post("/web/upload-file", {
+        file: file,
+      });
+      const fileUrl = response.data.data.Location;
+      setUploadedApplicationLetterUrl(fileUrl);
+      toast.success("Application letter uploaded successfully!");
+      return fileUrl;
+    } catch (error) {
+      console.error("Error uploading application letter:", error);
+      toast.error("Failed to upload application letter. Please try again.");
+      throw error;
+    } finally {
+      setApplicationLetterUploadLoading(false);
+    }
+  };
+
   const handleRecordingComplete = async (blob) => {
     setRecordedBlob(blob);
     // Upload the recording immediately
@@ -297,6 +497,118 @@ console.log(jobDetails,"jobDetails")
     } catch (error) {
       console.error("Failed to upload recording:", error);
     }
+  };
+
+  const handleApplicationLetterUpload = async (event) => {
+    // Define allowed file types for application letter
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+    ];
+
+    // Set maximum file size (optional, e.g., 5MB)
+    const maxFileSize = 5 * 1024 * 1024; // 5MB in bytes
+
+    const file = event.target.files[0];
+
+    if (file) {
+      if (!allowedTypes.includes(file.type)) {
+        // Handle invalid file type
+        event.target.value = "";
+        setApplicationLetterUploadError({
+          show: true,
+          msg: "Invalid file format. Please upload a valid document format (e.g., .pdf, .doc, .docx, .txt).",
+        });
+        return;
+      }
+
+      if (file.size > maxFileSize) {
+        // Handle file size limit
+        event.target.value = "";
+        setApplicationLetterUploadError({
+          show: true,
+          msg: `File size too large. Maximum allowed size is ${
+            maxFileSize / (1024 * 1024)
+          }MB.`,
+        });
+        return;
+      }
+
+      // Clear any previous errors and start loading
+      setApplicationLetterUploadError({ show: false, msg: "" });
+      setApplicationLetterUploadLoading(true);
+      setSelectedApplicationLetterFile(null); // Don't show selected file yet
+      
+      // Upload the file immediately
+      try {
+        await uploadApplicationLetterFile(file);
+        // Only set selected file after successful upload
+        setSelectedApplicationLetterFile(file);
+      } catch (error) {
+        setApplicationLetterUploadLoading(false);
+        setApplicationLetterUploadError({
+          show: true,
+          msg: "Failed to upload application letter. Please try again.",
+        });
+        // Reset file input on error
+        event.target.value = "";
+      }
+    } else {
+      // Handle case when no file is selected
+      event.target.value = "";
+      setApplicationLetterUploadError({
+        show: true,
+        msg: "No file selected. Please choose an application letter file to upload.",
+      });
+    }
+  };
+
+  // Delete functions for selected files
+  const deleteSelectedCvFile = () => {
+    setSelectedCvFile(null);
+    setUploadedCvUrl(null);
+    setResumeUploadError({ show: false, msg: "", file: "" });
+    // Reset the file input
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  };
+
+  const deleteSelectedVideoFile = () => {
+    setSelectedVideoFile(null);
+    setUploadedVideoUrl(null);
+    setVideoUploadError({ show: false, msg: "" });
+    // Reset the video file input
+    const videoInput = document.querySelector('input[type="file"][accept*="video"]');
+    if (videoInput) {
+      videoInput.value = '';
+    }
+  };
+
+  const deleteSelectedApplicationLetterFile = () => {
+    setSelectedApplicationLetterFile(null);
+    setUploadedApplicationLetterUrl(null);
+    setApplicationLetterUploadError({ show: false, msg: "" });
+    // Reset the application letter file input
+    const applicationLetterInput = document.querySelector('input[type="file"][accept*="application"]');
+    if (applicationLetterInput) {
+      applicationLetterInput.value = '';
+    }
+  };
+
+  // Function to handle email change
+  const handleEmailChange = () => {
+    setEmailVerificationStatus('unverified');
+    setIsEmailVerified({ isVerify: false });
+    localStorage.removeItem('emailVerificationStatus');
+    localStorage.removeItem('verifiedEmail');
+    localStorage.removeItem('emailVerificationTime');
+    localStorage.removeItem('verifiedExternalId');
+    // Clear the email field
+    setValue("email", "");
   };
 
   const beforeHandleSUbmit = (event) => {
@@ -318,13 +630,25 @@ console.log(jobDetails,"jobDetails")
     setShowVerifyEmailError(false);
     setResumeUploadError({ show: false, msg: "", file: "" });
     setVideoUploadError({ show: false, msg: "" });
+    setApplicationLetterUploadError({ show: false, msg: "" });
     setRecordedBlob(null);
     setUploadedCvUrl(null);
     setUploadedVideoUrl(null);
     setUploadedRecordingUrl(null);
+    setUploadedApplicationLetterUrl(null);
+    setSelectedCvFile(null);
+    setSelectedVideoFile(null);
+    setSelectedApplicationLetterFile(null);
+    setEmailVerificationStatus('unverified');
     setCvUploadLoading(false);
     setVideoUploadLoading(false);
     setRecordingUploadLoading(false);
+    setApplicationLetterUploadLoading(false);
+    // Clear localStorage when closing sidebar
+    localStorage.removeItem('emailVerificationStatus');
+    localStorage.removeItem('verifiedEmail');
+    localStorage.removeItem('emailVerificationTime');
+    localStorage.removeItem('verifiedExternalId');
     reset();
     setShowNext(true);
     onClose();
@@ -371,11 +695,22 @@ console.log(jobDetails,"jobDetails")
         payload.recording_file = uploadedRecordingUrl;
       }
 
+      // Add application letter file URL if uploaded
+      if (uploadedApplicationLetterUrl) {
+        payload.application_letter_file = uploadedApplicationLetterUrl;
+      }
+
       console.log(payload, "Payload for Job Application");
 
       // Submit Job Application
       await submitApplyJob(payload);
       setScreenLoader((prev) => !prev);
+      
+      // Clear localStorage after successful submission
+      localStorage.removeItem('emailVerificationStatus');
+      localStorage.removeItem('verifiedEmail');
+      localStorage.removeItem('emailVerificationTime');
+      localStorage.removeItem('verifiedExternalId');
       
     } catch (error) {
       console.error(error, "Error occurred during submission!");
@@ -411,9 +746,11 @@ console.log(jobDetails,"jobDetails")
 
   const handleVerifyEmail = async () => {
     setIsEmailVerified({ isVerify: false });
+    setEmailVerificationStatus('verifying');
     const email = watch("email");
     if (!email || !EMAIL_REGEX.test(email)) {
       trigger("email");
+      setEmailVerificationStatus('unverified');
       return;
     }
     setScreenLoader(true);
@@ -426,7 +763,7 @@ console.log(jobDetails,"jobDetails")
       );
       setShowVerifyEmailError(false);
       setScreenLoader((prev) => !prev);
-      const message = response.data.message || "Applied successfully";
+      const message = response.data.message || "OTP sent successfully";
       toast.success(message);
       console.log("Opening OTP Modal...");
       setShowOTPModal(true);
@@ -434,6 +771,7 @@ console.log(jobDetails,"jobDetails")
       console.log(response, "response");
     } catch (err) {
       setScreenLoader((prev) => !prev);
+      setEmailVerificationStatus('unverified');
       console.log(err, "error !!!!!!!!!!");
       const message = err?.response?.data?.message || "Something went wrong";
       toast.error(message);
@@ -548,8 +886,15 @@ console.log(jobDetails,"jobDetails")
                         name="email"
                         className="form-control user_email"
                         placeholder="Enter Email"
+                        disabled={emailVerificationStatus === 'verified'}
+                        style={{
+                          backgroundColor: emailVerificationStatus === 'verified' ? '#f8fff8' : 'white',
+                          borderColor: emailVerificationStatus === 'verified' ? '#28a745' : '#e9ecef',
+                          borderWidth: emailVerificationStatus === 'verified' ? '2px' : '1px',
+                          color: emailVerificationStatus === 'verified' ? '#155724' : 'inherit'
+                        }}
                         {...register("email", {
-                          required: "Email is required",
+                          required: emailVerificationStatus !== 'verified' ? "Email is required" : false,
                           pattern: {
                             value: EMAIL_REGEX,
                             message: "Enter a valid email address",
@@ -557,25 +902,68 @@ console.log(jobDetails,"jobDetails")
                         })}
                       />
                       <span className="verifyb-btn-section">
-                        <button
-                          className="verify-mail-career"
-                          onClick={handleVerifyEmail}
-                          type="button"
-                        >
-                          Verify
-                        </button>
+                        {emailVerificationStatus === 'verified' ? (
+                       <></>
+                        ) : (
+                          <button
+                            className="verify-mail-career"
+                            onClick={handleVerifyEmail}
+                            type="button"
+                            disabled={emailVerificationStatus === 'verifying'}
+                            style={{
+                              opacity: emailVerificationStatus === 'verifying' ? 0.7 : 1,
+                              cursor: emailVerificationStatus === 'verifying' ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            {emailVerificationStatus === 'verifying' ? 'Verifying...' : 'Verify'}
+                          </button>
+                        )}
                       </span>
                     </div>
+                    {emailVerificationStatus === 'verified' && (
+                      <div style={{ 
+                        marginTop: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}>
+                        <span style={{
+                          color: '#28a745',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          <span>✓</span>
+                          Verified Email
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleEmailChange}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#007bff',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Change Email
+                        </button>
+                      </div>
+                    )}
                     {errors.email && <ErrorMsg error={errors.email.message} />}
                   </div>
                   <div
-                    className={!isEmailVerified.isVerify ? "showDisabled" : ""}
+                    className={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified') ? "showDisabled" : ""}
                   >
                     <div className="form-row">
                       <div className="form-group">
                         <label className="form-label">First Name *</label>
                         <input
-                          disabled={!isEmailVerified.isVerify}
+                          disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                           type="text"
                           name="firstName"
                           placeholder="Enter First Name"
@@ -594,7 +982,7 @@ console.log(jobDetails,"jobDetails")
                         <input
                           type="text"
                           name="lastName"
-                          disabled={!isEmailVerified.isVerify}
+                          disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                           placeholder="Enter Last Name"
                           {...register("lastName", {
                             required: "Last name is required",
@@ -631,7 +1019,7 @@ console.log(jobDetails,"jobDetails")
                                   onChange(numberValue); // Update the form state
                                   setValue("phone_number", numberValue); // Update manually
                                 }}
-                                disabled={!isEmailVerified.isVerify}
+                                disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                 disableCountryGuess={false}
                               />
                               {/* Display error message if any */}
@@ -646,7 +1034,7 @@ console.log(jobDetails,"jobDetails")
                         <label className="form-label">Profession *</label>
                         <input
                           type="text"
-                          disabled={!isEmailVerified.isVerify}
+                          disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                           name="profession"
                           placeholder="Enter Profession Name"
                           {...register("profession", {
@@ -676,7 +1064,7 @@ console.log(jobDetails,"jobDetails")
                       </Col>
 
                       <Col lg={12}>
-                        <div className="mb-3">
+                        <div className="mb-3 language-preferences-container">
                           <label
                             htmlFor="exampleInputPassword1"
                             className="form-label"
@@ -694,18 +1082,102 @@ console.log(jobDetails,"jobDetails")
                                 multiple={true}
                                 options={language_preference}
                                 getOptionLabel={(option) => option.label}
-                                disabled={!isEmailVerified.isVerify}
+                                disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                 onChange={(language_preference, value) => {
                                   let lang = value.map((res) => res.value).join(',');
                                   setValue("language_preference", lang);
                                 }}
-                                
+                                sx={{
+                                  '& .MuiAutocomplete-tag': {
+                                    margin: '2px',
+                                    height: '28px',
+                                    fontSize: '12px',
+                                    backgroundColor: '#e3f2fd',
+                                    color: '#1976d2',
+                                    border: '1px solid #bbdefb',
+                                    '& .MuiChip-deleteIcon': {
+                                      color: '#1976d2',
+                                      '&:hover': {
+                                        color: '#d32f2f',
+                                      }
+                                    }
+                                  },
+                                  '& .MuiAutocomplete-inputRoot': {
+                                    minHeight: '48px',
+                                    padding: '4px 8px',
+                                    flexWrap: 'wrap',
+                                    alignItems: 'flex-start',
+                                    '& .MuiAutocomplete-input': {
+                                      minWidth: '120px',
+                                      margin: '2px',
+                                    }
+                                  },
+                                  '& .MuiOutlinedInput-root': {
+                                    '& fieldset': {
+                                      borderColor: '#e0e0e0',
+                                    },
+                                    '&:hover fieldset': {
+                                      borderColor: '#1976d2',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                      borderColor: '#1976d2',
+                                      borderWidth: '2px',
+                                    }
+                                  }
+                                }}
                                 renderInput={(params) => (
                                   <TextField
                                     {...params}
-                                    label="Select Language Preference"
+                                    placeholder="Select Language Preference"
+                                    variant="outlined"
+                                    size="small"
                                   />
                                 )}
+                                renderTags={(value, getTagProps) =>
+                                  value.map((option, index) => (
+                                    <div
+                                      key={option.value}
+                                      {...getTagProps({ index })}
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        backgroundColor: '#e3f2fd',
+                                        color: '#1976d2',
+                                        border: '1px solid #bbdefb',
+                                        borderRadius: '16px',
+                                        padding: '4px 8px',
+                                        margin: '2px',
+                                        fontSize: '12px',
+                                        height: '28px',
+                                        maxWidth: '120px',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap'
+                                      }}
+                                    >
+                                      <span style={{ marginRight: '4px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {option.label}
+                                      </span>
+                                      <span
+                                        style={{
+                                          cursor: 'pointer',
+                                          marginLeft: '4px',
+                                          fontSize: '14px',
+                                          fontWeight: 'bold',
+                                          color: '#1976d2'
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const newValue = value.filter((_, i) => i !== index);
+                                          let lang = newValue.map((res) => res.value).join(',');
+                                          setValue("language_preference", lang);
+                                        }}
+                                      >
+                                        ×
+                                      </span>
+                                    </div>
+                                  ))
+                                }
                               />
                             )}
                           />
@@ -729,7 +1201,7 @@ console.log(jobDetails,"jobDetails")
                             type="text"
                             name="country"
                             className="form-control apply_country"
-                            disabled={!isEmailVerified.isVerify}
+                            disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                             placeholder="Enter Country"
                             {...register("country", {
                               required: "Country is required",
@@ -752,7 +1224,7 @@ console.log(jobDetails,"jobDetails")
                           <input
                             type="text"
                             name="zip_code"
-                            disabled={!isEmailVerified.isVerify}
+                            disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                             className="form-control apply_zipcode"
                             placeholder="Enter Zipcode"
                             {...register("zip_code", {
@@ -776,7 +1248,7 @@ console.log(jobDetails,"jobDetails")
                           <select
                             name="experience"
                             className="form-control form-select apply_experiance"
-                            disabled={!isEmailVerified.isVerify}
+                            disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                             {...register("experience", {
                               required: "Experience is required",
                             })}
@@ -805,7 +1277,7 @@ console.log(jobDetails,"jobDetails")
                           <input
                             type="text"
                             name="time_zone"
-                            disabled={!isEmailVerified.isVerify}
+                            disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                             className="form-control"
                             placeholder="Enter Time Zone"
                             {...register("time_zone", {
@@ -836,7 +1308,7 @@ console.log(jobDetails,"jobDetails")
                             <input
                               type="text"
                               placeholder="Enter Answer"
-                              disabled={!isEmailVerified.isVerify}
+                              disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                               {...register(`question_${index}`)}
                             />
                           ) : res.web_type === "radio" ? (
@@ -846,7 +1318,7 @@ console.log(jobDetails,"jobDetails")
                                   type="radio"
                                   id={`yes_${index}`}
                                   name={`radio_${index}`}
-                                  disabled={!isEmailVerified.isVerify}
+                                  disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                   {...register(`question_${index}`)}
                                   value="yes"
                                 />
@@ -862,7 +1334,7 @@ console.log(jobDetails,"jobDetails")
                                   type="radio"
                                   id={`no_${index}`}
                                   name={`radio_${index}`}
-                                  disabled={!isEmailVerified.isVerify}
+                                  disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                   {...register(`question_${index}`)}
                                   value="no"
                                 />
@@ -878,7 +1350,7 @@ console.log(jobDetails,"jobDetails")
                               <div className="range-container">
                                 <Form.Range
                                   {...register(`question_${index}`)}
-                                  disabled={!isEmailVerified.isVerify}
+                                  disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                   value={rangeValue}
                                   onChange={(e) => {
                                     handleRange(e);
@@ -909,22 +1381,61 @@ console.log(jobDetails,"jobDetails")
                 <div className="upload-section">
                   <div className="form-group">
                     <label className="form-label">Upload your CV *</label>
-                    <div className="upload-box">
-                      <input
-                        type="file"
-                        onChange={handleFileUpload}
-                        className="file-input"
-                      />
-                   
-                      {cvUploadLoading ? <span className="loader-wrapper" style={{marginLeft: '10px'}}></span> :
-                       <span>Upload Document</span> 
-                    }
-                    </div>
-                    {resumeUploadError?.file && (
-                      <span>{resumeUploadError.file.name} </span>
-                    )}
-                    {uploadedCvUrl && (
-                      <span style={{color: 'green'}}>✓ CV uploaded successfully</span>
+                    {selectedCvFile && uploadedCvUrl ? (
+                      <div className="selected-file-display" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        backgroundColor: '#f8f9fa',
+                        marginBottom: '10px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '16px' }}>📄</span>
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{selectedCvFile.name}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              {(selectedCvFile.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: 'green', fontSize: '12px' }}>✓ Uploaded</span>
+                          <button
+                            type="button"
+                            onClick={deleteSelectedCvFile}
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="upload-box">
+                        <input
+                          type="file"
+                          onChange={handleFileUpload}
+                          className="file-input"
+                          disabled={cvUploadLoading}
+                        />
+                        {cvUploadLoading ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="loader-wrapper"></span>
+                          </div>
+                        ) : (
+                          <span>Upload Document</span>
+                        )}
+                      </div>
                     )}
                     {resumeUploadError?.show && (
                       <ErrorMsg error={resumeUploadError.msg} />
@@ -932,22 +1443,127 @@ console.log(jobDetails,"jobDetails")
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Upload Video</label>
-                    <div className="upload-box">
-                      <input
-                        type="file"
-                        onChange={handleVideoUpload}
-                        className="file-input"
-                        accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
-                      />
-                      <span>Upload Video</span>
-                      {videoUploadLoading && <span className="loader-wrapper" style={{marginLeft: '10px'}}></span>}
-                    </div>
-                    {videoUploadError?.file && (
-                      <span>{videoUploadError.file.name} </span>
+                    <label className="form-label">Application Letter</label>
+                    {selectedApplicationLetterFile && uploadedApplicationLetterUrl ? (
+                      <div className="selected-file-display" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        backgroundColor: '#f8f9fa',
+                        marginBottom: '10px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '16px' }}>📄</span>
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{selectedApplicationLetterFile.name}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              {(selectedApplicationLetterFile.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: 'green', fontSize: '12px' }}>✓ Uploaded</span>
+                          <button
+                            type="button"
+                            onClick={deleteSelectedApplicationLetterFile}
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="upload-box">
+                        <input
+                          type="file"
+                          onChange={handleApplicationLetterUpload}
+                          className="file-input"
+                          accept=".pdf,.doc,.docx,.txt"
+                          disabled={applicationLetterUploadLoading}
+                        />
+                        {applicationLetterUploadLoading ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="loader-wrapper"></span>
+                          </div>
+                        ) : (
+                          <span>Upload Application Letter</span>
+                        )}
+                      </div>
                     )}
-                    {uploadedVideoUrl && (
-                      <span style={{color: 'green'}}>✓ Video uploaded successfully</span>
+                    {applicationLetterUploadError?.show && (
+                      <ErrorMsg error={applicationLetterUploadError.msg} />
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Upload Video</label>
+                    {selectedVideoFile && uploadedVideoUrl ? (
+                      <div className="selected-file-display" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        backgroundColor: '#f8f9fa',
+                        marginBottom: '10px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '16px' }}>🎥</span>
+                          <div>
+                            <div style={{ fontWeight: '500' }}>{selectedVideoFile.name}</div>
+                            <div style={{ fontSize: '12px', color: '#666' }}>
+                              {(selectedVideoFile.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: 'green', fontSize: '12px' }}>✓ Uploaded</span>
+                          <button
+                            type="button"
+                            onClick={deleteSelectedVideoFile}
+                            style={{
+                              background: '#dc3545',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              padding: '5px 10px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="upload-box">
+                        <input
+                          type="file"
+                          onChange={handleVideoUpload}
+                          className="file-input"
+                          accept="video/mp4, video/mkv, video/avi, video/mov, video/webm"
+                          disabled={videoUploadLoading}
+                        />
+                        {videoUploadLoading ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span className="loader-wrapper"></span>
+                          </div>
+                        ) : (
+                          <span>Upload Video</span>
+                        )}
+                      </div>
                     )}
                     {videoUploadError?.show && (
                       <ErrorMsg error={videoUploadError.msg} />
@@ -972,7 +1588,7 @@ console.log(jobDetails,"jobDetails")
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Application Letter</label>
+                    <label className="form-label">Comments</label>
                     <textarea
                       name="application_letter_text"
                       placeholder="Enter a short application text (max 1500 characters)"
@@ -980,7 +1596,6 @@ console.log(jobDetails,"jobDetails")
                       maxLength={1500}
                       className="application-textarea"
                     />
-                    {}
                     {errors?.application_letter_text && (
                       <ErrorMsg
                         error={errors.application_letter_text.message}
@@ -1033,9 +1648,22 @@ console.log(jobDetails,"jobDetails")
           {showOTPModal && (
             <OTPModal
               modalIsOpen={showOTPModal}
-              closeModal={() => setShowOTPModal(false)}
+              closeModal={() => {
+                setShowOTPModal(false);
+                // The verification status will be updated by the OTP modal when verification is successful
+              }}
               email={watch("email")}
-              setIsEmailVerified={setIsEmailVerified}
+              setIsEmailVerified={(verificationData) => {
+                setIsEmailVerified(verificationData);
+                if (verificationData.isVerify) {
+                  setEmailVerificationStatus('verified');
+                  // Save the external_id for persistence
+                  localStorage.setItem('verifiedExternalId', verificationData.external_id);
+                } else {
+                  setEmailVerificationStatus('unverified');
+                  localStorage.removeItem('verifiedExternalId');
+                }
+              }}
             />
           )}
           {showThankYouModal && (
@@ -1057,3 +1685,4 @@ console.log(jobDetails,"jobDetails")
   );
 };
 export default Sidebar;
+

@@ -1,17 +1,23 @@
-.loading-screen {
-  position: fixed;
-  top: 0;
-  left: 0;
+.job-list-loader {
+  position: relative;
   width: 100%;
-  height: 100vh;
+  min-height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, .8);
-  z-index: 9999;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  margin: 20px 0;
 }
 
-.loader-wrapper {
+.job-list-loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.job-list-loader-wrapper {
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -20,6 +26,13 @@
   color: #4c4cbfb0;
   -webkit-animation: loaderdots 2s linear infinite;
   animation: loaderdots 2s linear infinite;
+}
+
+.job-list-loader-text {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 @-webkit-keyframes loaderdots {
@@ -66,32 +79,3 @@
   }
 }
 
-/* Website Loader Styles */
-.website-loader {
-  color: #4c4cbfb0;
-  -webkit-animation: loaderdots 2s linear infinite;
-  animation: loaderdots 2s linear infinite;
-}
-
-/* Job Data Loader Styles */
-.job-loader {
-  color: #28a745;
-  -webkit-animation: loaderdots 1.5s linear infinite;
-  animation: loaderdots 1.5s linear infinite;
-}
-
-/* Loader Content Styles */
-.loader-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.loader-text {
-  color: #333;
-  font-size: 16px;
-  font-weight: 500;
-  margin: 0;
-  text-align: center;
-}

@@ -9,6 +9,8 @@ import {
 import { useParams } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
 import ScreenLoader from "./ScreenLoader";
+import WebsiteLoader from "./Components/WebsiteLoader";
+import JobDataLoader from "./Components/JobDataLoader";
 import moment from "moment";
 import Header from "./Components/Header";
 import usePagination from "./Hooks/usePaginantion";
@@ -22,8 +24,8 @@ const Page = () => {
     js: "",
   });
   const [notFound, setNotFound] = useState(false);
-  const [loader, setLoader] = useState(true);
-  const [jobCardLoader, setJobCardLoader] = useState(false);
+  const [websiteLoader, setWebsiteLoader] = useState(true);
+  const [jobDataLoader, setJobDataLoader] = useState(false);
   const [htmlContent, setHtmlContent] = useState("");
   const [jobList, setJobList] = useState([]);
   const [isFilterActivate, setFilterActivate] = useState(false);
@@ -58,13 +60,13 @@ const Page = () => {
     setFilterActivate(false);
     fetchWebsite();
      fetchFilterList();
-     fetchJobData();
- 
+      fetchJobData();
+    
   }, []);
 
   const fetchWebsite = async () => {
     try {
-   
+      setWebsiteLoader(true);
       const landingPage = pageId || DEFAULT_LADING_PAGE;
       const response = await webSiteBuilderInstance.get(
         `/api/pages/activeTemplatePage/`
@@ -75,6 +77,7 @@ const Page = () => {
         const parser = new window.DOMParser();
         const doc = parser.parseFromString(html, "text/html");
         setHtmlContent(doc.body.innerHTML);
+      
       } else {
         setHtmlContent(html);
       }
@@ -84,12 +87,12 @@ const Page = () => {
         Object.keys(response?.data?.data).length === 0
       ) {
         setNotFound(true);
-        setLoader(false);
+        setWebsiteLoader(false);
       }
-      setLoader(false);
+      setWebsiteLoader(false);
     } catch (error) {
       setNotFound(true);
-      setLoader(false);
+      setWebsiteLoader(false);
       console.error("Error fetching website data:", error);
     }
   };
@@ -234,10 +237,10 @@ const Page = () => {
           const updatedHTML = await updateJobListContent(htmlContent, jobList);
           if (updatedHTML) setHtmlContent(updatedHTML);
           console.log(updatedHTML,"updatedHTML")
-          setLoader(false);
+          setJobDataLoader(false);
           setFilterActivate(false);
         } catch (err) {
-          setLoader(false);
+          setJobDataLoader(false);
           console.log(err);
         }
       };
@@ -758,18 +761,6 @@ const Page = () => {
       return doc.body.innerHTML;
     }
 
-    if(loader){
-      const noJobsMessage = document.createElement("div");
-      noJobsMessage.id = "no_jobs";
-      noJobsMessage.className = "no-jobs";
-      noJobsMessage.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px;">
-          <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
-          <p style="font-size: 24px; color: #666; margin: 0;">Pelase wait Job is loading.........</p>
-        </div>`;
-      jobListParent.appendChild(noJobsMessage);
-    }
-
     if (jobData.length === 0) {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
@@ -780,6 +771,7 @@ const Page = () => {
           <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
         </div>`;
       jobListParent.appendChild(noJobsMessage);
+      console.log("No jobs found - added no jobs message");
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
@@ -933,7 +925,7 @@ const Page = () => {
     search = "",
     sortBy = ""
   ) {
-    setLoader(() => true);
+    setJobDataLoader(true);
     try {
       // Encode parameters to handle special characters
       const params = new URLSearchParams({
@@ -983,9 +975,9 @@ const Page = () => {
         });
         setJobList([]);
       }
-      setLoader(() => false);
+      setJobDataLoader(false);
     } catch (err) {
-      setLoader(() => false);
+      setJobDataLoader(false);
       console.error("Error fetching job data:", err);
       console.error("Error details:", {
         message: err.message,
@@ -1008,11 +1000,13 @@ const Page = () => {
     
     <div>
       {
-        loader ? (
-          <ScreenLoader />
+        websiteLoader ? (
+          <WebsiteLoader />
+        ) : jobDataLoader ? (
+          <JobDataLoader />
         ) : (
           <>
-            <Header setLoader={setLoader} />
+            <Header setLoader={setWebsiteLoader} />
             <style>{website.css}</style>
             <style>{website["mycustom-css"]}</style>
             <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
