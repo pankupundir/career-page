@@ -90,6 +90,7 @@ const JobDetails = () => {
       applyBtn.addEventListener("click", handleApplyJob);
     }
   }, [htmlContent]);
+  
 
   useEffect(() => {
     const applyBtn = document.getElementById("apply_btn");
