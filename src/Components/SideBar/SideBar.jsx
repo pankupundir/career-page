@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
     show: false,
     msg: "",
   });
-  const [showNext, setShowNext] = useState(true);
+  const [currentStep, setCurrentStep] = useState(1);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [rangeValue, setRangeValue] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState(null);
@@ -185,7 +185,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
 
   // Effect to restore email when going back to form
   useEffect(() => {
-    if (showNext && emailVerificationStatus === 'verified') {
+    if (currentStep === 1 && emailVerificationStatus === 'verified') {
       const savedEmail = localStorage.getItem('verifiedEmail');
       if (savedEmail) {
         setValue("email", savedEmail);
@@ -193,7 +193,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
         setTimeout(() => trigger("email"), 100);
       }
     }
-  }, [showNext, emailVerificationStatus, setValue, trigger]);
+  }, [currentStep, emailVerificationStatus, setValue, trigger]);
 
   // Effect to reset verification status if email changes
   useEffect(() => {
@@ -258,23 +258,60 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
 
   const options = ["establishment", "geocode"];
 
-  const nextPage = () => {
+  const nextStep = () => {
+    if (currentStep === 1) {
+      // Validate Step 1: Personal Information
     if (!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')) {
       setShowVerifyEmailError(true);
       return;
     }
-    handleSubmit(() => setShowNext(false))();
+      // Trigger validation for step 1 fields
+      const step1Fields = ['firstName', 'lastName', 'phone_number', 'profession', 'address', 'language_preference', 'country', 'zip_code', 'experience', 'time_zone'];
+      const isValid = step1Fields.every(field => {
+        const value = getValues(field);
+        return value && value.toString().trim() !== '';
+      });
+      
+      if (!isValid) {
+        toast.error("Please fill in all required fields in Step 1");
+        return;
+      }
+      
+      // If there are no screening questions, skip to step 3
+      if (jobDetails?.screening_questions?.length === 0) {
+        setCurrentStep(3);
+      } else {
+        setCurrentStep(2);
+      }
+    } else if (currentStep === 2) {
+      // Validate Step 2: Screening Questions (if they exist)
+      if (jobDetails?.screening_questions?.length > 0) {
+        const screeningFields = jobDetails.screening_questions.map((_, index) => `question_${index}`);
+        const isValid = screeningFields.every(field => {
+          const value = getValues(field);
+          return value && value.toString().trim() !== '';
+        });
+        
+        if (!isValid) {
+          toast.error("Please answer all screening questions");
+          return;
+        }
+      }
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
+      // For step 3, the next button should trigger form submission
+      // This will be handled by the form's onSubmit
+      beforeHandleSUbmit(new Event('submit'));
+    }
   };
 
-  const goBackToForm = () => {
-    setShowNext(true);
-    // Always ensure email field is restored if it was verified
-    if (emailVerificationStatus === 'verified') {
-      const savedEmail = localStorage.getItem('verifiedEmail');
-      if (savedEmail) {
-        setValue("email", savedEmail);
-        // Trigger validation to clear any errors
-        setTimeout(() => trigger("email"), 100);
+  const prevStep = () => {
+    if (currentStep > 1) {
+      if (currentStep === 3 && jobDetails?.screening_questions?.length === 0) {
+        // If we're on step 3 and there are no screening questions, go back to step 1
+        setCurrentStep(1);
+      } else {
+        setCurrentStep(currentStep - 1);
       }
     }
   };
@@ -662,15 +699,33 @@ console.log(jobDetails,"jobDetails")
     localStorage.removeItem('emailVerificationTime');
     localStorage.removeItem('verifiedExternalId');
     reset();
-    setShowNext(true);
+    setCurrentStep(1);
     onClose();
   };
 
   const onSubmit = async (data) => {
     console.log(data?.address, "log this is address data");
+    console.log(isEmailVerified,"isEmailVerified")
     setScreenLoader(true);
 
     try {
+      // Get external_id with fallback to localStorage
+      const externalId = isEmailVerified.external_id || localStorage.getItem('verifiedExternalId');
+      
+      console.log('External ID Debug:', {
+        isEmailVerified: isEmailVerified,
+        externalIdFromState: isEmailVerified.external_id,
+        externalIdFromLocalStorage: localStorage.getItem('verifiedExternalId'),
+        finalExternalId: externalId
+      });
+      
+      // Validate that we have an external_id
+      if (!externalId) {
+        toast.error("Email verification is required. Please verify your email first.");
+        setScreenLoader(false);
+        return;
+      }
+
       // Construct payload using pre-uploaded file URLs
       const payload = {
         email: data.email,
@@ -683,7 +738,7 @@ console.log(jobDetails,"jobDetails")
         country: data.country,
         time_zone: data.time_zone,
         zip_code: data.zip_code,
-        external_id: isEmailVerified.external_id,
+        external_id: externalId,
         job_id: jobDetails.job_external_id,
         resume_file: uploadedCvUrl,
         screeing_questions_answers: jobDetails.screening_questions?.map(
@@ -733,7 +788,7 @@ console.log(jobDetails,"jobDetails")
       toast.error(message);
     }
   };
-
+console.log(isEmailVerified,"isEmailVerified")
   const submitApplyJob = async (payload) => {
     if (!isEmailVerified) {
       setShowVerifyEmailError(true);
@@ -793,9 +848,18 @@ console.log(jobDetails,"jobDetails")
   const handleConnect = async () => {
     setScreenLoader(true);
     try {
+      // Get external_id with fallback to localStorage
+      const externalId = isEmailVerified.external_id || localStorage.getItem('verifiedExternalId');
+      
+      if (!externalId) {
+        toast.error("Email verification is required. Please verify your email first.");
+        setScreenLoader(false);
+        return;
+      }
+
       const response = await updatedURLInstance.post(
         `/web/career/connect`,{
-          id:isEmailVerified.external_id,
+          id: externalId,
           job_id: jobDetails.job_external_id
         }
       );
@@ -863,11 +927,74 @@ console.log(jobDetails,"jobDetails")
             </button>
           </div>
           <div className="career-sidebar-heading">
-            {!showNext && (
+            {/* Step Progress Indicator */}
+            <div className="step-progress" style={{
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '20px',
+              padding: '0 10px',
+              position: 'relative'
+            }}>
+              {(jobDetails?.screening_questions?.length > 0 ? [1, 2, 3] : [1, 3]).map((step, index) => (
+                <div key={step} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  flex: 1,
+                  position: 'relative'
+                }}>
+                  {/* Connecting line */}
+                  {index < (jobDetails?.screening_questions?.length > 0 ? 2 : 1) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '15px',
+                      left: '50%',
+                      width: '100%',
+                      height: '2px',
+                      background: currentStep > step ? 'linear-gradient(to right, #FF6868, #C0A9FF)' : '#e9ecef',
+                      zIndex: 1
+                    }} />
+                  )}
+                  
+                  <div style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    background: currentStep >= step ? 'linear-gradient(to right, #FF6868, #C0A9FF)' : '#e9ecef',
+                    color: currentStep >= step ? 'white' : '#6c757d',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    marginBottom: '5px',
+                    // border: currentStep === step ? '2px solid #007bff' : '2px solid #e9ecef',
+                    position: 'relative',
+                    zIndex: 2
+                  }}>
+                    {jobDetails?.screening_questions?.length > 0 ? step : (step === 1 ? 1 : 2)}
+                  </div>
+                  <span style={{
+                    fontSize: '10px',
+                    color: currentStep >= step ? 'purple' : '#6c757d',
+                    textAlign: 'center',
+                    fontWeight: currentStep >= step ? '600' : '400'
+                  }}>
+                    {jobDetails?.screening_questions?.length > 0 
+                      ? (step === 1 ? 'Personal Info' : step === 2 ? 'Screening' : 'Upload')
+                      : (step === 1 ? 'Personal Info' : 'Upload')
+                    }
+                  </span>
+                </div>
+              ))}
+            </div>
+            
+            {/* Back Button */}
+            {currentStep > 1 && currentStep !== 3 && (
               <button 
                 type="button" 
                 className="back-btn" 
-                onClick={goBackToForm}
+                onClick={prevStep}
                 style={{
                   background: 'transparent',
                   border: '1px solid #ccc',
@@ -888,7 +1015,8 @@ console.log(jobDetails,"jobDetails")
           </div>
           <div className="career-sidebar-input mt-3">
             <form onSubmit={beforeHandleSUbmit}>
-              {showNext ? (
+              {/* Step 1: Personal Information */}
+              {currentStep === 1 && (
                 <div>
                   <div className="form-group position-relative">
                     <label className="form-label">Email *</label>
@@ -1078,121 +1206,340 @@ console.log(jobDetails,"jobDetails")
                       <Col lg={12}>
                         <div className="mb-3 language-preferences-container">
                           <label
-                            htmlFor="exampleInputPassword1"
+                            htmlFor="language_preference"
                             className="form-label"
+                            style={{
+                              fontWeight: '600',
+                              color: '#2c3e50',
+                              marginBottom: '8px',
+                              fontSize: '14px'
+                            }}
                           >
                             Language Preferences*
                           </label>
                           <Controller
-                            name="{language_preference}"
+                            name="language_preference"
                             control={control}
                             render={({
                               field: { onChange, ref, ...field },
-                            }) => (
-                              <Autocomplete
-                                {...field}
-                                multiple={true}
-                                options={language_preference}
-                                getOptionLabel={(option) => option.label}
-                                disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
-                                onChange={(language_preference, value) => {
-                                  let lang = value.map((res) => res.value).join(',');
-                                  setValue("language_preference", lang);
-                                }}
-                                sx={{
-                                  '& .MuiAutocomplete-tag': {
-                                    margin: '2px',
-                                    height: '28px',
-                                    fontSize: '12px',
-                                    backgroundColor: '#e3f2fd',
-                                    color: '#1976d2',
-                                    border: '1px solid #bbdefb',
-                                    '& .MuiChip-deleteIcon': {
-                                      color: '#1976d2',
-                                      '&:hover': {
-                                        color: '#d32f2f',
+                            }) => {
+                              const [isOpen, setIsOpen] = useState(false);
+                              const [selectedLanguages, setSelectedLanguages] = useState([]);
+                              const [searchTerm, setSearchTerm] = useState('');
+
+                              // Filter languages based on search term
+                              const filteredLanguages = language_preference.filter(lang =>
+                                lang.label.toLowerCase().includes(searchTerm.toLowerCase())
+                              );
+
+                              // Handle language selection
+                              const handleLanguageToggle = (language) => {
+                                const isSelected = selectedLanguages.some(lang => lang.value === language.value);
+                                let newSelection;
+                                
+                                if (isSelected) {
+                                  newSelection = selectedLanguages.filter(lang => lang.value !== language.value);
+                                } else {
+                                  newSelection = [...selectedLanguages, language];
+                                }
+                                
+                                setSelectedLanguages(newSelection);
+                                const langString = newSelection.map(lang => lang.value).join(',');
+                                setValue("language_preference", langString);
+                              };
+
+                              // Remove selected language
+                              const removeLanguage = (languageToRemove) => {
+                                const newSelection = selectedLanguages.filter(lang => lang.value !== languageToRemove.value);
+                                setSelectedLanguages(newSelection);
+                                const langString = newSelection.map(lang => lang.value).join(',');
+                                setValue("language_preference", langString);
+                              };
+
+                              // Clear all selections
+                              const clearAll = () => {
+                                setSelectedLanguages([]);
+                                setValue("language_preference", '');
+                              };
+
+                              return (
+                                <div className="custom-multi-select" style={{ position: 'relative' }}>
+                                  {/* Selected Languages Display */}
+                                  <div 
+                                    className="selected-languages-display"
+                                    style={{
+                                      border: '2px solid #e1e8ed',
+                                      borderRadius: '12px',
+                                      padding: '12px',
+                                      minHeight: '50px',
+                                      backgroundColor: !(isEmailVerified.isVerify || emailVerificationStatus === 'verified') ? '#f8f9fa' : '#ffffff',
+                                      cursor: !(isEmailVerified.isVerify || emailVerificationStatus === 'verified') ? 'not-allowed' : 'pointer',
+                                      transition: 'all 0.3s ease',
+                                      display: 'flex',
+                                      flexWrap: 'wrap',
+                                      alignItems: 'center',
+                                      gap: '8px'
+                                    }}
+                                    onClick={() => {
+                                      if (isEmailVerified.isVerify || emailVerificationStatus === 'verified') {
+                                        setIsOpen(!isOpen);
                                       }
-                                    }
-                                  },
-                                  '& .MuiAutocomplete-inputRoot': {
-                                    minHeight: '48px',
-                                    padding: '4px 8px',
-                                    flexWrap: 'wrap',
-                                    alignItems: 'flex-start',
-                                    '& .MuiAutocomplete-input': {
-                                      minWidth: '120px',
-                                      margin: '2px',
-                                    }
-                                  },
-                                  '& .MuiOutlinedInput-root': {
-                                    '& fieldset': {
-                                      borderColor: '#e0e0e0',
-                                    },
-                                    '&:hover fieldset': {
-                                      borderColor: '#1976d2',
-                                    },
-                                    '&.Mui-focused fieldset': {
-                                      borderColor: '#1976d2',
-                                      borderWidth: '2px',
-                                    }
-                                  }
-                                }}
-                                renderInput={(params) => (
-                                  <TextField
-                                    {...params}
-                                    placeholder="Select Language Preference"
-                                    variant="outlined"
-                                    size="small"
-                                  />
-                                )}
-                                renderTags={(value, getTagProps) =>
-                                  value.map((option, index) => (
-                                    <div
-                                      key={option.value}
-                                      {...getTagProps({ index })}
-                                      style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        backgroundColor: '#e3f2fd',
-                                        color: '#1976d2',
-                                        border: '1px solid #bbdefb',
-                                        borderRadius: '16px',
-                                        padding: '4px 8px',
-                                        margin: '2px',
-                                        fontSize: '12px',
-                                        height: '28px',
-                                        maxWidth: '120px',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
-                                      }}
-                                    >
-                                      <span style={{ marginRight: '4px', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {option.label}
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (isEmailVerified.isVerify || emailVerificationStatus === 'verified') {
+                                        e.target.style.borderColor = '#3498db';
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)';
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.target.style.borderColor = '#e1e8ed';
+                                      e.target.style.boxShadow = 'none';
+                                    }}
+                                  >
+                                    {selectedLanguages.length > 0 ? (
+                                      selectedLanguages.map((language, index) => (
+                                        <div
+                                          key={language.value}
+                                          style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            backgroundColor: '#e3f2fd',
+                                            color: '#1976d2',
+                                            border: '1px solid #bbdefb',
+                                            borderRadius: '20px',
+                                            padding: '6px 12px',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            height: '32px',
+                                            maxWidth: '140px',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: '0 2px 4px rgba(52, 152, 219, 0.1)',
+                                            transition: 'all 0.2s ease'
+                                          }}
+                                        >
+                                          <span style={{ marginRight: '6px', fontSize: '14px' }}>🌐</span>
+                                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {language.label}
+                                          </span>
+                                          <span
+                                            style={{
+                                              cursor: 'pointer',
+                                              marginLeft: '6px',
+                                              fontSize: '16px',
+                                              fontWeight: 'bold',
+                                              color: '#e74c3c',
+                                              width: '18px',
+                                              height: '18px',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              borderRadius: '50%',
+                                              backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                                              transition: 'all 0.2s ease'
+                                            }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              removeLanguage(language);
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.2)';
+                                              e.target.style.transform = 'scale(1.1)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+                                              e.target.style.transform = 'scale(1)';
+                                            }}
+                                          >
+                                            ×
+                                          </span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <span style={{ color: '#95a5a6', fontSize: '14px' }}>
+                                        Click to select your preferred languages...
                                       </span>
-                                      <span
-                                        style={{
-                                          cursor: 'pointer',
-                                          marginLeft: '4px',
-                                          fontSize: '14px',
-                                          fontWeight: 'bold',
-                                          color: '#1976d2'
-                                        }}
+                                    )}
+                                    
+                                    {/* Clear All Button */}
+                                    {selectedLanguages.length > 0 && (
+                                      <button
+                                        type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const newValue = value.filter((_, i) => i !== index);
-                                          let lang = newValue.map((res) => res.value).join(',');
-                                          setValue("language_preference", lang);
+                                          clearAll();
+                                        }}
+                                        style={{
+                                          marginLeft: 'auto',
+                                          background: 'none',
+                                          border: 'none',
+                                          color: '#e74c3c',
+                                          fontSize: '12px',
+                                          cursor: 'pointer',
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.target.style.backgroundColor = 'transparent';
                                         }}
                                       >
-                                        ×
-                                      </span>
+                                        Clear All
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Dropdown Arrow */}
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      right: '15px',
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      pointerEvents: 'none',
+                                      transition: 'transform 0.3s ease',
+                                      transform: isOpen ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%) rotate(0deg)'
+                                    }}
+                                  >
+                                    <span style={{ fontSize: '16px', color: '#7f8c8d' }}>▼</span>
+                                  </div>
+
+                                  {/* Dropdown Menu */}
+                                  {isOpen && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        backgroundColor: '#ffffff',
+                                        border: '2px solid #e1e8ed',
+                                        borderTop: 'none',
+                                        borderRadius: '0 0 12px 12px',
+                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                        zIndex: 1000,
+                                        maxHeight: '250px',
+                                        overflow: 'hidden'
+                                      }}
+                                    >
+                                      {/* Search Input */}
+                                      <div style={{ padding: '12px', borderBottom: '1px solid #ecf0f1' }}>
+                                        <input
+                                          type="text"
+                                          placeholder="Search languages..."
+                                          value={searchTerm}
+                                          onChange={(e) => setSearchTerm(e.target.value)}
+                                          style={{
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            border: '1px solid #ddd',
+                                            borderRadius: '6px',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s ease'
+                                          }}
+                                          onFocus={(e) => {
+                                            e.target.style.borderColor = '#3498db';
+                                          }}
+                                          onBlur={(e) => {
+                                            e.target.style.borderColor = '#ddd';
+                                          }}
+                                        />
+                                      </div>
+
+                                      {/* Language Options */}
+                                      <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                        {filteredLanguages.length > 0 ? (
+                                          filteredLanguages.map((language) => {
+                                            const isSelected = selectedLanguages.some(lang => lang.value === language.value);
+                                            return (
+                                              <div
+                                                key={language.value}
+                                                onClick={() => handleLanguageToggle(language)}
+                                                style={{
+                                                  padding: '12px 16px',
+                                                  cursor: 'pointer',
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  transition: 'all 0.2s ease',
+                                                  backgroundColor: isSelected ? '#e3f2fd' : 'transparent',
+                                                  borderBottom: '1px solid #f8f9fa'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                  if (!isSelected) {
+                                                    e.target.style.backgroundColor = '#f8f9fa';
+                                                  }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                  if (!isSelected) {
+                                                    e.target.style.backgroundColor = 'transparent';
+                                                  }
+                                                }}
+                                              >
+                                                <div
+                                                  style={{
+                                                    width: '20px',
+                                                    height: '20px',
+                                                    border: '2px solid #ddd',
+                                                    borderRadius: '4px',
+                                                    marginRight: '12px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    backgroundColor: isSelected ? '#1976d2' : 'transparent',
+                                                    transition: 'all 0.2s ease'
+                                                  }}
+                                                >
+                                                  {isSelected && (
+                                                    <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>✓</span>
+                                                  )}
+                                                </div>
+                                                <span style={{ marginRight: '8px', fontSize: '16px' }}>🌐</span>
+                                                <span style={{ fontSize: '14px', color: isSelected ? '#1976d2' : '#2c3e50', fontWeight: isSelected ? '500' : '400' }}>
+                                                  {language.label}
+                                                </span>
+                                              </div>
+                                            );
+                                          })
+                                        ) : (
+                                          <div style={{ padding: '20px', textAlign: 'center', color: '#7f8c8d' }}>
+                                            No languages found
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                  ))
-                                }
-                              />
-                            )}
+                                  )}
+
+                                  {/* Click outside to close */}
+                                  {isOpen && (
+                                    <div
+                                      style={{
+                                        position: 'fixed',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        zIndex: 999
+                                      }}
+                                      onClick={() => setIsOpen(false)}
+                                    />
+                                  )}
+                                </div>
+                              );
+                            }}
                           />
+                          <div style={{
+                            marginTop: '8px',
+                            fontSize: '12px',
+                            color: '#7f8c8d',
+                            fontStyle: 'italic'
+                          }}>
+                            💡 Click to select multiple languages you're comfortable with
+                          </div>
                         </div>
                         {errors.language_preference && (
                           <ErrorMsg
@@ -1303,25 +1650,41 @@ console.log(jobDetails,"jobDetails")
                       </Col>
                     </Row>
 
-                    {jobDetails?.screening_questions?.length > 0 && (
-                      <div className="form-group">
-                        <label className="form-label">Job Screening Questions</label>
-                        <div className="form-text">Answer these to help us match you better.</div>
-                      </div>
-                    )}
+                  </div>
+                  {showVerifyEmailError && (
+                    <ErrorMsg error={"Please verify the email first"} />
+                  )}
+                  <button className="next-btn" onClick={nextStep} type="button">
+                    Next
+                  </button>
+                </div>
+              )}
+
+              {/* Step 2: Screening Questions */}
+              {currentStep === 2 && (
+                <div>
+                  <h6 style={{ marginBottom: '20px', color: '#2c3e50' }}>Job Screening Questions</h6>
+                  <p style={{ marginBottom: '20px', color: '#6c757d', fontSize: '14px' }}>
+                    Please answer these questions to help us match you better.
+                  </p>
+                  
+                  {jobDetails?.screening_questions?.length > 0 ? (
                     <div className="questions-listing">
                       {jobDetails?.screening_questions?.map((res, index) => (
                         <div key={index} className="form-group">
                           <label className="form-label">
-                          {res.question} {res.is_required ? <span className="required-star">*</span> : null}
+                          {res.question_type === "language" && res.question.includes("[Language]") 
+                            ? res.question.replace("[Language]", res.title || "the language")
+                            : res.question} {res.is_required ? <span className="required-star">*</span> : null}
                         </label>
 
                           {res.web_type === "input" ? (
                             <input
                               type="text"
                               placeholder="Enter Answer"
-                              disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
-                              {...register(`question_${index}`)}
+                              {...register(`question_${index}`, {
+                                required: res.is_required ? "This field is required" : false
+                              })}
                             />
                           ) : res.web_type === "radio" ? (
                             <div className="radio-options">
@@ -1330,8 +1693,9 @@ console.log(jobDetails,"jobDetails")
                                   type="radio"
                                   id={`yes_${index}`}
                                   name={`radio_${index}`}
-                                  disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
-                                  {...register(`question_${index}`)}
+                                  {...register(`question_${index}`, {
+                                    required: res.is_required ? "Please select an option" : false
+                                  })}
                                   value="yes"
                                 />
                                 <label
@@ -1350,10 +1714,7 @@ console.log(jobDetails,"jobDetails")
                                   {...register(`question_${index}`)}
                                   value="no"
                                 />
-                                <label
-                                  className="form-label"
-                                  htmlFor={`no_${index}`}
-                                >
+                                <label className="form-label" htmlFor={`no_${index}`}>
                                   No
                                 </label>
                               </div>
@@ -1361,8 +1722,9 @@ console.log(jobDetails,"jobDetails")
                             ) : res.web_type === "range" ? (
                               <div className="range-container">
                                 <Form.Range
-                                  {...register(`question_${index}`)}
-                                  disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
+                                {...register(`question_${index}`, {
+                                  required: res.is_required ? "Please select a value" : false
+                                })}
                                   value={rangeValue}
                                   onChange={(e) => {
                                     handleRange(e);
@@ -1377,20 +1739,55 @@ console.log(jobDetails,"jobDetails")
                                 </div>
                               </div>
                             ) : null}
-  
+                          {errors[`question_${index}`] && (
+                            <ErrorMsg error={errors[`question_${index}`].message} />
+                          )}
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '40px 20px',
+                      color: '#6c757d'
+                    }}>
+                      <p>No screening questions for this job.</p>
                   </div>
-                  {showVerifyEmailError && (
-                    <ErrorMsg error={"Please verify the email first"} />
                   )}
-                  <button className="next-btn" onClick={nextPage} type="button">
+                  
+                  <button 
+                    className="next-btn" 
+                    type="button" 
+                    onClick={nextStep}
+                  >
                     Next
                   </button>
                 </div>
-              ) : (
+              )}
+
+              {/* Step 3: Upload Documents */}
+              {currentStep === 3 && (
                 <div className="upload-section">
+                  {/* Back Button at the top of Step 3 */}
+                  <button 
+                    type="button" 
+                    className="back-btn" 
+                    onClick={prevStep}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #ccc',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      marginBottom: '15px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '14px'
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  
                   <div className="form-group">
                     <label className="form-label">Upload your CV *</label>
                     {selectedCvFile && uploadedCvUrl ? (
@@ -1653,8 +2050,10 @@ console.log(jobDetails,"jobDetails")
                     type="submit"
                     disabled={!isAgreementChecked}
                     style={{
+                      width: '100%',
                       opacity: !isAgreementChecked ? 0.6 : 1,
-                      cursor: !isAgreementChecked ? 'not-allowed' : 'pointer'
+                      cursor: !isAgreementChecked ? 'not-allowed' : 'pointer',
+                      marginTop: '20px'
                     }}
                   >
                     Apply Now

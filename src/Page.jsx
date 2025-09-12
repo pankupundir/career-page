@@ -484,6 +484,7 @@ const Page = () => {
     setFilterActivate(false);
     setPage(1); // Directly set page to 1
     onPageChange({ selected: 0 }); // Also call the pagination hook
+    fetchWebsite();
     
     // Restore the original job card structure if it was lost
     // Use setTimeout to ensure DOM is ready
@@ -973,7 +974,13 @@ const Page = () => {
           total_pages: response.data.data.total_pages || 0,
         };     
         setPaginationData(newPaginationData);
-        fetchWebsite()
+        // Only fetch website if any filter value is present
+        console.log("Filter parameters:", { contract_type, skill_name, work_type, search, sortBy })
+        const hasActiveFilters = [contract_type, skill_name, work_type, search, sortBy].some(value => value && value.trim() !== '');
+        if (hasActiveFilters) {
+          fetchWebsite();
+        }
+   
    
       } else {
         console.warn("Unexpected API response structure:", response.data);
@@ -1005,6 +1012,8 @@ const Page = () => {
       setJobList([]);
     }
   }
+
+  console.log(selectedFilter,"selectedFilter")
 
   return (
     
