@@ -486,6 +486,7 @@ const Page = () => {
     onPageChange({ selected: 0 }); // Also call the pagination hook
     fetchWebsite();
     
+    
     // Restore the original job card structure if it was lost
     // Use setTimeout to ensure DOM is ready
     setTimeout(() => {

@@ -223,6 +223,8 @@ button.close-btn:hover {
   color: #007bff;
   font-weight: 500;
   margin-bottom: 15px;
+  text-decoration: none;
+  margin-top: 10px;
 }
 
 .btn-login-option {
@@ -241,6 +243,7 @@ button.close-btn:hover {
 
 .btn-login-option:hover {
   background-color: #0056b3;
+  text-decoration: underline;
 }
 
 /* Menu Footer */

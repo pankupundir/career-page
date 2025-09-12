@@ -148,9 +148,7 @@ const Header = ({ setLoader, loader }) => {
             <div >
               <div className="login-option">
                 <p>Access your candidate dashboard and manage your applications</p>
-                <p className="signup-text" onClick={handleSignupRedirect}>
-                  Want to sign up?
-                </p>
+               
                 <button 
                   className="btn btn-login-option" 
                   onClick={() => handleLoginOption('candidate-login')}
@@ -158,17 +156,19 @@ const Header = ({ setLoader, loader }) => {
                 >
                   Login as Candidate
                 </button>
+                <p className="signup-text mt-3" onClick={handleSignupRedirect}>
+                  Do you want to sign up?
+                </p>
               </div>
             </div>
           </div>
           
           <div className="menu-footer">
             <div className="menu-footer-links">
-              <a href="#home" className="footer-link">Home</a>
-              <a href="#about" className="footer-link">About Us</a>
-              <a href="#careers" className="footer-link">Career</a>
-              <a href="#blog" className="footer-link">Blogs</a>
-              <a href="#contact" className="footer-link">Contact</a>
+              <a href="#home" target="_blank" className="footer-link">Home</a>
+              <a href="#about" target="_blank" className="footer-link">About Us</a>
+              <a href="#blog" target="_blank" className="footer-link">Privacy Policy</a>
+              <a href="#contact" target="_blank" className="footer-link">Contact</a>
             </div>
           </div>
         </div>

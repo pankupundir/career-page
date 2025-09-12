@@ -28,6 +28,7 @@ function App() {
           {/* Define other routes here */}
         </Routes>
       </Router>
+      
     </>
   );
 }
