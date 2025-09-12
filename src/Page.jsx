@@ -36,7 +36,7 @@ const Page = () => {
     job_location: [],
     job_category: [],
   });
-  
+
   const [selectedFilter, setSelectedFilter] = useState({
     contract_type: "",
     skill_name: "",
@@ -119,6 +119,7 @@ const Page = () => {
     const jobOpeningButtons = document.querySelectorAll('.btn-job-opening');
     const registerButtons = document.querySelectorAll('.register-btn');
     const connectButtons = document.querySelectorAll('.btn-connect');
+    const connectButtonScrollDown = document.querySelectorAll('.scroll-down-icon');
     
     jobOpeningButtons.forEach(button => {
       button.removeEventListener('click', handleJobOpeningClick);
@@ -134,6 +135,14 @@ const Page = () => {
       button.removeEventListener('click', handleConnectClick);
       button.addEventListener('click', handleConnectClick);
     });
+
+      
+    connectButtonScrollDown.forEach(button => {
+      button.removeEventListener('click', handleConnectClick);
+      button.addEventListener('click', handleConnectClick);
+    });
+
+
     
     if (sideBarFilterBtn) {
       sideBarFilterBtn.setAttribute("type", "submit");

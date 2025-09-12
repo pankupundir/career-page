@@ -353,6 +353,25 @@ button.close-btn:hover {
   }
 }
 
+/* Scroll Down Icon Animation - Only inner arrow moves */
+.scroll-down-icon svg,
+.scroll-down-icon i,
+.scroll-down-icon::before,
+.scroll-down-icon::after,
+.scroll-down-icon .arrow,
+.scroll-down-icon .icon {
+  animation: arrowBounce 2s ease-in-out infinite;
+}
+
+@keyframes arrowBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
 /* Additional mobile improvements for overlay */
 @media (max-width: 768px) {
   .overlay {
