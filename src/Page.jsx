@@ -115,7 +115,7 @@ const Page = () => {
       shortByFilter.removeEventListener("change", handleSortByChange);
     }
     
-    // Add event listener for btn-job-opening and register-btn classes
+   
     const jobOpeningButtons = document.querySelectorAll('.btn-job-opening');
     const registerButtons = document.querySelectorAll('.register-btn');
     const connectButtons = document.querySelectorAll('.btn-connect');
