@@ -42,12 +42,12 @@ const Header = ({ setLoader, loader }) => {
     if (type === 'user') {
       window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/';
     } else if (type === 'candidate-login') {
-      window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/';
+      window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/candidate-login';
     }
   };
 
   const handleSignupRedirect = () => {
-    window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/talent-registration';
+    window.location.href = ' http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/talent-registration/step1';
   };
 
   useEffect(() => {
