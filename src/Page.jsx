@@ -353,10 +353,9 @@ const Page = () => {
   }
 
   const handleJobOpeningClick = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
+  
     // Redirect to the specified URL
-    window.open('http://rexett-crm-frontend-ccmqsc-63f980-13-48-133-111.traefik.me/talent-registration', '_blank');
+    window.open(`${import.meta.env.VITE_CRM_URL}/talent-registration`, '_blank');
   };
 
   const handleConnectClick = (event) => {
