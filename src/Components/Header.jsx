@@ -47,7 +47,7 @@ const Header = ({ setLoader, loader }) => {
   };
 
   const handleSignupRedirect = () => {
-    window.location.href = `${import.meta.env.VITE_CRM_URL}/talent-registration/step1`;
+    window.location.href = `${import.meta.env.VITE_CRM_URL}/talent-registration`;
   };
 
   useEffect(() => {
