@@ -145,7 +145,6 @@ const JobDetails = () => {
         // Update the iframe src
         googleMapIframe.src = embedUrl;
         
-        console.log(`Google Map iframe updated with coordinates: ${latitude}, ${longitude}`);
       }
     };
 
