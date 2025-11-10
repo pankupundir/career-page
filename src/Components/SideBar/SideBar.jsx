@@ -1620,12 +1620,47 @@ console.log(isEmailVerified,"isEmailVerified")
                       {jobDetails?.screening_questions?.map((res, index) => (
                         <div key={index} className="form-group">
                           <label className="form-label">
-                          {res.question_type === "language" && res.question.includes("[Language]") 
-                            ? res.question.replace("[Language]", res.title || "the language")
-                            : res.question} {res.is_required ? <span className="required-star">*</span> : null}
+                          {(() => {
+                            let displayQuestion = res.question;
+                            if (res.question_type === "Skill" && res.question.includes("[Skill]")) {
+                              displayQuestion = res.question.replace("[Skill]", res.title || "the skill");
+                            } else if (res.question_type === "language" && res.question.includes("[Language]")) {
+                              displayQuestion = res.question.replace("[Language]", res.title || "the language");
+                            }
+                            return displayQuestion;
+                          })()} {res.is_required ? <span className="required-star">*</span> : null}
                         </label>
 
-                          {res.web_type === "input" ? (
+                          {res.question_type === "language" ? (
+                            <div className="language-select-wrapper">
+                              <select
+                                className="form-control form-select apply_experiance language-proficiency-select"
+                                {...register(`question_${index}`, {
+                                  required: res.is_required ? "Please select a proficiency level" : false
+                                })}
+                              >
+                                <option value="">Select proficiency level</option>
+                                <option value="Conversational">Conversational</option>
+                                <option value="Professional">Professional</option>
+                                <option value="Native or Bilingual">Native or Bilingual</option>
+                              </select>
+                            </div>
+                          ) : res.question_type === "Skill" ? (
+                            <div className="skill-select-wrapper">
+                              <select
+                                className="form-control form-select apply_experiance skill-experience-select"
+                                {...register(`question_${index}`, {
+                                  required: res.is_required ? "Please select years of experience" : false
+                                })}
+                              >
+                                <option value="">Select years of experience</option>
+                                <option value="1-2">1-2</option>
+                                <option value="2-3">2-3</option>
+                                <option value="4-6">4-6</option>
+                                <option value="7+">7+</option>
+                              </select>
+                            </div>
+                          ) : res.web_type === "input" ? (
                             <input
                               type="text"
                               placeholder="Enter Answer"
@@ -1635,34 +1670,38 @@ console.log(isEmailVerified,"isEmailVerified")
                             />
                           ) : res.web_type === "radio" ? (
                             <div className="radio-options">
-                              <div>
+                              <div className="custom-radio-wrapper">
                                 <input
                                   type="radio"
                                   id={`yes_${index}`}
                                   name={`radio_${index}`}
+                                  className="custom-radio-input"
                                   {...register(`question_${index}`, {
                                     required: res.is_required ? "Please select an option" : false
                                   })}
                                   value="yes"
                                 />
                                 <label
-                                  className="form-label"
+                                  className="custom-radio-label"
                                   htmlFor={`yes_${index}`}
                                 >
-                                  Yes
+                                  <span className="radio-custom"></span>
+                                  <span className="radio-text">Yes</span>
                                 </label>
                               </div>
-                              <div>
+                              <div className="custom-radio-wrapper">
                                 <input
                                   type="radio"
                                   id={`no_${index}`}
                                   name={`radio_${index}`}
+                                  className="custom-radio-input"
                                   disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
                                   {...register(`question_${index}`)}
                                   value="no"
                                 />
-                                <label className="form-label" htmlFor={`no_${index}`}>
-                                  No
+                                <label className="custom-radio-label" htmlFor={`no_${index}`}>
+                                  <span className="radio-custom"></span>
+                                  <span className="radio-text">No</span>
                                 </label>
                               </div>
                             </div>

@@ -166,6 +166,27 @@
     margin: 0 !important;
     padding: 0 !important;
   }
+
+  .radio-options {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .custom-radio-label {
+    min-width: auto;
+    width: 100%;
+    padding: 10px 16px;
+  }
+
+  .radio-custom {
+    width: 18px;
+    height: 18px;
+  }
+
+  .radio-custom::after {
+    width: 8px;
+    height: 8px;
+  }
 }
 
 .visiblity {
@@ -760,6 +781,31 @@
   border-radius: 8px;
   border: 1px solid #e9ecef;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.questions-listing .form-group .language-select-wrapper {
+  z-index: 1000;
+  pointer-events: auto !important;
+}
+
+.questions-listing .form-group .language-proficiency-select {
+  z-index: 1001;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.questions-listing .form-group .skill-select-wrapper {
+  z-index: 1000;
+  pointer-events: auto !important;
+}
+
+.questions-listing .form-group .skill-experience-select {
+  z-index: 1001;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .radio-options {
@@ -777,6 +823,243 @@
 .radio-options input[type="radio"] {
   width: auto;
   margin: 0;
+}
+
+/* Custom Radio Button Styles */
+.custom-radio-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-radio-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  width: 0;
+  height: 0;
+}
+
+.custom-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 2px solid #e9ecef;
+  background: #ffffff;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.custom-radio-label:hover {
+  border-color: #007bff;
+  background: #f8f9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.radio-custom {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #adb5bd;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.radio-custom::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #007bff;
+  transition: transform 0.2s ease;
+}
+
+.custom-radio-input:checked ~ .custom-radio-label .radio-custom {
+  border-color: #007bff;
+  background: #ffffff;
+}
+
+.custom-radio-input:checked ~ .custom-radio-label .radio-custom::after {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.custom-radio-input:checked ~ .custom-radio-label {
+  border-color: #007bff;
+  background: #f0f8ff;
+  color: #007bff;
+  font-weight: 500;
+}
+
+.custom-radio-input:disabled ~ .custom-radio-label {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f5f5f5;
+}
+
+.custom-radio-input:disabled ~ .custom-radio-label:hover {
+  border-color: #e9ecef;
+  background: #f5f5f5;
+  transform: none;
+  box-shadow: none;
+}
+
+.radio-text {
+  font-size: 14px;
+  color: #495057;
+  transition: color 0.3s ease;
+}
+
+.custom-radio-input:checked ~ .custom-radio-label .radio-text {
+  color: #007bff;
+  font-weight: 500;
+}
+
+/* Language Proficiency Dropdown Styles */
+.language-select-wrapper {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto !important;
+  width: 100%;
+  isolation: isolate;
+}
+
+.language-proficiency-select {
+  width: 100%;
+  background-color: #ffffff;
+  height: 44px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0 16px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #495057;
+  transition: all 0.2s ease;
+  cursor: pointer !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px;
+  padding-right: 40px;
+  position: relative;
+  z-index: 101;
+  pointer-events: auto !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.language-proficiency-select:hover {
+  border-color: #007bff;
+  background-color: #f8f9ff;
+}
+
+.language-proficiency-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
+  background-color: #ffffff;
+}
+
+.language-proficiency-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Skill Experience Dropdown Styles */
+.skill-select-wrapper {
+  position: relative;
+  z-index: 100;
+  pointer-events: auto !important;
+  width: 100%;
+  isolation: isolate;
+}
+
+.skill-experience-select {
+  width: 100%;
+  background-color: #ffffff;
+  height: 44px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 0 16px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #495057;
+  transition: all 0.2s ease;
+  cursor: pointer !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px;
+  padding-right: 40px;
+  position: relative;
+  z-index: 101;
+  pointer-events: auto !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.skill-experience-select:hover {
+  border-color: #007bff;
+  background-color: #f8f9ff;
+}
+
+.skill-experience-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  outline: none;
+  background-color: #ffffff;
+}
+
+.skill-experience-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.skill-experience-select option {
+  padding: 10px;
+  background-color: #ffffff;
+  color: #495057;
+}
+
+.skill-experience-select option:hover {
+  background-color: #f8f9ff;
+}
+
+.language-proficiency-select option {
+  padding: 10px;
+  background-color: #ffffff;
+  color: #495057;
+}
+
+.language-proficiency-select option:hover {
+  background-color: #f8f9ff;
 }
 
 .range-container {
