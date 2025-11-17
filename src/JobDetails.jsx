@@ -241,6 +241,63 @@ const JobDetails = () => {
       }
     }
 
+    // Debug: Log jobDetails to see structure
+    console.log('JobDetails for skills:', {
+      job_skills: jobDetails.job_skills,
+      optional_skills: jobDetails.optional_skills,
+      skills: jobDetails.skills,
+      allKeys: Object.keys(jobDetails)
+    });
+
+    // Update required skills - search in entire document
+    const jobSkillsSideBar = doc.querySelector(`#job_skills_side_bar`) || jobCardDetails?.querySelector(`#job_skills_side_bar`);
+    // Try multiple possible property names for required skills
+    const requiredSkills = jobDetails.job_skills || jobDetails.skills || jobDetails.required_skills || [];
+    
+    if (jobSkillsSideBar) {
+      // Clear existing skills
+      jobSkillsSideBar.innerHTML = '';
+      
+      if (Array.isArray(requiredSkills) && requiredSkills.length > 0) {
+        // Add each skill as a span
+        requiredSkills.forEach((skill) => {
+          const skillSpan = document.createElement('span');
+          skillSpan.className = 'skill-tag-sidebar';
+          skillSpan.textContent = skill.skill_name || skill.normalized_skill_name || skill;
+          jobSkillsSideBar.appendChild(skillSpan);
+        });
+        console.log('Required skills updated:', requiredSkills);
+      } else {
+        console.log('No required skills data found');
+      }
+    } else {
+      console.log('Required skills element #job_skills_side_bar not found in document');
+    }
+
+    // Update optional skills - search in entire document
+    const optionalSkillsSideBar = doc.querySelector(`#optional_skills_side_bar`) || jobCardDetails?.querySelector(`#optional_skills_side_bar`);
+    const optionalSkills = jobDetails.optional_skills || [];
+    
+    if (optionalSkillsSideBar) {
+      // Clear existing skills
+      optionalSkillsSideBar.innerHTML = '';
+      
+      if (Array.isArray(optionalSkills) && optionalSkills.length > 0) {
+        // Add each skill as a span with optional class
+        optionalSkills.forEach((skill) => {
+          const skillSpan = document.createElement('span');
+          skillSpan.className = 'skill-tag-sidebar skill-tag-optional';
+          skillSpan.textContent = skill.skill_name || skill.normalized_skill_name || skill;
+          optionalSkillsSideBar.appendChild(skillSpan);
+        });
+        console.log('Optional skills updated:', optionalSkills);
+      } else {
+        console.log('No optional skills data found');
+      }
+    } else {
+      console.log('Optional skills element #optional_skills_side_bar not found in document');
+    }
+
     return doc.body.innerHTML;
   }
 

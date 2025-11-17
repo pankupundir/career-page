@@ -175,15 +175,10 @@ const Page = () => {
     if (paginationComponent) {
       const root = createRoot(paginationComponent);
       
-      console.log("Pagination Debug:", {
-        total_pages: paginationData.total_pages,
-        totalData: paginationData.totalData,
-        shouldShowPagination: paginationData.total_pages > 1
-      });
+
       
       // Only show pagination if there are multiple pages and total items > 0
       if (paginationData.total_pages > 1 && paginationData.totalData > 0) {
-        console.log("Showing pagination - total_pages > 1 and totalData > 0");
         root.render(
           <div className="d-flex align-items-end justify-content-end mb-3 showing-text-sec">
             <Pagination
@@ -195,7 +190,6 @@ const Page = () => {
           </div>
         );
       } else {
-        console.log("Hiding pagination - total_pages:", paginationData.total_pages, "totalData:", paginationData.totalData);
         // Hide pagination when total_pages is 0 or 1, or when there are no items
         root.render(<div></div>);
       }
@@ -758,8 +752,8 @@ const Page = () => {
       filterList?.contractTypes?.forEach((item) => {
         const listItem = document.createElement("li");
         listItem.innerHTML = `
-                <input type="checkbox" id="${item.type}">
-                <label for="${item.type}">${item.type} (${item.count})</label>
+                <input type="checkbox" id="${item.originalName}">
+                <label for="${item.originalName}">${item.type} (${item.count})</label>
             `;
         contractTypeFilter?.appendChild(listItem);
       });
@@ -798,8 +792,137 @@ const Page = () => {
         }
 
         newJobCard.querySelector(`#job_card_title`).innerText = job.title;
-        newJobCard.querySelector(`#job_company_name`).innerText =
-          job.company_name;
+        const companyNameElement = newJobCard.querySelector(`#job_company_name`);
+        if (companyNameElement) {
+          companyNameElement.innerText = job.company_name;
+          
+          // Add skills below company name
+          const existingSkillsContainer = newJobCard.querySelector('.job-skills-container');
+          if (existingSkillsContainer) {
+            existingSkillsContainer.remove();
+          }
+          
+          if (job.job_skills && job.job_skills.length > 0) {
+            const skillsContainer = document.createElement('div');
+            skillsContainer.className = 'job-skills-container';
+            skillsContainer.setAttribute('data-not-editable', 'true');
+            skillsContainer.style.marginBottom = '15px';
+            
+            const skillsList = document.createElement('ul');
+            skillsList.className = 'skills-list';
+            skillsList.setAttribute('data-not-editable', 'true');
+            skillsList.style.display = 'flex';
+            skillsList.style.alignItems = 'center';
+            skillsList.style.flexWrap = 'wrap';
+            skillsList.style.gap = '8px';
+            skillsList.style.listStyle = 'none';
+            skillsList.style.padding = '0';
+            skillsList.style.margin = '0';
+            
+            job.job_skills.forEach((skill, index) => {
+              const skillItem = document.createElement('li');
+              skillItem.className = 'skill-tag';
+              skillItem.setAttribute('data-not-editable', 'true');
+              skillItem.id = `job_skill_${skill.id || skill.skill_id || index}`;
+              skillItem.style.display = 'flex';
+              skillItem.style.alignItems = 'center';
+              skillItem.style.gap = '6px';
+              
+              // Create SVG star icon
+              const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svgIcon.setAttribute('class', 'skill-icon');
+              svgIcon.setAttribute('width', '14');
+              svgIcon.setAttribute('height', '14');
+              svgIcon.setAttribute('viewBox', '0 0 24 24');
+              svgIcon.setAttribute('fill', 'none');
+              svgIcon.setAttribute('stroke', 'currentColor');
+              svgIcon.setAttribute('stroke-width', '2');
+              svgIcon.setAttribute('stroke-linecap', 'round');
+              svgIcon.setAttribute('stroke-linejoin', 'round');
+              svgIcon.style.flexShrink = '0';
+              
+              const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+              polygon.setAttribute('points', '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2');
+              svgIcon.appendChild(polygon);
+              
+              // Create span for skill name
+              const skillSpan = document.createElement('span');
+              skillSpan.textContent = skill.skill_name || skill;
+              
+              skillItem.appendChild(svgIcon);
+              skillItem.appendChild(skillSpan);
+              skillsList.appendChild(skillItem);
+            });
+            
+            skillsContainer.appendChild(skillsList);
+            
+            // Insert skills container after company name
+            if (companyNameElement.parentNode) {
+              companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
+            }
+          } else if (job.skills) {
+            // Fallback to comma-separated skills string
+            const skillsContainer = document.createElement('div');
+            skillsContainer.className = 'job-skills-container';
+            skillsContainer.setAttribute('data-not-editable', 'true');
+            skillsContainer.style.marginBottom = '15px';
+            
+            const skillsList = document.createElement('ul');
+            skillsList.className = 'skills-list';
+            skillsList.setAttribute('data-not-editable', 'true');
+            skillsList.style.display = 'flex';
+            skillsList.style.alignItems = 'center';
+            skillsList.style.flexWrap = 'wrap';
+            skillsList.style.gap = '8px';
+            skillsList.style.listStyle = 'none';
+            skillsList.style.padding = '0';
+            skillsList.style.margin = '0';
+            
+            job.skills.split(',').forEach((skill, index) => {
+              const skillItem = document.createElement('li');
+              skillItem.className = 'skill-tag';
+              skillItem.setAttribute('data-not-editable', 'true');
+              skillItem.style.display = 'flex';
+              skillItem.style.alignItems = 'center';
+              skillItem.style.gap = '6px';
+              
+              // Create SVG star icon
+              const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              svgIcon.setAttribute('class', 'skill-icon');
+              svgIcon.setAttribute('width', '14');
+              svgIcon.setAttribute('height', '14');
+              svgIcon.setAttribute('viewBox', '0 0 24 24');
+              svgIcon.setAttribute('fill', 'none');
+              svgIcon.setAttribute('stroke', 'currentColor');
+              svgIcon.setAttribute('stroke-width', '2');
+              svgIcon.setAttribute('stroke-linecap', 'round');
+              svgIcon.setAttribute('stroke-linejoin', 'round');
+              svgIcon.style.flexShrink = '0';
+              
+              const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+              polygon.setAttribute('points', '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2');
+              svgIcon.appendChild(polygon);
+              
+              // Create span for skill name
+              const skillSpan = document.createElement('span');
+              skillSpan.textContent = skill.trim();
+              
+              skillItem.appendChild(svgIcon);
+              skillItem.appendChild(skillSpan);
+              skillsList.appendChild(skillItem);
+            });
+            
+            skillsContainer.appendChild(skillsList);
+            
+            // Insert skills container after company name
+            if (companyNameElement.parentNode) {
+              companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
+            }
+          }
+        } else {
+          // Fallback if company name element not found
+          newJobCard.querySelector(`#job_company_name`).innerText = job.company_name;
+        }
         newJobCard.querySelector(`#job-post-time`).innerText = moment(
           job.created_at
         ).fromNow();
@@ -1013,7 +1136,6 @@ const Page = () => {
     }
   }
 
-  console.log(selectedFilter,"selectedFilter")
 
   return (
     
