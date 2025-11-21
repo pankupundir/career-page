@@ -276,7 +276,7 @@ const JobDetails = () => {
 
     // Update optional skills - search in entire document
     const optionalSkillsSideBar = doc.querySelector(`#optional_skills_side_bar`) || jobCardDetails?.querySelector(`#optional_skills_side_bar`);
-    const optionalSkills = jobDetails.optional_skills || [];
+    const optionalSkills = jobDetails.optional_job_skills || [];
     
     if (optionalSkillsSideBar) {
       // Clear existing skills
