@@ -60,7 +60,6 @@ const Page = () => {
   useEffect(() => {
     setFilterActivate(false);
     fetchWebsite();
-     fetchFilterList();
       fetchJobData();
     
   }, []);
@@ -292,6 +291,11 @@ const Page = () => {
       numberSpan.textContent = paginationData.totalData;
     }
   }, [paginationData.totalData, htmlContent]);
+
+  // Call fetchFilterList after DOM is ready but before paint
+  useEffect(() => {
+    fetchFilterList();
+  }, []);
 
   // Restore search input value and filter states from state
   useEffect(() => {
