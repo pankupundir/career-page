@@ -795,10 +795,153 @@ const Page = () => {
           newJobCard = copyFirstNode.cloneNode(true);
         }
 
-        newJobCard.querySelector(`#job_card_title`).innerText = job.title;
+        const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
+        jobTitleElement.innerText = job.title;
+        
+        // Remove existing job picture and container if they exist (in case URL was removed)
+        const existingJobPicture = newJobCard.querySelector('.job-picture');
+        const existingTitleContainer = newJobCard.querySelector('.job-title-container');
+        
+        // Helper function to check if URL is valid
+        const isValidUrl = (url) => {
+          return url && 
+                 url !== null && 
+                 url !== undefined && 
+                 typeof url === 'string' && 
+                 url.trim() !== '';
+        };
+        
+        // Clean up existing containers if URL is null/empty
+        if (!isValidUrl(job.job_picture_url)) {
+          if (existingJobPicture) {
+            existingJobPicture.remove();
+          }
+          if (existingTitleContainer) {
+            // If container exists, unwrap the title to restore normal display
+            const titleText = jobTitleElement.innerText;
+            existingTitleContainer.parentNode.replaceChild(jobTitleElement, existingTitleContainer);
+            jobTitleElement.innerText = titleText;
+            // Reset any flex styles that were applied
+            jobTitleElement.style.flex = '';
+            jobTitleElement.style.minWidth = '';
+          }
+        }
+        
+        // Add job picture next to job title if it exists and is not null/empty
+        if (isValidUrl(job.job_picture_url)) {
+          // Remove existing elements before creating new ones
+          if (existingJobPicture) {
+            existingJobPicture.remove();
+          }
+          if (existingTitleContainer) {
+            // If container exists, unwrap the title
+            const titleText = jobTitleElement.innerText;
+            existingTitleContainer.parentNode.replaceChild(jobTitleElement, existingTitleContainer);
+            jobTitleElement.innerText = titleText;
+          }
+          
+          // Create image wrapper for better styling
+          const imageWrapper = document.createElement('div');
+          imageWrapper.className = 'job-picture-wrapper';
+          imageWrapper.setAttribute('data-not-editable', 'true');
+          imageWrapper.style.flexShrink = '0';
+          imageWrapper.style.width = '60px';
+          imageWrapper.style.height = '60px';
+          imageWrapper.style.borderRadius = '6px';
+          imageWrapper.style.overflow = 'hidden';
+          imageWrapper.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.08)';
+          imageWrapper.style.border = '1px solid rgba(0, 0, 0, 0.06)';
+          imageWrapper.style.backgroundColor = '#f5f5f5';
+          
+          // Create image element
+          const jobPicture = document.createElement('img');
+          jobPicture.className = 'job-picture';
+          jobPicture.setAttribute('data-not-editable', 'true');
+          jobPicture.src = job.job_picture_url;
+          jobPicture.alt = job.title || 'Job image';
+          jobPicture.style.width = '100%';
+          jobPicture.style.height = '100%';
+          jobPicture.style.objectFit = 'cover';
+          jobPicture.style.display = 'block';
+          
+          // Handle image load errors
+          jobPicture.onerror = function() {
+            this.style.display = 'none';
+            imageWrapper.style.display = 'none';
+          };
+          
+          imageWrapper.appendChild(jobPicture);
+          
+          // Get company name element before restructuring
+          const companyNameElement = newJobCard.querySelector(`#job_company_name`);
+          
+          // Create outer container: [Logo] [Title + Company Name Column]
+          const outerContainer = document.createElement('div');
+          outerContainer.className = 'job-title-container';
+          outerContainer.setAttribute('data-not-editable', 'true');
+          outerContainer.style.display = 'flex';
+          outerContainer.style.alignItems = 'flex-start';
+          outerContainer.style.gap = '12px';
+          outerContainer.style.flexWrap = 'wrap';
+          
+          // Create inner container for title and company name (vertical stack)
+          const titleContentContainer = document.createElement('div');
+          titleContentContainer.className = 'job-title-content';
+          titleContentContainer.setAttribute('data-not-editable', 'true');
+          titleContentContainer.style.display = 'flex';
+          titleContentContainer.style.flexDirection = 'column';
+          titleContentContainer.style.flex = '1';
+          titleContentContainer.style.minWidth = '0';
+          
+          // Wrap title and image in container
+          if (jobTitleElement.parentNode) {
+            // Store the title's current styles
+            const titleStyles = window.getComputedStyle(jobTitleElement);
+            const titleMargin = titleStyles.margin;
+            const titleMarginBottom = titleStyles.marginBottom;
+            
+            // Insert outer container before title
+            jobTitleElement.parentNode.insertBefore(outerContainer, jobTitleElement);
+            
+            // Add image wrapper first (left side)
+            outerContainer.appendChild(imageWrapper);
+            
+            // Add title to content container
+            titleContentContainer.appendChild(jobTitleElement);
+            
+            // Add company name to content container if it exists
+            if (companyNameElement && companyNameElement.parentNode) {
+              // Set company name text
+              companyNameElement.innerText = job.company_name;
+              // Remove company name from its current position
+              companyNameElement.parentNode.removeChild(companyNameElement);
+              // Add margin-top for spacing
+              companyNameElement.style.marginTop = '8px';
+              companyNameElement.style.marginBottom = '0';
+              titleContentContainer.appendChild(companyNameElement);
+            }
+            
+            // Add content container to outer container
+            outerContainer.appendChild(titleContentContainer);
+            
+            // Preserve original margin on container if needed
+            if (titleMargin && titleMargin !== '0px') {
+              outerContainer.style.margin = titleMargin;
+            }
+            if (titleMarginBottom && titleMarginBottom !== '0px') {
+              outerContainer.style.marginBottom = titleMarginBottom;
+            }
+          }
+        }
+        
+        // Handle company name when there's no image
         const companyNameElement = newJobCard.querySelector(`#job_company_name`);
         if (companyNameElement) {
-          companyNameElement.innerText = job.company_name;
+          // Only set text if it wasn't already set (when image exists, it's set above)
+          if (!isValidUrl(job.job_picture_url)) {
+            companyNameElement.innerText = job.company_name;
+            companyNameElement.style.marginTop = '';
+          }
           
           // Add skills below company name
           const existingSkillsContainer = newJobCard.querySelector('.job-skills-container');
