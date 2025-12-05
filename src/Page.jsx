@@ -6,7 +6,7 @@ import {
   DEFAULT_TEMPLATE_ID,
   DEFAULT_LADING_PAGE,
 } from "./config/webBuilder";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import NoPageFound from "./NoPageFound";
 import ScreenLoader from "./ScreenLoader";
 import WebsiteLoader from "./Components/WebsiteLoader";
@@ -16,6 +16,7 @@ import Header from "./Components/Header";
 import usePagination from "./Hooks/usePaginantion";
 import Pagination from "./Components/Pagination";
 import { initializeAccordion } from "./Components/AccordionInit";
+import LocationModal from "./Components/LocationModal";
 
 const Page = () => {
   const [website, setWebsite] = useState({
@@ -45,6 +46,7 @@ const Page = () => {
   });
 
   let { pageId } = useParams();
+  const navigate = useNavigate();
   const { page, onPageChange, setPage } = usePagination();
   const [paginationData, setPaginationData] = useState({
     totalData: 0,
@@ -56,6 +58,13 @@ const Page = () => {
   const [initialJobCard, setInitialJobCard] = useState(null);
   const [originalJobCardHTML, setOriginalJobCardHTML] = useState(null);
   const ITEMS_PER_PAGE = 5;
+  const [locationModal, setLocationModal] = useState({
+    isOpen: false,
+    latitude: null,
+    longitude: null,
+    locationName: '',
+    companyName: ''
+  });
 
   useEffect(() => {
     setFilterActivate(false);
@@ -119,6 +128,7 @@ const Page = () => {
     const registerButtons = document.querySelectorAll('.register-btn');
     const connectButtons = document.querySelectorAll('.btn-connect');
     const connectButtonScrollDown = document.querySelectorAll('.scroll-down-icon');
+    const seeAllButtons = document.querySelectorAll('#see_all, .see_all, .see_all_container button, .see_all_container a, .see_all_container .see_all');
     
     jobOpeningButtons.forEach(button => {
       button.removeEventListener('click', handleJobOpeningClick);
@@ -140,6 +150,18 @@ const Page = () => {
       button.removeEventListener('click', handleConnectClick);
       button.addEventListener('click', handleConnectClick);
     });
+
+    seeAllButtons.forEach(button => {
+      button.removeEventListener('click', handleSeeAllClick);
+      button.addEventListener('click', handleSeeAllClick);
+    });
+
+    // Also handle the button by ID directly (in case it's not found by class)
+    const seeAllButtonById = document.getElementById('see_all');
+    if (seeAllButtonById) {
+      seeAllButtonById.removeEventListener('click', handleSeeAllClick);
+      seeAllButtonById.addEventListener('click', handleSeeAllClick);
+    }
 
 
     
@@ -195,8 +217,69 @@ const Page = () => {
     }
     initializeAccordion();
     
+    // Add event delegation for location clicks
+    const handleLocationClickDelegation = (e) => {
+      const locationElement = e.target.closest('#job_location') || (e.target.id === 'job_location' ? e.target : null);
+      if (locationElement) {
+        const latitude = locationElement.getAttribute('data-latitude');
+        const longitude = locationElement.getAttribute('data-longitude');
+        const locationName = locationElement.textContent.trim() || 'Job Location';
+        
+        // Find the job card to get company name
+        const jobCard = locationElement.closest('#job_card');
+        let companyName = '';
+        if (jobCard) {
+          const companyNameElement = jobCard.querySelector('#job_company_name');
+          if (companyNameElement) {
+            companyName = companyNameElement.textContent.trim() || '';
+          }
+        }
+        
+        if (latitude && longitude) {
+          e.preventDefault();
+          e.stopPropagation();
+          setLocationModal({
+            isOpen: true,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            locationName: locationName,
+            companyName: companyName
+          });
+        }
+      }
+    };
+    
+    // Add event delegation for job card clicks
+    const handleJobCardClick = (e) => {
+      // Don't navigate if clicking on location element (it has its own handler)
+      if (e.target.closest('#job_location') || e.target.id === 'job_location') {
+        return;
+      }
+      
+      // Find the closest job card element
+      const jobCard = e.target.closest('#job_card');
+      if (jobCard) {
+        const jobId = jobCard.getAttribute('data-job-id');
+        // Don't navigate if clicking on buttons or links inside the card
+        if (!e.target.closest('button') && !e.target.closest('a') && !e.target.closest('.btn-job-opening') && !e.target.closest('.register-btn')) {
+          if (jobId) {
+            e.preventDefault();
+            e.stopPropagation();
+            navigate(`/job-details/${jobId}`);
+          }
+        }
+      }
+    };
+    
+    // Attach event listeners to document for event delegation
+    document.addEventListener('click', handleLocationClickDelegation);
+    document.addEventListener('click', handleJobCardClick);
+    
     // Cleanup function
     return () => {
+      // Remove location and job card click listeners
+      document.removeEventListener('click', handleLocationClickDelegation);
+      document.removeEventListener('click', handleJobCardClick);
       if (sideBarFilterForm) {
         sideBarFilterForm.removeEventListener("submit", handleFormSubmit);
       }
@@ -206,7 +289,7 @@ const Page = () => {
       if (shortByFilter) {
         shortByFilter.removeEventListener("change", handleSortByChange);
       }
-      // Clean up job opening, register, and connect button event listeners
+      // Clean up job opening, register, connect, and see all button event listeners
       jobOpeningButtons.forEach(button => {
         button.removeEventListener('click', handleJobOpeningClick);
       });
@@ -216,6 +299,13 @@ const Page = () => {
       connectButtons.forEach(button => {
         button.removeEventListener('click', handleConnectClick);
       });
+      seeAllButtons.forEach(button => {
+        button.removeEventListener('click', handleSeeAllClick);
+      });
+      const seeAllButtonById = document.getElementById('see_all');
+      if (seeAllButtonById) {
+        seeAllButtonById.removeEventListener('click', handleSeeAllClick);
+      }
     };
   }, [htmlContent, paginationData]);
 
@@ -369,6 +459,22 @@ const Page = () => {
     } else {
       console.warn('job-openings div not found');
     }
+  };
+
+  const handleSeeAllClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    navigate('/see-all-jobs');
+  };
+
+  const closeLocationModal = () => {
+    setLocationModal({
+      isOpen: false,
+      latitude: null,
+      longitude: null,
+      locationName: '',
+      companyName: ''
+    });
   };
 
   const handleSortByChange = (event) => {
@@ -607,6 +713,129 @@ const Page = () => {
     }
   }
 
+  // Helper function to create SVG icons
+  const createSVGIcon = (type, size = 16) => {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.style.flexShrink = '0';
+    svg.style.display = 'inline-block';
+    svg.style.verticalAlign = 'middle';
+    
+    switch(type) {
+      case 'company':
+        // Building icon
+        const buildingPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        buildingPath.setAttribute('d', 'M3 21h18M5 21V7l8-4v18M19 21V11l-6-4');
+        svg.appendChild(buildingPath);
+        const window1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        window1.setAttribute('x1', '9');
+        window1.setAttribute('y1', '9');
+        window1.setAttribute('x2', '9.01');
+        window1.setAttribute('y2', '9');
+        svg.appendChild(window1);
+        const window2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        window2.setAttribute('x1', '9');
+        window2.setAttribute('y1', '12');
+        window2.setAttribute('x2', '9.01');
+        window2.setAttribute('y2', '12');
+        svg.appendChild(window2);
+        const window3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        window3.setAttribute('x1', '9');
+        window3.setAttribute('y1', '15');
+        window3.setAttribute('x2', '9.01');
+        window3.setAttribute('y2', '15');
+        svg.appendChild(window3);
+        break;
+      case 'location':
+        // Map pin icon
+        const pinPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        pinPath.setAttribute('d', 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z');
+        svg.appendChild(pinPath);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '10');
+        circle.setAttribute('r', '3');
+        svg.appendChild(circle);
+        break;
+      case 'skill':
+        // Tag icon
+        const tagPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tagPath.setAttribute('d', 'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z');
+        svg.appendChild(tagPath);
+        const tagCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        tagCircle.setAttribute('cx', '7');
+        tagCircle.setAttribute('cy', '7');
+        tagCircle.setAttribute('r', '1');
+        svg.appendChild(tagCircle);
+        break;
+      case 'time':
+        // Clock icon
+        const clockCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        clockCircle.setAttribute('cx', '12');
+        clockCircle.setAttribute('cy', '12');
+        clockCircle.setAttribute('r', '10');
+        svg.appendChild(clockCircle);
+        const clockLine1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        clockLine1.setAttribute('x1', '12');
+        clockLine1.setAttribute('y1', '6');
+        clockLine1.setAttribute('x2', '12');
+        clockLine1.setAttribute('y2', '12');
+        svg.appendChild(clockLine1);
+        const clockLine2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        clockLine2.setAttribute('x1', '16');
+        clockLine2.setAttribute('y1', '14');
+        clockLine2.setAttribute('x2', '12');
+        clockLine2.setAttribute('y2', '12');
+        svg.appendChild(clockLine2);
+        break;
+      default:
+        return svg;
+    }
+    
+    return svg;
+  };
+
+  // Helper function to add icon to element
+  const addIconToElement = (element, iconType, size = 16) => {
+    if (!element) return;
+    
+    // Check if icon already exists
+    const existingIcon = element.querySelector('.job-icon');
+    if (existingIcon) {
+      existingIcon.remove();
+    }
+    
+    // Create wrapper if element doesn't have display flex
+    const currentDisplay = window.getComputedStyle(element).display;
+    if (currentDisplay !== 'flex' && currentDisplay !== 'inline-flex') {
+      element.style.display = 'flex';
+      element.style.alignItems = 'center';
+      element.style.gap = '6px';
+    } else {
+      element.style.gap = '6px';
+      element.style.alignItems = 'center';
+    }
+    
+    const icon = createSVGIcon(iconType, size);
+    icon.classList.add('job-icon');
+    icon.style.color = '#666';
+    icon.style.marginRight = '4px';
+    
+    // Insert icon at the beginning
+    if (element.firstChild) {
+      element.insertBefore(icon, element.firstChild);
+    } else {
+      element.appendChild(icon);
+    }
+  };
+
   async function updateJobListContent(htmlString, jobData) {
     const parser = new DOMParser();
     let doc;
@@ -677,6 +906,21 @@ const Page = () => {
     if (isFilterActivate) {
       const jobCards = doc.querySelectorAll("#job_card");
       jobCards.forEach((job) => job.remove());
+      // Apply flex layout styling when filters are active (working with document)
+      const jobCardViewActive = document.getElementById("job_card_view");
+      if (jobCardViewActive) {
+        jobCardViewActive.style.display = 'flex';
+        jobCardViewActive.style.flexDirection = 'row';
+        jobCardViewActive.style.flexWrap = 'wrap';
+        jobCardViewActive.style.gap = '13px';
+      }
+      // Also style the jobListParent if it's in the document
+      if (jobListParent && jobListParent.ownerDocument === document) {
+        jobListParent.style.display = 'flex';
+        jobListParent.style.flexDirection = 'row';
+        jobListParent.style.flexWrap = 'wrap';
+        jobListParent.style.gap = '13px';
+      }
     } else {
       const previousSortBar = doc.getElementById("sort_bar");
       if (previousSortBar) previousSortBar.remove();
@@ -694,6 +938,11 @@ const Page = () => {
       // Check if job-card-view exists and insert sort bar accordingly
       const jobCardView = doc.getElementById("job_card_view");
       if (jobCardView) {
+        // Apply flex layout styling to job_card_view if it exists
+        jobCardView.style.display = 'flex';
+        jobCardView.style.flexDirection = 'row';
+        jobCardView.style.flexWrap = 'wrap';
+        jobCardView.style.gap = '13px';
         // Insert sort bar before job-card-view
         jobCardView.parentNode.insertBefore(sortBar, jobCardView);
       } else {
@@ -770,6 +1019,14 @@ const Page = () => {
       return doc.body.innerHTML;
     }
 
+    // Apply flex layout styling to the job cards container
+    if (jobListParent) {
+      jobListParent.style.display = 'flex';
+      jobListParent.style.flexDirection = 'row';
+      jobListParent.style.flexWrap = 'wrap';
+      jobListParent.style.gap = '13px';
+    }
+
     if (jobData.length === 0) {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
@@ -784,6 +1041,16 @@ const Page = () => {
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
+      
+      // Format contract type: "full-time" -> "Full Time"
+      const formatContractType = (contractType) => {
+        if (!contractType) return '';
+        return contractType
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      };
+      
       jobData.forEach((job) => {
         let newJobCard;
         // Use original HTML structure if available, otherwise use the current card
@@ -795,12 +1062,33 @@ const Page = () => {
           newJobCard = copyFirstNode.cloneNode(true);
         }
 
+        // Style each job card to take up 1/3 of the row width (accounting for gaps)
+        // For 3 cards with 20px gap: (100% - 40px) / 3 = calc((100% - 40px) / 3)
+        newJobCard.style.flex = '0 0 calc((100% - 40px) / 3)';
+        newJobCard.style.minWidth = 'calc((100% - 40px) / 3)';
+        newJobCard.style.maxWidth = 'calc((100% - 40px) / 3)';
+        newJobCard.style.width = 'calc((100% - 40px) / 3)';
+        
+        // Enhanced job card design with better border radius and styling
+        newJobCard.style.borderRadius = '16px';
+        newJobCard.style.overflow = 'hidden';
+        newJobCard.style.backgroundColor = '#ffffff';
+        newJobCard.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06)';
+        newJobCard.style.transition = 'all 0.3s ease';
+        newJobCard.style.border = '1px solid rgba(0, 0, 0, 0.08)';
+        
+        // Add hover effect
+        newJobCard.addEventListener('mouseenter', function() {
+          this.style.boxShadow = '0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.08)';
+          this.style.transform = 'translateY(-2px)';
+        });
+        newJobCard.addEventListener('mouseleave', function() {
+          this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06)';
+          this.style.transform = 'translateY(0)';
+        });
+
         const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
         jobTitleElement.innerText = job.title;
-        
-        // Remove existing job picture and container if they exist (in case URL was removed)
-        const existingJobPicture = newJobCard.querySelector('.job-picture');
-        const existingTitleContainer = newJobCard.querySelector('.job-title-container');
         
         // Helper function to check if URL is valid
         const isValidUrl = (url) => {
@@ -811,86 +1099,36 @@ const Page = () => {
                  url.trim() !== '';
         };
         
-        // Clean up existing containers if URL is null/empty
-        if (!isValidUrl(job.job_picture_url)) {
-          if (existingJobPicture) {
-            existingJobPicture.remove();
+        // Find and update the existing job_card_image element
+        const jobCardImage = newJobCard.querySelector(`#job_card_image`);
+        if (jobCardImage) {
+          if (isValidUrl(job.job_picture_url)) {
+            // Update the image src with API image
+            jobCardImage.src = job.job_picture_url;
+            jobCardImage.alt = job.title || 'Job image';
+            jobCardImage.style.display = 'block';
+            // Make the image with better styling
+            jobCardImage.style.width = '100%';
+            jobCardImage.style.height = '220px';
+            jobCardImage.style.objectFit = 'cover';
+            jobCardImage.style.borderRadius = '16px 16px 0 0';
+            jobCardImage.style.marginBottom = '0';
+            
+            // Handle image load errors
+            jobCardImage.onerror = function() {
+              this.style.display = 'none';
+            };
+          } else {
+            // Hide the image if no valid URL
+            jobCardImage.style.display = 'none';
           }
-          if (existingTitleContainer) {
-            // If container exists, unwrap the title to restore normal display
-            const titleText = jobTitleElement.innerText;
-            existingTitleContainer.parentNode.replaceChild(jobTitleElement, existingTitleContainer);
-            jobTitleElement.innerText = titleText;
-            // Reset any flex styles that were applied
-            jobTitleElement.style.flex = '';
-            jobTitleElement.style.minWidth = '';
-          }
-        }
-        
-        // Add job picture at top-right of card if it exists and is not null/empty
-        if (isValidUrl(job.job_picture_url)) {
-          // Remove existing elements before creating new ones
-          if (existingJobPicture) {
-            existingJobPicture.remove();
-          }
-          if (existingTitleContainer) {
-            // If container exists, unwrap the title
-            const titleText = jobTitleElement.innerText;
-            existingTitleContainer.parentNode.replaceChild(jobTitleElement, existingTitleContainer);
-            jobTitleElement.innerText = titleText;
-          }
-          
-          // Make the job card position relative for absolute positioning
-          if (newJobCard.style.position !== 'absolute') {
-            const computedPosition = window.getComputedStyle(newJobCard).position;
-            if (computedPosition === 'static' || !computedPosition) {
-              newJobCard.style.position = 'relative';
-            }
-          }
-          
-          // Create image wrapper for better styling
-          const imageWrapper = document.createElement('div');
-          imageWrapper.className = 'job-picture-wrapper';
-          imageWrapper.setAttribute('data-not-editable', 'true');
-          imageWrapper.style.position = 'absolute';
-          imageWrapper.style.top = '15px';
-          imageWrapper.style.right = '15px';
-          imageWrapper.style.width = '60px';
-          imageWrapper.style.height = '60px';
-          imageWrapper.style.borderRadius = '6px';
-          imageWrapper.style.overflow = 'hidden';
-          imageWrapper.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.08)';
-          imageWrapper.style.border = '1px solid rgba(0, 0, 0, 0.06)';
-          imageWrapper.style.backgroundColor = '#f5f5f5';
-          imageWrapper.style.zIndex = '10';
-          
-          // Create image element
-          const jobPicture = document.createElement('img');
-          jobPicture.className = 'job-picture';
-          jobPicture.setAttribute('data-not-editable', 'true');
-          jobPicture.src = job.job_picture_url;
-          jobPicture.alt = job.title || 'Job image';
-          jobPicture.style.width = '100%';
-          jobPicture.style.height = '100%';
-          jobPicture.style.objectFit = 'cover';
-          jobPicture.style.display = 'block';
-          
-          // Handle image load errors
-          jobPicture.onerror = function() {
-            this.style.display = 'none';
-            imageWrapper.style.display = 'none';
-          };
-          
-          imageWrapper.appendChild(jobPicture);
-          
-          // Append image wrapper to the job card
-          newJobCard.appendChild(imageWrapper);
         }
         
         // Handle company name
         const companyNameElement = newJobCard.querySelector(`#job_company_name`);
         if (companyNameElement) {
           companyNameElement.innerText = job.company_name;
+          addIconToElement(companyNameElement, 'company', 16);
           if (!isValidUrl(job.job_picture_url)) {
             companyNameElement.style.marginTop = '';
           }
@@ -927,22 +1165,10 @@ const Page = () => {
               skillItem.style.alignItems = 'center';
               skillItem.style.gap = '6px';
               
-              // Create SVG star icon
-              const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              // Create SVG tag icon for skills
+              const svgIcon = createSVGIcon('skill', 14);
               svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.setAttribute('width', '14');
-              svgIcon.setAttribute('height', '14');
-              svgIcon.setAttribute('viewBox', '0 0 24 24');
-              svgIcon.setAttribute('fill', 'none');
-              svgIcon.setAttribute('stroke', 'currentColor');
-              svgIcon.setAttribute('stroke-width', '2');
-              svgIcon.setAttribute('stroke-linecap', 'round');
-              svgIcon.setAttribute('stroke-linejoin', 'round');
-              svgIcon.style.flexShrink = '0';
-              
-              const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-              polygon.setAttribute('points', '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2');
-              svgIcon.appendChild(polygon);
+              svgIcon.style.color = '#666';
               
               // Create span for skill name
               const skillSpan = document.createElement('span');
@@ -985,22 +1211,10 @@ const Page = () => {
               skillItem.style.alignItems = 'center';
               skillItem.style.gap = '6px';
               
-              // Create SVG star icon
-              const svgIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+              // Create SVG tag icon for skills
+              const svgIcon = createSVGIcon('skill', 14);
               svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.setAttribute('width', '14');
-              svgIcon.setAttribute('height', '14');
-              svgIcon.setAttribute('viewBox', '0 0 24 24');
-              svgIcon.setAttribute('fill', 'none');
-              svgIcon.setAttribute('stroke', 'currentColor');
-              svgIcon.setAttribute('stroke-width', '2');
-              svgIcon.setAttribute('stroke-linecap', 'round');
-              svgIcon.setAttribute('stroke-linejoin', 'round');
-              svgIcon.style.flexShrink = '0';
-              
-              const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-              polygon.setAttribute('points', '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2');
-              svgIcon.appendChild(polygon);
+              svgIcon.style.color = '#666';
               
               // Create span for skill name
               const skillSpan = document.createElement('span');
@@ -1020,17 +1234,52 @@ const Page = () => {
           }
         } else {
           // Fallback if company name element not found
-          newJobCard.querySelector(`#job_company_name`).innerText = job.company_name;
+          const fallbackCompanyElement = newJobCard.querySelector(`#job_company_name`);
+          if (fallbackCompanyElement) {
+            fallbackCompanyElement.innerText = job.company_name;
+            addIconToElement(fallbackCompanyElement, 'company', 16);
+          }
         }
-        newJobCard.querySelector(`#job-post-time`).innerText = moment(
-          job.created_at
-        ).fromNow();
-        newJobCard.querySelector(`#job_contract_type`).innerText =
-          job.contract_type;
+        // Handle time display with icon
+        const timeElement = newJobCard.querySelector(`#job-post-time`);
+        if (timeElement) {
+          timeElement.innerText = moment(job.created_at).fromNow();
+          addIconToElement(timeElement, 'time', 14);
+          timeElement.style.display = 'inline-flex';
+          timeElement.style.alignItems = 'center';
+          timeElement.style.gap = '6px';
+          timeElement.style.color = '#666';
+          timeElement.style.fontSize = '13px';
+          timeElement.style.width = 'fit-content';
+        }
+        
+        const contractTypeElement = newJobCard.querySelector(`#job_contract_type`);
+        if (contractTypeElement) {
+          contractTypeElement.innerText = formatContractType(job.contract_type);
+          contractTypeElement.style.marginTop = '10px';
+        }
         
         // Add location display if location field exists
         if (job.job_location && newJobCard.querySelector(`#job_location`)) {
-          newJobCard.querySelector(`#job_location`).innerText = job.job_location;
+          const locationElement = newJobCard.querySelector(`#job_location`);
+          locationElement.innerText = job.job_location;
+          addIconToElement(locationElement, 'location', 16);
+          locationElement.style.display = 'flex';
+          locationElement.style.alignItems = 'center';
+          locationElement.style.gap = '6px';
+          
+          // Add click handler for location modal
+          // Store lat/long from job data (use provided values or job.lat/job.long)
+          const latitude = job.lat || 22.7681995;
+          const longitude = job.long || 86.20066969999999;
+          
+          // Set data attributes for coordinates
+          locationElement.setAttribute('data-latitude', latitude);
+          locationElement.setAttribute('data-longitude', longitude);
+          
+          // Make location clickable (event delegation handles the click)
+          locationElement.style.cursor = 'pointer';
+          locationElement.style.userSelect = 'none';
         }
         
         // Add created_at display in a more readable format
@@ -1053,10 +1302,11 @@ const Page = () => {
             }
           }
         }
-        if (newJobCard.querySelector("#job-details-btn")) {
-          newJobCard
-            .querySelector("#job-details-btn")
-            .setAttribute("href", `/job-details/${job.job_external_id}`);
+        // Make entire card clickable to open job details
+        if (job.job_external_id) {
+          newJobCard.style.cursor = 'pointer';
+          // Add data attribute for event delegation
+          newJobCard.setAttribute('data-job-id', job.job_external_id);
         }
         // Ensure we're not appending to a button or inappropriate element
         if (jobListParent && jobListParent.tagName.toLowerCase() !== 'button' && 
@@ -1196,12 +1446,8 @@ const Page = () => {
           total_pages: response.data.data.total_pages || 0,
         };     
         setPaginationData(newPaginationData);
-        // Only fetch website if any filter value is present
-        console.log("Filter parameters:", { contract_type, skill_name, work_type, search, sortBy })
-        const hasActiveFilters = [contract_type, skill_name, work_type, search, sortBy].some(value => value && value.trim() !== '');
-        if (hasActiveFilters) {
-          fetchWebsite();
-        }
+        // Don't fetch website when filters change - only update job data
+        // The website HTML structure doesn't need to be reloaded on filter changes
    
    
       } else {
@@ -1252,7 +1498,14 @@ const Page = () => {
           </>
         )
       }
-      
+      <LocationModal
+        isOpen={locationModal.isOpen}
+        onClose={closeLocationModal}
+        latitude={locationModal.latitude}
+        longitude={locationModal.longitude}
+        locationName={locationModal.locationName}
+        companyName={locationModal.companyName}
+      />
     </div>
   );
 };

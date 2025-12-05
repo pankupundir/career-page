@@ -81,3 +81,201 @@
   color: #ff4c4c;
   padding: 20px;
 }
+
+/* Enhanced Job Card Design */
+#job_card {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.3s ease !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  padding: 0 !important;
+  flex: 0 0 calc((100% - 40px) / 3) !important;
+  min-width: calc((100% - 40px) / 3) !important;
+  max-width: calc((100% - 40px) / 3) !important;
+  width: calc((100% - 40px) / 3) !important;
+  box-sizing: border-box !important;
+}
+
+#job_card:hover {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Job card image styling */
+#job_card #job_card_image {
+  border-radius: 16px 16px 0 0 !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+/* Job card content padding */
+#job_card > *:not(#job_card_image) {
+  padding: 16px 20px !important;
+}
+
+#job_card > *:first-child:not(#job_card_image) {
+  padding-top: 20px !important;
+}
+
+/* Ensure proper spacing inside job cards */
+#job_card ul,
+#job_card ol {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#job_card li {
+  margin-bottom: 8px !important;
+}
+
+/* Job card title styling */
+#job_card #job_card_title {
+  font-weight: 600 !important;
+  margin-bottom: 12px !important;
+  line-height: 1.4 !important;
+}
+
+/* Company name styling */
+#job_card #job_company_name {
+  color: #666 !important;
+  font-size: 14px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Skills container styling */
+#job_card .job-skills-container {
+  margin: 12px 0 !important;
+  padding: 0 !important;
+}
+
+#job_card .skills-list {
+  gap: 8px !important;
+}
+
+#job_card .skill-tag {
+  background-color: #f0f0f0 !important;
+  padding: 4px 10px !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  color: #333 !important;
+}
+
+/* Job details button styling */
+#job_card #job-details-btn,
+#job_card a[href*="job-details"] {
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
+  margin-top: 12px !important;
+}
+
+#job_card #job-details-btn:hover,
+#job_card a[href*="job-details"]:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Job cards container - ensure 3 cards per row */
+#job_card_view,
+[id*="job_card"]:not(#job_card) {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 17px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Job card section margin */
+.job-card-sec {
+  margin-top: 35px !important;
+}
+
+/* Responsive: On smaller screens, show 2 cards, then 1 */
+@media (max-width: 992px) {
+  #job_card {
+    flex: 0 0 calc((100% - 20px) / 2) !important;
+    min-width: calc((100% - 20px) / 2) !important;
+    max-width: calc((100% - 20px) / 2) !important;
+    width: calc((100% - 20px) / 2) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #job_card {
+    flex: 0 0 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* Center see_all_container */
+.see_all_container {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 0 auto !important;
+  padding: 20px 0 !important;
+}
+
+/* Enhanced see_all button/link styling - Button style with solid background */
+.see_all,
+.see_all_container a,
+.see_all_container button,
+.see_all_container .see_all,
+.see_all_container > * {
+
+  color: #ffffff !important;
+  padding: 14px 32px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 8px rgba(255, 104, 104, 0.25) !important;
+  display: inline-block !important;
+  text-align: center !important;
+  min-width: 140px !important;
+  line-height: 1.5 !important;
+}
+
+.see_all:hover,
+.see_all_container a:hover,
+.see_all_container button:hover,
+.see_all_container .see_all:hover,
+.see_all_container > *:hover {
+  /* background-color: #ff5252 !important; */
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(255, 104, 104, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.see_all:active,
+.see_all_container a:active,
+.see_all_container button:active,
+.see_all_container .see_all:active,
+.see_all_container > *:active {
+  /* background-color: #e63946 !important; */
+  transform: translateY(0) !important;
+  box-shadow: 0 1px 4px rgba(255, 104, 104, 0.2) !important;
+}
+
+.see_all:focus,
+.see_all_container a:focus,
+.see_all_container button:focus,
+.see_all_container .see_all:focus,
+.see_all_container > *:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 104, 104, 0.3) !important;
+}
+
+/* Ensure text color is white for all child elements */
+.see_all *,
+.see_all_container a *,
+.see_all_container button *,
+.see_all_container .see_all *,
+.see_all_container > * * {
+  color: #ffffff !important;
+}

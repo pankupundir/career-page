@@ -152,6 +152,98 @@ const JobDetails = () => {
     updateGoogleMapIframe();
   }, [htmlContent, jobDetails]);
 
+  // Effect to update job banner background image and height after HTML is rendered
+  useEffect(() => {
+    if (htmlContent) {
+      // Hide the job_title element
+      const jobTitleElement = document.querySelector(`#job_title`);
+      if (jobTitleElement) {
+        jobTitleElement.style.display = 'none';
+      }
+
+      // Update banner background image
+      if (jobDetails.job_picture_url) {
+        const jobBanner = document.querySelector(`.job-banner`);
+        if (jobBanner) {
+          jobBanner.style.backgroundImage = `url(${jobDetails.job_picture_url})`;
+          jobBanner.style.backgroundSize = 'cover';
+          jobBanner.style.backgroundPosition = 'center';
+          jobBanner.style.backgroundRepeat = 'no-repeat';
+          jobBanner.style.minHeight = '500px';
+          jobBanner.style.height = '500px';
+          jobBanner.style.width = '100%';
+          jobBanner.style.backgroundAttachment = 'fixed';
+          console.log("Job banner styles applied after render:", jobDetails.job_picture_url);
+        }
+      }
+
+      // Update banner job location above title
+      const bannerJobTitle = document.querySelector(`#banner_job_title`);
+      if (bannerJobTitle && jobDetails.job_location) {
+        let bannerJobLocation = document.querySelector(`#banner_job_location`);
+        
+        if (!bannerJobLocation) {
+          // Create location element if it doesn't exist
+          bannerJobLocation = document.createElement('div');
+          bannerJobLocation.id = 'banner_job_location';
+          bannerJobLocation.style.fontSize = '18px';
+          bannerJobLocation.style.color = '#ffffff';
+          bannerJobLocation.style.marginBottom = '10px';
+          bannerJobLocation.style.opacity = '0.9';
+          bannerJobLocation.style.fontWeight = '400';
+          
+          // Insert before the title
+          if (bannerJobTitle.parentNode) {
+            bannerJobTitle.parentNode.insertBefore(bannerJobLocation, bannerJobTitle);
+          }
+        }
+        
+        if (bannerJobLocation) {
+          bannerJobLocation.innerText = jobDetails.job_location;
+          console.log("Banner job location applied after render:", jobDetails.job_location);
+        }
+      }
+
+      // Update banner company name and category below title
+      if (bannerJobTitle) {
+        let bannerCompanyCategory = document.querySelector(`#banner_company_category`);
+        
+        if (!bannerCompanyCategory) {
+          // Create company/category element if it doesn't exist
+          bannerCompanyCategory = document.createElement('div');
+          bannerCompanyCategory.id = 'banner_company_category';
+          bannerCompanyCategory.style.fontSize = '16px';
+          bannerCompanyCategory.style.color = '#ffffff';
+          bannerCompanyCategory.style.marginTop = '10px';
+          bannerCompanyCategory.style.opacity = '0.85';
+          bannerCompanyCategory.style.fontWeight = '400';
+          bannerCompanyCategory.style.display = 'flex';
+          bannerCompanyCategory.style.alignItems = 'center';
+          bannerCompanyCategory.style.justifyContent = 'center';
+          bannerCompanyCategory.style.gap = '10px';
+          bannerCompanyCategory.style.textAlign = 'center';
+          
+          // Insert after the title
+          if (bannerJobTitle.parentNode) {
+            bannerJobTitle.parentNode.insertBefore(bannerCompanyCategory, bannerJobTitle.nextSibling);
+          }
+        }
+        
+        if (bannerCompanyCategory) {
+          // Ensure centering styles are applied
+          bannerCompanyCategory.style.justifyContent = 'center';
+          bannerCompanyCategory.style.textAlign = 'center';
+          
+          const companyName = jobDetails.company_name || jobDetails.publishedBy?.name || '';
+          const categoryName = jobDetails.job_category?.title || '';
+          const separator = companyName && categoryName ? ' • ' : '';
+          bannerCompanyCategory.innerText = `${companyName}${separator}${categoryName}`;
+          console.log("Banner company and category applied after render:", companyName, categoryName);
+        }
+      }
+    }
+  }, [htmlContent, jobDetails]);
+
 
 
   async function updateJobDetailsContent(htmlString, jobDetails) {
@@ -166,25 +258,100 @@ const JobDetails = () => {
       console.warn("Anchor tag not found in job_card_details.");
     }
 
-    jobCardDetails.querySelector(`#job_title`).innerText = jobDetails.title;
+    // Hide the job_title element
+    const jobTitleElement = jobCardDetails.querySelector(`#job_title`);
+    if (jobTitleElement) {
+      jobTitleElement.style.display = 'none';
+    }
+    
     jobCardDetails.querySelector(`#job_title_side_bar`).innerText =
       jobDetails.title;
     
     // Update banner job title
-    const bannerJobTitle = jobCardDetails.querySelector(`#banner_job_title`);
+    const bannerJobTitle = jobCardDetails.querySelector(`#banner_job_title`) || doc.querySelector(`#banner_job_title`);
     if (bannerJobTitle) {
+      // First, add job location above the title
+      let bannerJobLocation = jobCardDetails.querySelector(`#banner_job_location`) || doc.querySelector(`#banner_job_location`);
+      
+      if (!bannerJobLocation && jobDetails.job_location) {
+        // Create location element if it doesn't exist
+        bannerJobLocation = doc.createElement('div');
+        bannerJobLocation.id = 'banner_job_location';
+        bannerJobLocation.style.fontSize = '18px';
+        bannerJobLocation.style.color = '#ffffff';
+        bannerJobLocation.style.marginBottom = '10px';
+        bannerJobLocation.style.opacity = '0.9';
+        
+        // Insert before the title
+        if (bannerJobTitle.parentNode) {
+          bannerJobTitle.parentNode.insertBefore(bannerJobLocation, bannerJobTitle);
+        }
+      }
+      
+      if (bannerJobLocation && jobDetails.job_location) {
+        bannerJobLocation.innerText = jobDetails.job_location;
+        console.log("Banner job location updated:", jobDetails.job_location);
+      }
+      
+      // Update the title
       bannerJobTitle.innerText = jobDetails.title;
       console.log("Banner job title updated:", jobDetails.title);
-    } else {
-      console.log("Banner job title element not found in job_card_details");
-      // Try to find it in the entire document
-      const bannerJobTitleGlobal = doc.querySelector(`#banner_job_title`);
-      if (bannerJobTitleGlobal) {
-        bannerJobTitleGlobal.innerText = jobDetails.title;
-        console.log("Banner job title found globally and updated:", jobDetails.title);
-      } else {
-        console.log("Banner job title element not found anywhere in the document");
+      
+      // Add company name and category below the title (on one line)
+      let bannerCompanyCategory = jobCardDetails.querySelector(`#banner_company_category`) || doc.querySelector(`#banner_company_category`);
+      
+      if (!bannerCompanyCategory) {
+        // Create company/category element if it doesn't exist
+        bannerCompanyCategory = doc.createElement('div');
+        bannerCompanyCategory.id = 'banner_company_category';
+        bannerCompanyCategory.style.fontSize = '16px';
+        bannerCompanyCategory.style.color = '#ffffff';
+        bannerCompanyCategory.style.marginTop = '10px';
+        bannerCompanyCategory.style.opacity = '0.85';
+        bannerCompanyCategory.style.fontWeight = '400';
+        bannerCompanyCategory.style.display = 'flex';
+        bannerCompanyCategory.style.alignItems = 'center';
+        bannerCompanyCategory.style.justifyContent = 'center';
+        bannerCompanyCategory.style.gap = '10px';
+        bannerCompanyCategory.style.textAlign = 'center';
+        
+        // Insert after the title
+        if (bannerJobTitle.parentNode) {
+          bannerJobTitle.parentNode.insertBefore(bannerCompanyCategory, bannerJobTitle.nextSibling);
+        }
       }
+      
+      if (bannerCompanyCategory) {
+        // Ensure centering styles are applied
+        bannerCompanyCategory.style.justifyContent = 'center';
+        bannerCompanyCategory.style.textAlign = 'center';
+        
+        const companyName = jobDetails.company_name || jobDetails.publishedBy?.name || '';
+        const categoryName = jobDetails.job_category?.title || '';
+        const separator = companyName && categoryName ? ' • ' : '';
+        bannerCompanyCategory.innerText = `${companyName}${separator}${categoryName}`;
+        console.log("Banner company and category updated:", companyName, categoryName);
+      }
+    } else {
+      console.log("Banner job title element not found anywhere in the document");
+    }
+
+    // Update job banner background image dynamically
+    const jobBanner = doc.querySelector(`.job-banner`);
+    if (jobBanner && jobDetails.job_picture_url) {
+      jobBanner.style.backgroundImage = `url(${jobDetails.job_picture_url})`;
+      jobBanner.style.backgroundSize = 'cover';
+      jobBanner.style.backgroundPosition = 'center';
+      jobBanner.style.backgroundRepeat = 'no-repeat';
+      jobBanner.style.minHeight = '500px';
+      jobBanner.style.height = '500px';
+      jobBanner.style.width = '100%';
+      jobBanner.style.backgroundAttachment = 'fixed';
+      console.log("Job banner background image updated:", jobDetails.job_picture_url);
+    } else if (jobBanner) {
+      console.log("Job banner element found but job_picture_url is not available");
+    } else {
+      console.log("Job banner element with class .job-banner not found in the document");
     }
     jobCardDetails.querySelector(`#key_feature`).innerText =
       jobDetails.key_feature;

@@ -3,6 +3,7 @@ import Page from "./Page";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import JobDetails from "./JobDetails";
+import SeeAllJobs from "./SeeAllJobs";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/" element={<Page />} />
           <Route path="/:pageId" element={<Page />} />
           <Route path="/job-details/:jobId" element={<JobDetails />} />
+          <Route path="/see-all-jobs" element={<SeeAllJobs />} />
           {/* Define other routes here */}
         </Routes>
       </Router>
