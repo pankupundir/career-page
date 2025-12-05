@@ -1136,7 +1136,11 @@ const SeeAllJobs = () => {
 
         const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
         if (jobTitleElement) {
-          jobTitleElement.innerText = job.title;
+          // Truncate job title to 25 characters and add ellipsis if longer
+          const truncatedTitle = job.title && job.title.length > 25 
+            ? job.title.substring(0, 25) + '...' 
+            : job.title;
+          jobTitleElement.innerText = truncatedTitle;
           // Enhanced title styling
           jobTitleElement.style.fontSize = '20px';
           jobTitleElement.style.fontWeight = '700';
@@ -1229,7 +1233,19 @@ const SeeAllJobs = () => {
             
             // Contract type wrapper
             const contractWrapper = document.createElement('span');
-            contractWrapper.textContent = job.contract_type;
+            // Convert contract_type to camelCase (e.g., "part-time" -> "partTime", "full-time" -> "fullTime")
+            const formatContractTypeToCamelCase = (contractType) => {
+              if (!contractType) return '';
+              return contractType
+                .split('-')
+                .map((word, index) => 
+                  index === 0 
+                    ? word.toLowerCase() 
+                    : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                )
+                .join('');
+            };
+            contractWrapper.textContent = formatContractTypeToCamelCase(job.contract_type);
             contractWrapper.style.fontSize = '14px';
             contractWrapper.style.fontWeight = '500';
             contractWrapper.style.color = '#64748b';
@@ -1276,7 +1292,7 @@ const SeeAllJobs = () => {
             skillsList.style.padding = '0';
             skillsList.style.margin = '0';
             
-            job.job_skills.forEach((skill, index) => {
+            job.job_skills.slice(0, 3).forEach((skill, index) => {
               const skillItem = document.createElement('li');
               skillItem.className = 'skill-tag';
               skillItem.setAttribute('data-not-editable', 'true');
@@ -1337,7 +1353,7 @@ const SeeAllJobs = () => {
             skillsList.style.padding = '0';
             skillsList.style.margin = '0';
             
-            job.skills.split(',').forEach((skill, index) => {
+            job.skills.split(',').slice(0, 3).forEach((skill, index) => {
               const skillItem = document.createElement('li');
               skillItem.className = 'skill-tag';
               skillItem.setAttribute('data-not-editable', 'true');
@@ -1389,7 +1405,7 @@ const SeeAllJobs = () => {
           timeElement.style.display = 'inline-flex';
           timeElement.style.alignItems = 'center';
           timeElement.style.gap = '6px';
-          timeElement.style.color = '#94a3b8';
+          timeElement.style.color = '#000000';
           timeElement.style.fontSize = '13px';
           timeElement.style.fontWeight = '400';
           timeElement.style.marginTop = '8px';

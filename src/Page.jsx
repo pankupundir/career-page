@@ -7,8 +7,6 @@ import {
   DEFAULT_LADING_PAGE,
 } from "./config/webBuilder";
 import { useParams, useNavigate } from "react-router-dom";
-import NoPageFound from "./NoPageFound";
-import ScreenLoader from "./ScreenLoader";
 import WebsiteLoader from "./Components/WebsiteLoader";
 import JobDataLoader from "./Components/JobDataLoader";
 import moment from "moment";
@@ -825,8 +823,18 @@ const Page = () => {
     
     const icon = createSVGIcon(iconType, size);
     icon.classList.add('job-icon');
-    icon.style.color = '#666';
+    // Enhanced icon colors based on element type
+    if (iconType === 'company') {
+      icon.style.color = '#64748b';
+    } else if (iconType === 'location') {
+      icon.style.color = '#64748b';
+    } else if (iconType === 'time') {
+      icon.style.color = '#94a3b8';
+    } else {
+      icon.style.color = '#64748b';
+    }
     icon.style.marginRight = '4px';
+    icon.style.opacity = '0.8';
     
     // Insert icon at the beginning
     if (element.firstChild) {
@@ -1088,7 +1096,23 @@ const Page = () => {
         });
 
         const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
-        jobTitleElement.innerText = job.title;
+        if (jobTitleElement) {
+          // Truncate job title to 25 characters and add ellipsis if longer
+          const truncatedTitle = job.title && job.title.length > 25 
+            ? job.title.substring(0, 25) + '...' 
+            : job.title;
+          jobTitleElement.innerText = truncatedTitle;
+          // Enhanced title styling
+          jobTitleElement.style.fontSize = '20px';
+          jobTitleElement.style.fontWeight = '700';
+          jobTitleElement.style.color = '#1a1a1a';
+          jobTitleElement.style.lineHeight = '1.3';
+          jobTitleElement.style.marginBottom = '10px';
+          jobTitleElement.style.marginTop = '0';
+          jobTitleElement.style.letterSpacing = '-0.02em';
+          jobTitleElement.style.wordWrap = 'break-word';
+          jobTitleElement.style.overflowWrap = 'break-word';
+        }
         
         // Helper function to check if URL is valid
         const isValidUrl = (url) => {
@@ -1124,13 +1148,85 @@ const Page = () => {
           }
         }
         
-        // Handle company name
+        // Handle company name and contract type on one line
         const companyNameElement = newJobCard.querySelector(`#job_company_name`);
+        const contractTypeElement = newJobCard.querySelector(`#job_contract_type`);
+        
         if (companyNameElement) {
-          companyNameElement.innerText = job.company_name;
-          addIconToElement(companyNameElement, 'company', 16);
+          // Create a container for company name and contract type
+          const existingCompanyContainer = newJobCard.querySelector('.company-contract-container');
+          if (existingCompanyContainer) {
+            existingCompanyContainer.remove();
+          }
+          
+          const companyContractContainer = document.createElement('div');
+          companyContractContainer.className = 'company-contract-container';
+          companyContractContainer.setAttribute('data-not-editable', 'true');
+          companyContractContainer.style.display = 'flex';
+          companyContractContainer.style.alignItems = 'center';
+          companyContractContainer.style.gap = '8px';
+          companyContractContainer.style.flexWrap = 'wrap';
+          companyContractContainer.style.marginBottom = '10px';
+          companyContractContainer.style.marginTop = '0';
+          
+          // Company name wrapper
+          const companyWrapper = document.createElement('span');
+          companyWrapper.style.display = 'flex';
+          companyWrapper.style.alignItems = 'center';
+          companyWrapper.style.gap = '6px';
+          companyWrapper.innerText = job.company_name;
+          addIconToElement(companyWrapper, 'company', 16);
+          companyWrapper.style.fontSize = '15px';
+          companyWrapper.style.fontWeight = '500';
+          companyWrapper.style.color = '#4a5568';
+          companyWrapper.style.lineHeight = '1.5';
+          
+          companyContractContainer.appendChild(companyWrapper);
+          
+          // Add separator if contract type exists
+          if (contractTypeElement && job.contract_type) {
+            const separator = document.createElement('span');
+            separator.textContent = '•';
+            separator.style.color = '#cbd5e0';
+            separator.style.fontSize = '14px';
+            separator.style.margin = '0 2px';
+            companyContractContainer.appendChild(separator);
+            
+            // Contract type wrapper
+            const contractWrapper = document.createElement('span');
+            // Convert contract_type to camelCase (e.g., "part-time" -> "partTime", "full-time" -> "fullTime")
+            const formatContractTypeToCamelCase = (contractType) => {
+              if (!contractType) return '';
+              return contractType
+                .split('-')
+                .map((word, index) => 
+                  index === 0 
+                    ? word.toLowerCase() 
+                    : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                )
+                .join('');
+            };
+            contractWrapper.textContent = formatContractTypeToCamelCase(job.contract_type);
+            contractWrapper.style.fontSize = '14px';
+            contractWrapper.style.fontWeight = '500';
+            contractWrapper.style.color = '#64748b';
+            contractWrapper.style.lineHeight = '1.5';
+            
+            companyContractContainer.appendChild(contractWrapper);
+            
+            // Hide the original contract type element
+            contractTypeElement.style.display = 'none';
+          }
+          
+          // Insert the container before the company name element
+          if (companyNameElement.parentNode) {
+            companyNameElement.parentNode.insertBefore(companyContractContainer, companyNameElement);
+            // Hide the original company name element
+            companyNameElement.style.display = 'none';
+          }
+          
           if (!isValidUrl(job.job_picture_url)) {
-            companyNameElement.style.marginTop = '';
+            companyContractContainer.style.marginTop = '';
           }
           
           // Add skills below company name
@@ -1143,7 +1239,8 @@ const Page = () => {
             const skillsContainer = document.createElement('div');
             skillsContainer.className = 'job-skills-container';
             skillsContainer.setAttribute('data-not-editable', 'true');
-            skillsContainer.style.marginBottom = '15px';
+            skillsContainer.style.marginBottom = '16px';
+            skillsContainer.style.marginTop = '14px';
             
             const skillsList = document.createElement('ul');
             skillsList.className = 'skills-list';
@@ -1156,7 +1253,7 @@ const Page = () => {
             skillsList.style.padding = '0';
             skillsList.style.margin = '0';
             
-            job.job_skills.forEach((skill, index) => {
+            job.job_skills.slice(0, 3).forEach((skill, index) => {
               const skillItem = document.createElement('li');
               skillItem.className = 'skill-tag';
               skillItem.setAttribute('data-not-editable', 'true');
@@ -1164,11 +1261,21 @@ const Page = () => {
               skillItem.style.display = 'flex';
               skillItem.style.alignItems = 'center';
               skillItem.style.gap = '6px';
+              // Enhanced skill tag styling
+              skillItem.style.backgroundColor = '#f7f8fa';
+              skillItem.style.padding = '6px 12px';
+              skillItem.style.borderRadius = '16px';
+              skillItem.style.fontSize = '12px';
+              skillItem.style.fontWeight = '500';
+              skillItem.style.color = '#2d3748';
+              skillItem.style.border = '1px solid #e2e8f0';
               
               // Create SVG tag icon for skills
               const svgIcon = createSVGIcon('skill', 14);
               svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.style.color = '#666';
+              svgIcon.style.color = '#64748b';
+              svgIcon.style.opacity = '0.7';
+              svgIcon.style.flexShrink = '0';
               
               // Create span for skill name
               const skillSpan = document.createElement('span');
@@ -1181,8 +1288,11 @@ const Page = () => {
             
             skillsContainer.appendChild(skillsList);
             
-            // Insert skills container after company name
-            if (companyNameElement.parentNode) {
+            // Insert skills container after company-contract container
+            const companyContainer = newJobCard.querySelector('.company-contract-container');
+            if (companyContainer && companyContainer.parentNode) {
+              companyContainer.parentNode.insertBefore(skillsContainer, companyContainer.nextSibling);
+            } else if (companyNameElement && companyNameElement.parentNode) {
               companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
             }
           } else if (job.skills) {
@@ -1190,7 +1300,8 @@ const Page = () => {
             const skillsContainer = document.createElement('div');
             skillsContainer.className = 'job-skills-container';
             skillsContainer.setAttribute('data-not-editable', 'true');
-            skillsContainer.style.marginBottom = '15px';
+            skillsContainer.style.marginBottom = '16px';
+            skillsContainer.style.marginTop = '14px';
             
             const skillsList = document.createElement('ul');
             skillsList.className = 'skills-list';
@@ -1203,18 +1314,28 @@ const Page = () => {
             skillsList.style.padding = '0';
             skillsList.style.margin = '0';
             
-            job.skills.split(',').forEach((skill, index) => {
+            job.skills.split(',').slice(0, 3).forEach((skill, index) => {
               const skillItem = document.createElement('li');
               skillItem.className = 'skill-tag';
               skillItem.setAttribute('data-not-editable', 'true');
               skillItem.style.display = 'flex';
               skillItem.style.alignItems = 'center';
               skillItem.style.gap = '6px';
+              // Enhanced skill tag styling
+              skillItem.style.backgroundColor = '#f7f8fa';
+              skillItem.style.padding = '6px 12px';
+              skillItem.style.borderRadius = '16px';
+              skillItem.style.fontSize = '12px';
+              skillItem.style.fontWeight = '500';
+              skillItem.style.color = '#2d3748';
+              skillItem.style.border = '1px solid #e2e8f0';
               
               // Create SVG tag icon for skills
               const svgIcon = createSVGIcon('skill', 14);
               svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.style.color = '#666';
+              svgIcon.style.color = '#64748b';
+              svgIcon.style.opacity = '0.7';
+              svgIcon.style.flexShrink = '0';
               
               // Create span for skill name
               const skillSpan = document.createElement('span');
@@ -1227,17 +1348,13 @@ const Page = () => {
             
             skillsContainer.appendChild(skillsList);
             
-            // Insert skills container after company name
-            if (companyNameElement.parentNode) {
+            // Insert skills container after company-contract container
+            const companyContainer = newJobCard.querySelector('.company-contract-container');
+            if (companyContainer && companyContainer.parentNode) {
+              companyContainer.parentNode.insertBefore(skillsContainer, companyContainer.nextSibling);
+            } else if (companyNameElement && companyNameElement.parentNode) {
               companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
             }
-          }
-        } else {
-          // Fallback if company name element not found
-          const fallbackCompanyElement = newJobCard.querySelector(`#job_company_name`);
-          if (fallbackCompanyElement) {
-            fallbackCompanyElement.innerText = job.company_name;
-            addIconToElement(fallbackCompanyElement, 'company', 16);
           }
         }
         // Handle time display with icon
@@ -1248,25 +1365,33 @@ const Page = () => {
           timeElement.style.display = 'inline-flex';
           timeElement.style.alignItems = 'center';
           timeElement.style.gap = '6px';
-          timeElement.style.color = '#666';
+          timeElement.style.color = '#000000';
           timeElement.style.fontSize = '13px';
+          timeElement.style.fontWeight = '400';
+          timeElement.style.marginTop = '8px';
+          timeElement.style.marginBottom = '4px';
+          timeElement.style.lineHeight = '1.4';
           timeElement.style.width = 'fit-content';
         }
         
-        const contractTypeElement = newJobCard.querySelector(`#job_contract_type`);
-        if (contractTypeElement) {
-          contractTypeElement.innerText = formatContractType(job.contract_type);
-          contractTypeElement.style.marginTop = '10px';
-        }
+        // Contract type is now handled in the company name section above
         
         // Add location display if location field exists
         if (job.job_location && newJobCard.querySelector(`#job_location`)) {
           const locationElement = newJobCard.querySelector(`#job_location`);
           locationElement.innerText = job.job_location;
           addIconToElement(locationElement, 'location', 16);
+          // Enhanced location styling
           locationElement.style.display = 'flex';
           locationElement.style.alignItems = 'center';
           locationElement.style.gap = '6px';
+          locationElement.style.color = '#64748b';
+          locationElement.style.fontSize = '14px';
+          locationElement.style.fontWeight = '400';
+          locationElement.style.marginTop = '8px';
+          locationElement.style.marginBottom = '8px';
+          locationElement.style.lineHeight = '1.5';
+          locationElement.style.listStyle = 'none';
           
           // Add click handler for location modal
           // Store lat/long from job data (use provided values or job.lat/job.long)
@@ -1280,19 +1405,47 @@ const Page = () => {
           // Make location clickable (event delegation handles the click)
           locationElement.style.cursor = 'pointer';
           locationElement.style.userSelect = 'none';
+          
+          // Remove dot from parent list item if location is inside a <li>
+          const parentLi = locationElement.closest('li');
+          if (parentLi) {
+            parentLi.style.listStyle = 'none';
+            parentLi.style.listStyleType = 'none';
+          }
         }
         
         // Add created_at display in a more readable format
-        if (newJobCard.querySelector(`#job_created_at`)) {
-          newJobCard.querySelector(`#job_created_at`).innerText = moment(
-            job.created_at
-          ).format('MMM DD, YYYY');
+        const createdAtElement = newJobCard.querySelector(`#job_created_at`);
+        if (createdAtElement) {
+          createdAtElement.innerText = moment(job.created_at).format('MMM DD, YYYY');
+          // Enhanced created at styling
+          createdAtElement.style.color = '#94a3b8';
+          createdAtElement.style.fontSize = '13px';
+          createdAtElement.style.fontWeight = '400';
+          createdAtElement.style.marginTop = '4px';
+          createdAtElement.style.marginBottom = '4px';
+          createdAtElement.style.lineHeight = '1.4';
         }
         if (job.show_pay) {
-          if (newJobCard.querySelector(`#job_pay`))
-            newJobCard.querySelector(`#job_pay`).innerText = job.pay;
-          if (newJobCard.querySelector(`#job_currency`))
-            newJobCard.querySelector(`#job_currency`).innerText = job.currency;
+          const payElement = newJobCard.querySelector(`#job_pay`);
+          const currencyElement = newJobCard.querySelector(`#job_currency`);
+          if (payElement) {
+            payElement.innerText = job.pay;
+            // Enhanced pay styling
+            payElement.style.color = '#1e40af';
+            payElement.style.fontSize = '16px';
+            payElement.style.fontWeight = '600';
+            payElement.style.marginTop = '8px';
+            payElement.style.marginBottom = '4px';
+            payElement.style.lineHeight = '1.4';
+          }
+          if (currencyElement) {
+            currencyElement.innerText = job.currency;
+            // Enhanced currency styling
+            currencyElement.style.color = '#1e40af';
+            currencyElement.style.fontSize = '16px';
+            currencyElement.style.fontWeight = '600';
+          }
         } else {
           if (newJobCard.querySelector(`#job_pay`)) {
             const payElement = newJobCard.querySelector(`#job_pay`);
