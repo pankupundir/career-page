@@ -11,6 +11,7 @@ import moment from "moment";
 import usePagination from "./Hooks/usePaginantion";
 import Pagination from "./Components/Pagination";
 import { createRoot } from "react-dom/client";
+import LocationModal from "./Components/LocationModal";
 
 const SeeAllJobs = () => {
   const [website, setWebsite] = useState({
@@ -49,6 +50,13 @@ const SeeAllJobs = () => {
     search: ""
   });
   const ITEMS_PER_PAGE = 10;
+  const [locationModal, setLocationModal] = useState({
+    isOpen: false,
+    latitude: null,
+    longitude: null,
+    locationName: '',
+    companyName: ''
+  });
 
   const fetchWebsite = async () => {
     try {
@@ -61,6 +69,16 @@ const SeeAllJobs = () => {
       if (html) {
         const parser = new window.DOMParser();
         const doc = parser.parseFromString(html, "text/html");
+        
+        // Remove the "Job Openings" heading
+        const gradientHeading = doc.querySelector('h2.gradient-heading');
+        if (gradientHeading) {
+          // Check if it contains "Job Openings" text
+          if (gradientHeading.textContent.trim().includes('Job Openings')) {
+            gradientHeading.remove();
+          }
+        }
+        
         setHtmlContent(doc.body.innerHTML);
       
       } else {
@@ -303,6 +321,118 @@ const SeeAllJobs = () => {
     setTimeout(() => {
       setupResetButton();
     }, 300);
+  };
+
+  // Setup back button - icon only, no text
+  const setupBackButton = () => {
+    const backButton = document.getElementById("seeall_back_button");
+    if (backButton) {
+      // Get existing SVG icon if it exists
+      const existingSvgIcon = backButton.querySelector('svg');
+      
+      // Create or clone the icon
+      let icon;
+      if (existingSvgIcon) {
+        // Clone the existing icon to preserve it
+        icon = existingSvgIcon.cloneNode(true);
+      } else {
+        // Create a new icon if none exists
+        icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        icon.setAttribute('width', '20');
+        icon.setAttribute('height', '20');
+        icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('fill', 'none');
+        icon.setAttribute('stroke', 'currentColor');
+        icon.setAttribute('stroke-width', '2');
+        icon.setAttribute('stroke-linecap', 'round');
+        icon.setAttribute('stroke-linejoin', 'round');
+        
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M19 12H5');
+        icon.appendChild(path1);
+        
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M12 19l-7-7 7-7');
+        icon.appendChild(path2);
+      }
+      
+      // Clear button and add only the icon
+      backButton.innerHTML = '';
+      backButton.appendChild(icon);
+      
+      // Enhanced button styling - icon only, modern design
+      backButton.style.display = 'flex';
+      backButton.style.alignItems = 'center';
+      backButton.style.justifyContent = 'center';
+      backButton.style.cursor = 'pointer';
+      backButton.style.padding = '10px';
+      backButton.style.borderRadius = '50%';
+      backButton.style.border = '1px solid #e2e8f0';
+      backButton.style.backgroundColor = '#ffffff';
+      backButton.style.transition = 'all 0.3s ease';
+      backButton.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+      backButton.style.width = '40px';
+      backButton.style.height = '40px';
+      backButton.style.minWidth = '40px';
+      backButton.style.minHeight = '40px';
+      backButton.style.outline = 'none';
+      
+      // Icon styling - ensure it's visible
+      icon.style.width = '20px';
+      icon.style.height = '20px';
+      icon.style.color = '#475569';
+      icon.style.flexShrink = '0';
+      icon.style.transition = 'transform 0.3s ease, color 0.3s ease';
+      icon.style.display = 'block';
+      icon.style.visibility = 'visible';
+      icon.style.opacity = '1';
+      
+      // Add title attribute for tooltip
+      backButton.setAttribute('title', 'Go back');
+      
+      // Enhanced hover effects
+      backButton.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = '#f1f5f9';
+        this.style.borderColor = '#cbd5e1';
+        this.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+        this.style.transform = 'translateX(-2px)';
+        const svg = this.querySelector('svg');
+        if (svg) {
+          svg.style.color = '#334155';
+          svg.style.transform = 'translateX(-2px)';
+        }
+      });
+      
+      backButton.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#ffffff';
+        this.style.borderColor = '#e2e8f0';
+        this.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+        this.style.transform = 'translateX(0)';
+        const svg = this.querySelector('svg');
+        if (svg) {
+          svg.style.color = '#475569';
+          svg.style.transform = 'translateX(0)';
+        }
+      });
+      
+      // Add active/press effect
+      backButton.addEventListener('mousedown', function() {
+        this.style.transform = 'translateX(0) scale(0.95)';
+        this.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.1)';
+      });
+      
+      backButton.addEventListener('mouseup', function() {
+        this.style.transform = 'translateX(-2px) scale(1)';
+        this.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+      });
+      
+      // Add click handler for navigation
+      backButton.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate(-1); // Go back in browser history
+      };
+    }
   };
 
   // Setup reset filters button icon
@@ -640,10 +770,17 @@ const SeeAllJobs = () => {
     if (htmlContent) {
       // Use setTimeout to ensure DOM is ready after React renders
       const timer = setTimeout(() => {
+        // Remove the "Job Openings" heading from the DOM if it exists
+        const gradientHeading = document.querySelector('h2.gradient-heading');
+        if (gradientHeading && gradientHeading.textContent.trim().includes('Job Openings')) {
+          gradientHeading.remove();
+        }
+        
         if (filterData.workTypes.length > 0 || filterData.contractTypes.length > 0 || filterData.skills.length > 0) {
           populateFilterDropdowns();
         }
         setupFilterListeners();
+        setupBackButton();
         setupResetButton();
         setupPaginationListeners();
       }, 200);
@@ -652,10 +789,12 @@ const SeeAllJobs = () => {
     }
   }, [htmlContent, filterData]);
 
-  // Additional useEffect to ensure reset button is set up whenever DOM updates
+  // Additional useEffect to ensure reset button and back button are set up whenever DOM updates
   useEffect(() => {
-    const setupResetButtonWithRetry = () => {
+    const setupButtonsWithRetry = () => {
       const resetFiltersBtn = document.getElementById("seeall_reset_filters");
+      const backButton = document.getElementById("seeall_back_button");
+      
       if (resetFiltersBtn) {
         // Check if icon already exists
         const existingIcon = resetFiltersBtn.querySelector('svg');
@@ -663,14 +802,34 @@ const SeeAllJobs = () => {
           setupResetButton();
         }
       }
+      
+      if (backButton) {
+        // Check if button has icon and is properly styled
+        const hasIcon = backButton.querySelector('svg');
+        const computedStyle = window.getComputedStyle(backButton);
+        const isStyled = computedStyle.borderRadius === '50%' && computedStyle.width === '40px';
+        
+        // Setup if no icon or not properly styled
+        if (!hasIcon || !isStyled) {
+          setupBackButton();
+        }
+      } else {
+        // Button doesn't exist yet, try to set it up anyway (might be timing issue)
+        setTimeout(() => {
+          const btn = document.getElementById("seeall_back_button");
+          if (btn) {
+            setupBackButton();
+          }
+        }, 100);
+      }
     };
 
     // Try immediately
-    setupResetButtonWithRetry();
+    setupButtonsWithRetry();
 
     // Also try after a short delay to catch any delayed DOM updates
     const timer = setTimeout(() => {
-      setupResetButtonWithRetry();
+      setupButtonsWithRetry();
     }, 500);
 
     return () => clearTimeout(timer);
@@ -1258,6 +1417,19 @@ const SeeAllJobs = () => {
           locationElement.style.lineHeight = '1.5';
           locationElement.style.listStyle = 'none';
           
+          // Add click handler for location modal
+          // Store lat/long from job data (use provided values or job.lat/job.long)
+          const latitude = job.lat || 22.7681995;
+          const longitude = job.long || 86.20066969999999;
+          
+          // Set data attributes for coordinates
+          locationElement.setAttribute('data-latitude', latitude);
+          locationElement.setAttribute('data-longitude', longitude);
+          
+          // Make location clickable (event delegation handles the click)
+          locationElement.style.cursor = 'pointer';
+          locationElement.style.userSelect = 'none';
+          
           // Remove dot from parent list item if location is inside a <li>
           const parentLi = locationElement.closest('li');
           if (parentLi) {
@@ -1412,9 +1584,56 @@ const SeeAllJobs = () => {
     }
   }, [jobList, website]);
 
+  const closeLocationModal = () => {
+    setLocationModal({
+      isOpen: false,
+      latitude: null,
+      longitude: null,
+      locationName: '',
+      companyName: ''
+    });
+  };
+
   useEffect(() => {
+    // Add event delegation for location clicks
+    const handleLocationClickDelegation = (e) => {
+      const locationElement = e.target.closest('#job_location') || (e.target.id === 'job_location' ? e.target : null);
+      if (locationElement) {
+        const latitude = locationElement.getAttribute('data-latitude');
+        const longitude = locationElement.getAttribute('data-longitude');
+        const locationName = locationElement.textContent.trim() || 'Job Location';
+        
+        // Find the job card to get company name
+        const jobCard = locationElement.closest('#job_card');
+        let companyName = '';
+        if (jobCard) {
+          const companyNameElement = jobCard.querySelector('#job_company_name');
+          if (companyNameElement) {
+            companyName = companyNameElement.textContent.trim() || '';
+          }
+        }
+        
+        if (latitude && longitude) {
+          e.preventDefault();
+          e.stopPropagation();
+          setLocationModal({
+            isOpen: true,
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+            locationName: locationName,
+            companyName: companyName
+          });
+        }
+      }
+    };
+
     // Add event delegation for job card clicks
     const handleJobCardClick = (e) => {
+      // Don't navigate if clicking on location element (it has its own handler)
+      if (e.target.closest('#job_location') || e.target.id === 'job_location') {
+        return;
+      }
+      
       // Find the closest job card element
       const jobCard = e.target.closest('#job_card');
       if (jobCard) {
@@ -1430,7 +1649,8 @@ const SeeAllJobs = () => {
       }
     };
     
-    // Attach event listener to document for event delegation
+    // Attach event listeners to document for event delegation
+    document.addEventListener('click', handleLocationClickDelegation);
     document.addEventListener('click', handleJobCardClick);
     
     const paginationComponent = document.getElementById("job_list_pagination");
@@ -1478,6 +1698,7 @@ const SeeAllJobs = () => {
     
     // Cleanup function
     return () => {
+      document.removeEventListener('click', handleLocationClickDelegation);
       document.removeEventListener('click', handleJobCardClick);
     };
   }, [navigate, htmlContent, paginationData, page, onPageChange, selectedFilters]);
@@ -1523,6 +1744,14 @@ const SeeAllJobs = () => {
           <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
         </>
       )}
+      <LocationModal
+        isOpen={locationModal.isOpen}
+        onClose={closeLocationModal}
+        latitude={locationModal.latitude}
+        longitude={locationModal.longitude}
+        locationName={locationModal.locationName}
+        companyName={locationModal.companyName}
+      />
     </div>
   );
 };
