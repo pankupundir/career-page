@@ -4,10 +4,11 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import JobDetails from "./JobDetails";
 import SeeAllJobs from "./SeeAllJobs";
+import ErrorBoundary from "./Components/ErrorBoundary";
 
 function App() {
   return (
-    <>
+    <ErrorBoundary>
       <ToastContainer
         className="custom-toast-container"
         position="top-center"
@@ -30,8 +31,7 @@ function App() {
           {/* Define other routes here */}
         </Routes>
       </Router>
-      
-    </>
+    </ErrorBoundary>
   );
 }
 
