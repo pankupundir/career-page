@@ -116,6 +116,21 @@ const SeeAllJobs = () => {
   ) {
     setJobDataLoader(true);
     try {
+      // Validate API instance has a base URL
+      if (!openAPIBuilderInstance.defaults.baseURL) {
+        console.error("API base URL is not configured. Please set VITE_JOB_OPEN_API environment variable.");
+        toast.error("API configuration error. Please contact support.");
+        setJobDataLoader(false);
+        setJobList([]);
+        setPaginationData({
+          totalData: 0,
+          current_page: 1,
+          per_page: ITEMS_PER_PAGE,
+          total_pages: 0,
+        });
+        return;
+      }
+      
       // Use provided page number or current page state
       const currentPage = pageNumber !== null ? pageNumber : page;
       
@@ -131,7 +146,12 @@ const SeeAllJobs = () => {
       });
       
       const apiUrl = `web/jobs/published?${params.toString()}`;
-      console.log("API Call URL:", apiUrl);
+      const fullUrl = `${openAPIBuilderInstance.defaults.baseURL}${apiUrl}`;
+      
+      console.log("=== Fetching Job Data ===");
+      console.log("API Base URL:", openAPIBuilderInstance.defaults.baseURL);
+      console.log("API Endpoint:", apiUrl);
+      console.log("Full URL:", fullUrl);
       console.log("Fetching jobs with parameters:", {
         contract_type,
         skill_name,
@@ -143,10 +163,13 @@ const SeeAllJobs = () => {
       
       const response = await openAPIBuilderInstance.get(apiUrl);
       
-      console.log("API Response:", response.data);
+      console.log("API Response Status:", response.status);
+      console.log("API Response Data:", response.data);
       
       if (response.data && response.data.data) {
-        let list=response.data.data.jobs 
+        let list = response.data.data.jobs || [];
+        console.log("Jobs received:", list.length);
+        
         setJobList(list);
         const newPaginationData = {
           totalData: response.data.data.total_items || 0,
@@ -155,11 +178,19 @@ const SeeAllJobs = () => {
           total_pages: response.data.data.total_pages || 0,
         };     
         setPaginationData(newPaginationData);
-        // Don't fetch website here - only update job list to avoid full page reload
-   
-   
+        console.log("Pagination data set:", newPaginationData);
+        
+        // Show success message if no jobs found (but API call succeeded)
+        if (list.length === 0) {
+          console.log("No jobs found in response");
+        }
       } else {
         console.warn("Unexpected API response structure:", response.data);
+        console.warn("Response structure:", {
+          hasData: !!response.data,
+          hasDataData: !!(response.data && response.data.data),
+          fullResponse: response.data
+        });
         setPaginationData({
           totalData: 0,
           current_page: 1,
@@ -171,11 +202,48 @@ const SeeAllJobs = () => {
       setJobDataLoader(false);
     } catch (err) {
       setJobDataLoader(false);
-      console.error("Error fetching job data:", err);
-      console.error("Error details:", {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
+      
+      // Enhanced error logging
+      console.error("=== Error Fetching Job Data ===");
+      console.error("Error Type:", err.constructor.name);
+      console.error("Error Message:", err.message);
+      console.error("Error Code:", err.code);
+      console.error("Error Config:", {
+        url: err.config?.url,
+        baseURL: err.config?.baseURL,
+        method: err.config?.method,
+        fullURL: err.config?.baseURL ? `${err.config.baseURL}${err.config.url}` : err.config?.url
+      });
+      console.error("Error Response:", {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        headers: err.response?.headers
+      });
+      
+      // User-friendly error messages
+      let errorMessage = "Failed to load jobs. Please try again later.";
+      
+      if (err.code === 'ERR_NETWORK' || err.message.includes('Network Error')) {
+        errorMessage = "Network error. Please check your internet connection.";
+        console.error("Network error - API may be unreachable or CORS issue");
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = "Request timeout. The server took too long to respond.";
+        console.error("Request timeout");
+      } else if (err.response?.status === 404) {
+        errorMessage = "Jobs endpoint not found. Please contact support.";
+        console.error("404 - Endpoint not found");
+      } else if (err.response?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
+        console.error("Server error:", err.response?.status);
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        errorMessage = "Authentication error. Please refresh the page.";
+        console.error("Authentication error");
+      }
+      
+      // Show error toast
+      toast.error(errorMessage, {
+        autoClose: 5000,
       });
       
       // Set empty data on error
@@ -986,16 +1054,28 @@ const SeeAllJobs = () => {
   };
 
   async function updateJobListContent(htmlString, jobData) {
+    console.log("=== updateJobListContent called ===");
+    console.log("Job Data Length:", jobData?.length || 0);
+    console.log("HTML String Length:", htmlString?.length || 0);
+    
+    if (!htmlString) {
+      console.error("HTML string is empty or undefined");
+      return null;
+    }
+    
     const parser = new DOMParser();
     let doc;
     if (isFilterActivate) {
       doc = document;
+      console.log("Using document (filter active)");
     } else {
       doc = parser.parseFromString(htmlString, "text/html");
+      console.log("Using parsed HTML document");
     }
 
     let firstJobCard = doc.getElementById("job_card");
-    console.log(firstJobCard, "firstJobCard");
+    console.log("First Job Card Found:", !!firstJobCard);
+    console.log("First Job Card Element:", firstJobCard);
     if (firstJobCard) {
       setInitialJobCard(firstJobCard);
       // Store the original HTML structure of the job card
@@ -1005,9 +1085,30 @@ const SeeAllJobs = () => {
       }
     }
     if (!firstJobCard && !initialJobCard) {
-      console.error("No first job card found.");
+      console.error("No first job card found in document.");
+      console.error("Searching for job card with alternative selectors...");
+      
+      // Try alternative selectors
+      const alternativeSelectors = [
+        '#job_card',
+        '.job_card',
+        '[id*="job_card"]',
+        '[class*="job-card"]',
+        '[class*="jobCard"]',
+        '[data-job-card]'
+      ];
+      
+      for (const selector of alternativeSelectors) {
+        const found = doc.querySelector(selector);
+        if (found) {
+          console.log(`Found job card with selector: ${selector}`);
+          firstJobCard = found;
+          break;
+        }
+      }
+      
       // Try to restore from stored HTML if available
-      if (originalJobCardHTML) {
+      if (!firstJobCard && originalJobCardHTML) {
         console.log("Attempting to restore job card from stored HTML");
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = originalJobCardHTML;
@@ -1018,17 +1119,77 @@ const SeeAllJobs = () => {
           console.log("Job card restored from stored HTML");
         }
       }
+      
       if (!firstJobCard) {
         console.error("Still no job card available after restoration attempt");
-        return;
+        console.error("Available elements in document:", {
+          bodyChildren: doc.body ? Array.from(doc.body.children).map(el => ({
+            tag: el.tagName,
+            id: el.id,
+            className: el.className
+          })) : [],
+          allIds: doc.querySelectorAll('[id]') ? Array.from(doc.querySelectorAll('[id]')).map(el => el.id) : []
+        });
+        
+        // Don't return early - try to create a container if possible
+        console.warn("Proceeding without job card template - will try to create container");
       }
     }
     if (initialJobCard && !firstJobCard) {
       firstJobCard = initialJobCard;
+      console.log("Using stored initial job card");
     }
 
     // Find the correct parent container for job cards
-    let jobListParent = firstJobCard.parentNode;
+    let jobListParent = firstJobCard ? firstJobCard.parentNode : null;
+    
+    // If no parent found, try to find a container by common selectors
+    if (!jobListParent) {
+      console.log("No parent found from job card, searching for container...");
+      const containerSelectors = [
+        '#job_card_view',
+        '.job-card-view',
+        '[id*="job"]',
+        '[class*="job"]',
+        'main',
+        '.container',
+        '.row',
+        'section'
+      ];
+      
+      for (const selector of containerSelectors) {
+        const found = doc.querySelector(selector);
+        if (found && found.tagName.toLowerCase() !== 'button' && !found.className.includes('btn')) {
+          jobListParent = found;
+          console.log(`Found container with selector: ${selector}`);
+          break;
+        }
+      }
+      
+      // If still no parent, use body or create a container
+      if (!jobListParent) {
+        console.warn("No suitable container found, using document body or creating one");
+        if (doc.body) {
+          // Try to find or create a job list container in the body
+          let jobContainer = doc.body.querySelector('#job_list_container');
+          if (!jobContainer) {
+            jobContainer = document.createElement('div');
+            jobContainer.id = 'job_list_container';
+            jobContainer.className = 'job-list-container';
+            jobContainer.style.display = 'flex';
+            jobContainer.style.flexDirection = 'row';
+            jobContainer.style.flexWrap = 'wrap';
+            jobContainer.style.gap = '13px';
+            jobContainer.style.padding = '20px';
+            doc.body.appendChild(jobContainer);
+            console.log("Created new job list container");
+          }
+          jobListParent = jobContainer;
+        } else {
+          jobListParent = doc.body || document.body;
+        }
+      }
+    }
     
     // If the parent is a button or inappropriate element, find a better parent
     if (jobListParent && (jobListParent.tagName.toLowerCase() === 'button' || 
@@ -1050,7 +1211,14 @@ const SeeAllJobs = () => {
       }
     }
     
-    const copyFirstNode = firstJobCard.cloneNode(true);
+    // Only clone if we have a job card template
+    let copyFirstNode = null;
+    if (firstJobCard) {
+      copyFirstNode = firstJobCard.cloneNode(true);
+      console.log("Job card template cloned successfully");
+    } else {
+      console.warn("No job card template available - will create basic job cards");
+    }
 
     if (isFilterActivate) {
       const jobCards = doc.querySelectorAll("#job_card");
@@ -1075,9 +1243,23 @@ const SeeAllJobs = () => {
     }
 
     if (!jobListParent) {
-      console.error("No parent container found for job cards.");
-      return doc.body.innerHTML;
+      console.error("No parent container found for job cards after all attempts.");
+      console.error("This is a critical error - jobs cannot be rendered.");
+      // Try one more time with document.body
+      if (document.body) {
+        jobListParent = document.body;
+        console.log("Using document.body as fallback");
+      } else {
+        console.error("document.body is also not available");
+        return null;
+      }
     }
+    
+    console.log("Job List Parent:", {
+      tagName: jobListParent.tagName,
+      id: jobListParent.id,
+      className: jobListParent.className
+    });
 
     // Apply flex layout styling to the job cards container
     if (jobListParent) {
@@ -1101,15 +1283,28 @@ const SeeAllJobs = () => {
     } else {
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
-      jobData.forEach((job) => {
+      jobData.forEach((job, index) => {
         let newJobCard;
-        // Use original HTML structure if available, otherwise use the current card
+        
+        // Try to use existing template
         if (originalJobCardHTML && !firstJobCard) {
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = originalJobCardHTML;
           newJobCard = tempDiv.firstElementChild.cloneNode(true);
-        } else {
+        } else if (copyFirstNode) {
           newJobCard = copyFirstNode.cloneNode(true);
+        } else {
+          // Create a basic job card if no template is available
+          console.warn(`Creating basic job card for job ${index + 1} (no template available)`);
+          newJobCard = document.createElement('div');
+          newJobCard.id = 'job_card';
+          newJobCard.className = 'job-card';
+          newJobCard.innerHTML = `
+            <div id="job_card_title">${job.title || 'Job Title'}</div>
+            <div id="job_company_name">${job.company_name || 'Company'}</div>
+            <div id="job_location">${job.job_location || 'Location'}</div>
+            <div id="job-post-time">${job.created_at ? moment(job.created_at).fromNow() : ''}</div>
+          `;
         }
 
         // Style each job card to take up 1/3 of the row width (accounting for gaps)
@@ -1571,19 +1766,38 @@ const SeeAllJobs = () => {
     if (website["mycustom-html"]) {
       const updateJObList = async () => {
         try {
+          console.log("=== Updating Job List Content ===");
+          console.log("Job List Length:", jobList.length);
+          console.log("HTML Content Length:", htmlContent.length);
+          console.log("Is Filter Active:", isFilterActivate);
+          
           const updatedHTML = await updateJobListContent(htmlContent, jobList);
+          
           if (updatedHTML && !isFilterActivate) {
             // Only update htmlContent when not filtering to preserve original structure
             setHtmlContent(updatedHTML);
+            console.log("HTML content updated successfully");
+          } else if (isFilterActivate) {
+            console.log("Filter is active, skipping HTML content update");
+          } else {
+            console.warn("No updated HTML returned from updateJobListContent");
           }
-          console.log(updatedHTML,"updatedHTML")
+          
           setJobDataLoader(false);
         } catch (err) {
           setJobDataLoader(false);
-          console.log(err);
+          console.error("Error updating job list content:", err);
+          console.error("Error stack:", err.stack);
+          
+          // Show error to user
+          toast.error("Error rendering job list. Please refresh the page.", {
+            autoClose: 3000,
+          });
         }
       };
       updateJObList();
+    } else {
+      console.log("Website HTML not available yet, waiting...");
     }
 
     const totalResult = document.getElementById("result-total");
