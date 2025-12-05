@@ -58,6 +58,12 @@ const SeeAllJobs = () => {
     companyName: ''
   });
 
+  useEffect(() => {
+    fetchWebsite();
+    fetchFilterData();
+    fetchJobData();
+  }, []);
+
   const fetchWebsite = async () => {
     try {
         setLoader(true);
@@ -747,11 +753,7 @@ const SeeAllJobs = () => {
     }
   };
 
-  useEffect(() => {
-    fetchWebsite();
-    fetchFilterData();
-    fetchJobData();
-  }, []);
+
 
   useEffect(() => {
     if (page > 0) {
