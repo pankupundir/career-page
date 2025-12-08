@@ -380,6 +380,63 @@ const Page = () => {
     }
   }, [paginationData.totalData, htmlContent]);
 
+  // Manage loader in job-card-sec area
+  useEffect(() => {
+    // Find the job-card-sec container
+    const jobCardSec = document.querySelector('.job-card-sec');
+    if (!jobCardSec) return;
+
+    // Find or create the loader container inside job-card-sec
+    let loaderContainer = document.getElementById('job-cards-loader');
+    
+    if (jobDataLoader) {
+      // Show loader
+      if (!loaderContainer) {
+        loaderContainer = document.createElement('div');
+        loaderContainer.id = 'job-cards-loader';
+        loaderContainer.style.display = 'flex';
+        loaderContainer.style.justifyContent = 'center';
+        loaderContainer.style.alignItems = 'center';
+        loaderContainer.style.padding = '60px 20px';
+        loaderContainer.style.width = '100%';
+        loaderContainer.innerHTML = `
+          <div class="loader-content">
+            <span class="loader-wrapper job-loader"></span>
+            <p class="loader-text">Loading jobs...</p>
+          </div>
+        `;
+        jobCardSec.appendChild(loaderContainer);
+      } else {
+        loaderContainer.style.display = 'flex';
+      }
+      
+      // Hide job cards and no jobs message while loading
+      const jobCards = jobCardSec.querySelectorAll('#job_card');
+      jobCards.forEach(card => {
+        card.style.display = 'none';
+      });
+      const noJobsMsg = jobCardSec.querySelector('#no_jobs');
+      if (noJobsMsg) {
+        noJobsMsg.style.display = 'none';
+      }
+    } else {
+      // Hide loader
+      if (loaderContainer) {
+        loaderContainer.style.display = 'none';
+      }
+      
+      // Show job cards and no jobs message after loading
+      const jobCards = jobCardSec.querySelectorAll('#job_card');
+      jobCards.forEach(card => {
+        card.style.display = '';
+      });
+      const noJobsMsg = jobCardSec.querySelector('#no_jobs');
+      if (noJobsMsg) {
+        noJobsMsg.style.display = '';
+      }
+    }
+  }, [jobDataLoader, htmlContent]);
+
   // Call fetchFilterList after DOM is ready but before paint
   useEffect(() => {
     fetchFilterList();
