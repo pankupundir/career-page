@@ -1227,19 +1227,67 @@ const SeeAllJobs = () => {
       const noJobsMsg = document.getElementById("no_jobs");
       if (noJobsMsg) noJobsMsg.remove();
       // Apply flex layout styling when filters are active (working with document)
-      const jobCardViewActive = document.getElementById("job_card_view");
+      // First try to find job_card_view in the actual DOM
+      let jobCardViewActive = document.getElementById("job_card_view");
+      
+      // If not found, try to find it in job-card-sec or other containers
+      if (!jobCardViewActive) {
+        const jobCardSec = document.querySelector('.job-card-sec');
+        if (jobCardSec) {
+          jobCardViewActive = jobCardSec.querySelector('#job_card_view');
+        }
+      }
+      
+      // If still not found, try to find any container that might hold job cards
+      if (!jobCardViewActive) {
+        const possibleContainers = [
+          document.querySelector('#job_card_view'),
+          document.querySelector('.job-card-view'),
+          document.querySelector('.job-listings-container'),
+          document.querySelector('.job-listings'),
+          document.querySelector('.job-card-sec'),
+          document.querySelector('[id*="job_card"]'),
+          document.querySelector('[class*="job-card"]')
+        ].filter(Boolean);
+        
+        if (possibleContainers.length > 0) {
+          jobCardViewActive = possibleContainers[0];
+        }
+      }
+      
       if (jobCardViewActive) {
         jobCardViewActive.style.display = 'flex';
         jobCardViewActive.style.flexDirection = 'row';
         jobCardViewActive.style.flexWrap = 'wrap';
         jobCardViewActive.style.gap = '13px';
+        jobCardViewActive.style.visibility = 'visible';
+        jobCardViewActive.style.opacity = '1';
+        jobCardViewActive.style.width = '100%';
+        // Use job_card_view as the parent when filters are active
+        jobListParent = jobCardViewActive;
+      } else {
+        // If still no container found, ensure jobListParent is in actual DOM
+        if (jobListParent && jobListParent.ownerDocument !== document) {
+          // Try to find the equivalent in actual DOM
+          const actualParent = document.getElementById(jobListParent.id) || 
+                              document.querySelector(`.${jobListParent.className}`) ||
+                              document.querySelector('#job_card_view') ||
+                              document.querySelector('.job-card-sec');
+          if (actualParent) {
+            jobListParent = actualParent;
+          }
+        }
       }
+      
       // Also style the jobListParent if it's in the document
       if (jobListParent && jobListParent.ownerDocument === document) {
         jobListParent.style.display = 'flex';
         jobListParent.style.flexDirection = 'row';
         jobListParent.style.flexWrap = 'wrap';
         jobListParent.style.gap = '13px';
+        jobListParent.style.visibility = 'visible';
+        jobListParent.style.opacity = '1';
+        jobListParent.style.width = '100%';
       }
     } else {
       doc.querySelectorAll("#job_card").forEach((job) => job.remove());
@@ -1248,11 +1296,45 @@ const SeeAllJobs = () => {
     if (!jobListParent) {
       console.error("No parent container found for job cards after all attempts.");
       console.error("This is a critical error - jobs cannot be rendered.");
+      
+      // Try to find container in actual DOM when filters are active
+      if (isFilterActivate) {
+        const fallbackContainers = [
+          document.getElementById('job_card_view'),
+          document.querySelector('.job-card-sec'),
+          document.querySelector('.job-listings-container'),
+          document.querySelector('.job-listings'),
+          document.querySelector('[id*="job_card"]'),
+          document.querySelector('[class*="job-card"]')
+        ].filter(Boolean);
+        
+        if (fallbackContainers.length > 0) {
+          jobListParent = fallbackContainers[0];
+          console.log("Found fallback container:", jobListParent);
+        }
+      }
+      
       // Try one more time with document.body
-      if (document.body) {
-        jobListParent = document.body;
-        console.log("Using document.body as fallback");
-      } else {
+      if (!jobListParent && document.body) {
+        // Try to find or create a container in body
+        let bodyContainer = document.querySelector('#job_card_view') || 
+                           document.querySelector('.job-card-sec') ||
+                           document.querySelector('.job-listings-container');
+        if (!bodyContainer) {
+          bodyContainer = document.createElement('div');
+          bodyContainer.id = 'job_card_view';
+          bodyContainer.className = 'job-card-view';
+          bodyContainer.style.display = 'flex';
+          bodyContainer.style.flexDirection = 'row';
+          bodyContainer.style.flexWrap = 'wrap';
+          bodyContainer.style.gap = '13px';
+          bodyContainer.style.width = '100%';
+          document.body.appendChild(bodyContainer);
+          console.log("Created new job_card_view container in body");
+        }
+        jobListParent = bodyContainer;
+        console.log("Using container as fallback:", jobListParent);
+      } else if (!jobListParent) {
         console.error("document.body is also not available");
         return null;
       }
@@ -1277,16 +1359,32 @@ const SeeAllJobs = () => {
       const existingNoJobsInDoc = doc.getElementById("no_jobs");
       if (existingNoJobsInDoc) existingNoJobsInDoc.remove();
       
+      // Remove any existing "No Jobs Found" message from the actual DOM
+      const existingNoJobs = document.getElementById("no_jobs");
+      if (existingNoJobs) existingNoJobs.remove();
+      
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
       noJobsMessage.className = "no-jobs";
+      noJobsMessage.style.display = 'block';
+      noJobsMessage.style.visibility = 'visible';
+      noJobsMessage.style.opacity = '1';
+      noJobsMessage.style.width = '100%';
       noJobsMessage.innerHTML = `
         <div style="text-align: center; padding: 40px 20px;">
           <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
           <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
         </div>`;
+      
+      // Ensure the parent container is visible
+      if (jobListParent) {
+        jobListParent.style.display = 'flex';
+        jobListParent.style.visibility = 'visible';
+        jobListParent.style.opacity = '1';
+      }
+      
       jobListParent.appendChild(noJobsMessage);
-      console.log("No jobs found - added no jobs message");
+      console.log("No jobs found - added no jobs message to:", jobListParent);
     } else {
       // Remove any existing "No Jobs Found" message from both actual DOM and parsed doc
       const noJobsMessage = document.getElementById("no_jobs");
@@ -1719,17 +1817,52 @@ const SeeAllJobs = () => {
           // Add data attribute for event delegation
           newJobCard.setAttribute('data-job-id', job.job_external_id);
         }
+        // Ensure the job card is visible
+        newJobCard.style.display = 'block';
+        newJobCard.style.visibility = 'visible';
+        newJobCard.style.opacity = '1';
+        
         // Ensure we're not appending to a button or inappropriate element
         if (jobListParent && jobListParent.tagName.toLowerCase() !== 'button' && 
             !(jobListParent.className && jobListParent.className.includes('btn'))) {
+          // Ensure parent is visible
+          if (jobListParent.style) {
+            jobListParent.style.display = 'flex';
+            jobListParent.style.flexDirection = 'row';
+            jobListParent.style.flexWrap = 'wrap';
+            jobListParent.style.gap = '13px';
+            jobListParent.style.visibility = 'visible';
+            jobListParent.style.opacity = '1';
+            jobListParent.style.width = '100%';
+          }
           jobListParent.appendChild(newJobCard);
+          console.log("Appended job card to jobListParent:", jobListParent.id || jobListParent.className);
         } else {
-          console.error("Cannot append job card to button element:", jobListParent);
-          // Try to find a better parent
-          const betterParent = document.querySelector('div[class*="job"], div[id*="job"], div[class*="card"], div[id*="card"], section[class*="job"], section[id*="job"], main, .container, .row');
+          console.error("Cannot append job card to button element or jobListParent is null:", jobListParent);
+          // Try to find a better parent in actual DOM (not parsed doc)
+          const betterParent = document.querySelector('#job_card_view') ||
+                              document.querySelector('.job-card-sec') ||
+                              document.querySelector('.job-listings-container') ||
+                              document.querySelector('.job-listings') ||
+                              document.querySelector('div[class*="job"]') ||
+                              document.querySelector('div[id*="job"]') ||
+                              document.querySelector('section[class*="job"]') ||
+                              document.querySelector('main') ||
+                              document.querySelector('.container');
           if (betterParent && betterParent.tagName.toLowerCase() !== 'button') {
+            if (betterParent.style) {
+              betterParent.style.display = 'flex';
+              betterParent.style.flexDirection = 'row';
+              betterParent.style.flexWrap = 'wrap';
+              betterParent.style.gap = '13px';
+              betterParent.style.visibility = 'visible';
+              betterParent.style.opacity = '1';
+              betterParent.style.width = '100%';
+            }
             betterParent.appendChild(newJobCard);
-            console.log("Appended to better parent:", betterParent);
+            console.log("Appended to better parent:", betterParent.id || betterParent.className);
+          } else {
+            console.error("Could not find any suitable parent for job card");
           }
         }
       });
@@ -1737,11 +1870,25 @@ const SeeAllJobs = () => {
 
     if (!isFilterActivate) {
       // When filters are not active, we need to update the actual DOM
-      // Find the job list container in the actual document
-      const actualJobListParent = document.querySelector('#job_card')?.parentNode || 
-                                   document.querySelector('#job_card_view') ||
-                                   document.querySelector('[id*="job"]') ||
-                                   document.querySelector('[class*="job"]');
+      // Find the job list container in the actual document - try multiple selectors
+      let actualJobListParent = document.querySelector('#job_card')?.parentNode || 
+                                document.querySelector('#job_card_view') ||
+                                document.querySelector('.job-card-sec') ||
+                                document.querySelector('.job-listings-container') ||
+                                document.querySelector('.job-listings') ||
+                                document.querySelector('[id*="job_card"]') ||
+                                document.querySelector('[class*="job-card"]') ||
+                                document.querySelector('[id*="job"]') ||
+                                document.querySelector('[class*="job"]');
+      
+      // If still not found, try to find it in the parsed doc and get equivalent in actual DOM
+      if (!actualJobListParent && jobListParent) {
+        if (jobListParent.id) {
+          actualJobListParent = document.getElementById(jobListParent.id);
+        } else if (jobListParent.className) {
+          actualJobListParent = document.querySelector(`.${jobListParent.className.split(' ')[0]}`);
+        }
+      }
       
       if (actualJobListParent) {
         // Clear existing job cards in the actual DOM
@@ -1757,6 +1904,9 @@ const SeeAllJobs = () => {
         actualJobListParent.style.flexDirection = 'row';
         actualJobListParent.style.flexWrap = 'wrap';
         actualJobListParent.style.gap = '13px';
+        actualJobListParent.style.visibility = 'visible';
+        actualJobListParent.style.opacity = '1';
+        actualJobListParent.style.width = '100%';
         
         // Render based on job data
         if (jobData.length === 0) {
@@ -1773,11 +1923,36 @@ const SeeAllJobs = () => {
         } else {
           // Get all job cards from the parsed doc and append to actual DOM
           const newCards = doc.querySelectorAll('#job_card');
-          newCards.forEach(card => {
-            const clonedCard = card.cloneNode(true);
-            actualJobListParent.appendChild(clonedCard);
-          });
+          if (newCards.length > 0) {
+            newCards.forEach(card => {
+              const clonedCard = card.cloneNode(true);
+              // Ensure cloned card is visible
+              clonedCard.style.display = 'block';
+              clonedCard.style.visibility = 'visible';
+              clonedCard.style.opacity = '1';
+              actualJobListParent.appendChild(clonedCard);
+            });
+          } else {
+            // If no cards in parsed doc, they might have been appended directly to DOM when isFilterActivate was true
+            // In this case, cards should already be in the DOM, just ensure they're visible
+            const existingCardsInDOM = document.querySelectorAll('#job_card');
+            existingCardsInDOM.forEach(card => {
+              card.style.display = 'block';
+              card.style.visibility = 'visible';
+              card.style.opacity = '1';
+            });
+          }
+          
+          // Ensure container is visible
+          if (actualJobListParent.style) {
+            actualJobListParent.style.display = 'flex';
+            actualJobListParent.style.visibility = 'visible';
+            actualJobListParent.style.opacity = '1';
+            actualJobListParent.style.width = '100%';
+          }
         }
+      } else {
+        console.warn("Could not find actualJobListParent, cards may have been appended to parsed doc only");
       }
       
       return doc.body.innerHTML;
@@ -1999,7 +2174,15 @@ const SeeAllJobs = () => {
       jobCards.forEach(card => {
         card.style.display = 'none';
       });
-      const noJobsMsg = jobCardSec.querySelector('#no_jobs');
+      // Also check in job_card_view which might be inside or related to job-card-sec
+      const jobCardView = document.getElementById('job_card_view');
+      if (jobCardView) {
+        const jobCardsInView = jobCardView.querySelectorAll('#job_card');
+        jobCardsInView.forEach(card => {
+          card.style.display = 'none';
+        });
+      }
+      const noJobsMsg = document.getElementById('no_jobs');
       if (noJobsMsg) {
         noJobsMsg.style.display = 'none';
       }
@@ -2009,14 +2192,49 @@ const SeeAllJobs = () => {
         loaderContainer.style.display = 'none';
       }
       
-      // Show job cards and no jobs message after loading
+      // Show job cards after loading - check in multiple locations
       const jobCards = jobCardSec.querySelectorAll('#job_card');
       jobCards.forEach(card => {
-        card.style.display = '';
+        card.style.display = 'block';
+        card.style.visibility = 'visible';
+        card.style.opacity = '1';
       });
-      const noJobsMsg = jobCardSec.querySelector('#no_jobs');
+      
+      // Also check in job_card_view which is used when filters are active
+      const jobCardView = document.getElementById('job_card_view');
+      if (jobCardView) {
+        // Ensure container is visible
+        jobCardView.style.display = 'flex';
+        jobCardView.style.visibility = 'visible';
+        jobCardView.style.opacity = '1';
+        
+        const jobCardsInView = jobCardView.querySelectorAll('#job_card');
+        jobCardsInView.forEach(card => {
+          card.style.display = 'block';
+          card.style.visibility = 'visible';
+          card.style.opacity = '1';
+        });
+        
+        const noJobsMsgInView = jobCardView.querySelector('#no_jobs');
+        if (noJobsMsgInView) {
+          noJobsMsgInView.style.display = 'block';
+        }
+      }
+      
+      // Also check document-wide for job cards (in case they're in other containers)
+      const allJobCards = document.querySelectorAll('#job_card');
+      allJobCards.forEach(card => {
+        // Only show if not already explicitly hidden by other logic
+        if (card.style.display !== 'none') {
+          card.style.display = 'block';
+          card.style.visibility = 'visible';
+          card.style.opacity = '1';
+        }
+      });
+      
+      const noJobsMsg = document.getElementById('no_jobs');
       if (noJobsMsg) {
-        noJobsMsg.style.display = '';
+        noJobsMsg.style.display = 'block';
       }
     }
   }, [jobDataLoader, htmlContent]);
