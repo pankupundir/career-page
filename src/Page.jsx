@@ -1095,6 +1095,17 @@ const Page = () => {
           this.style.transform = 'translateY(0)';
         });
 
+        // Create and add tooltip with full job title
+        const existingTooltip = newJobCard.querySelector('.job-card-tooltip');
+        if (existingTooltip) {
+          existingTooltip.remove();
+        }
+        const tooltip = document.createElement('div');
+        tooltip.className = 'job-card-tooltip';
+        tooltip.textContent = job.title || '';
+        tooltip.setAttribute('data-not-editable', 'true');
+        newJobCard.appendChild(tooltip);
+
         const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
         if (jobTitleElement) {
           // Truncate job title to 25 characters and add ellipsis if longer

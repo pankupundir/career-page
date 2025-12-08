@@ -1223,6 +1223,9 @@ const SeeAllJobs = () => {
     if (isFilterActivate) {
       const jobCards = doc.querySelectorAll("#job_card");
       jobCards.forEach((job) => job.remove());
+      // Remove no jobs message if exists
+      const noJobsMsg = document.getElementById("no_jobs");
+      if (noJobsMsg) noJobsMsg.remove();
       // Apply flex layout styling when filters are active (working with document)
       const jobCardViewActive = document.getElementById("job_card_view");
       if (jobCardViewActive) {
@@ -1270,6 +1273,10 @@ const SeeAllJobs = () => {
     }
 
     if (jobData.length === 0) {
+      // Remove any existing job cards from the parsed doc
+      const existingNoJobsInDoc = doc.getElementById("no_jobs");
+      if (existingNoJobsInDoc) existingNoJobsInDoc.remove();
+      
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
       noJobsMessage.className = "no-jobs";
@@ -1281,8 +1288,11 @@ const SeeAllJobs = () => {
       jobListParent.appendChild(noJobsMessage);
       console.log("No jobs found - added no jobs message");
     } else {
+      // Remove any existing "No Jobs Found" message from both actual DOM and parsed doc
       const noJobsMessage = document.getElementById("no_jobs");
       if (noJobsMessage) noJobsMessage.remove();
+      const noJobsInDoc = doc.getElementById("no_jobs");
+      if (noJobsInDoc) noJobsInDoc.remove();
       jobData.forEach((job, index) => {
         let newJobCard;
         
@@ -1330,6 +1340,17 @@ const SeeAllJobs = () => {
           this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06)';
           this.style.transform = 'translateY(0)';
         });
+
+        // Create and add tooltip with full job title
+        const existingTooltip = newJobCard.querySelector('.job-card-tooltip');
+        if (existingTooltip) {
+          existingTooltip.remove();
+        }
+        const tooltip = document.createElement('div');
+        tooltip.className = 'job-card-tooltip';
+        tooltip.textContent = job.title || '';
+        tooltip.setAttribute('data-not-editable', 'true');
+        newJobCard.appendChild(tooltip);
 
         const jobTitleElement = newJobCard.querySelector(`#job_card_title`);
         if (jobTitleElement) {
@@ -1737,14 +1758,8 @@ const SeeAllJobs = () => {
         actualJobListParent.style.flexWrap = 'wrap';
         actualJobListParent.style.gap = '13px';
         
-        // Get all job cards from the parsed doc and append to actual DOM
-        const newCards = doc.querySelectorAll('#job_card');
-        if (newCards.length > 0) {
-          newCards.forEach(card => {
-            const clonedCard = card.cloneNode(true);
-            actualJobListParent.appendChild(clonedCard);
-          });
-        } else if (jobData.length === 0) {
+        // Render based on job data
+        if (jobData.length === 0) {
           // Show no jobs message if no jobs
           const noJobsMessage = document.createElement("div");
           noJobsMessage.id = "no_jobs";
@@ -1755,6 +1770,13 @@ const SeeAllJobs = () => {
               <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
             </div>`;
           actualJobListParent.appendChild(noJobsMessage);
+        } else {
+          // Get all job cards from the parsed doc and append to actual DOM
+          const newCards = doc.querySelectorAll('#job_card');
+          newCards.forEach(card => {
+            const clonedCard = card.cloneNode(true);
+            actualJobListParent.appendChild(clonedCard);
+          });
         }
       }
       

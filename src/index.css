@@ -191,6 +191,48 @@
   margin-top: 35px !important;
 }
 
+/* Glass-style tooltip for job cards */
+#job_card {
+  position: relative !important;
+}
+
+.job-card-tooltip {
+  position: absolute !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  color: #000000 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  z-index: 1000 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease !important;
+  pointer-events: none !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+  width: auto !important;
+  min-width: 120px !important;
+  max-width: calc(100% - 40px) !important;
+  text-align: center !important;
+  overflow-wrap: break-word !important;
+}
+
+#job_card:hover .job-card-tooltip {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
 /* Responsive: On smaller screens, show 2 cards, then 1 */
 @media (max-width: 992px) {
   #job_card {
