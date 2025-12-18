@@ -215,6 +215,324 @@ const Page = () => {
     }
     initializeAccordion();
     
+    // Initialize map location change handler
+    const initializeMapLocationHandlers = () => {
+      // Create or update the global handleMapLocationChange function
+      window.handleMapLocationChange = (sectionId, selectedValue) => {
+        // sectionId format: "map-section-1766041536372-jyz84o8i5"
+        const selectElement = document.getElementById(`location-select-${sectionId}`);
+        if (!selectElement) return;
+        
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        if (!selectedOption) return;
+        
+        // Get location data from data attributes or parse from option text
+        const fullAddress = selectedOption.textContent.trim();
+        const latitude = selectedOption.getAttribute('data-latitude');
+        const longitude = selectedOption.getAttribute('data-longitude');
+        const locationName = selectedOption.getAttribute('data-location-name') || fullAddress.split(',')[0];
+        const address = selectedOption.getAttribute('data-address') || fullAddress;
+        const email = selectedOption.getAttribute('data-email') || 'support@kretsia.com';
+        
+        // If coordinates are not in data attributes, try to extract from current map iframe
+        let lat = latitude;
+        let lng = longitude;
+        
+        if (!lat || !lng) {
+          // Try to extract from the map iframe URL
+          const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
+          if (mapIframe && mapIframe.src) {
+            const markerMatch = mapIframe.src.match(/marker=([\d.]+),([\d.]+)/);
+            if (markerMatch) {
+              lat = markerMatch[1];
+              lng = markerMatch[2];
+            }
+          }
+        }
+        
+        // If still no coordinates, use geocoding coordinates based on location name
+        // Coordinates for specific locations
+        if (!lat || !lng) {
+          const locationCoords = {
+            'Dehradun': { lat: 30.3165, lng: 78.0322 },
+            'Amsterdam': { lat: 52.3676, lng: 4.9041 },
+            'Strawinskylaan': { lat: 52.3676, lng: 4.9041 },
+            'Copenhagen': { lat: 55.6120, lng: 12.6477 },
+            'Copenhagen Airport': { lat: 55.6120128, lng: 12.6476789 },
+            'CPH': { lat: 55.6120128, lng: 12.6476789 }
+          };
+          
+          const locationKey = Object.keys(locationCoords).find(key => 
+            fullAddress.includes(key)
+          );
+          
+          if (locationKey) {
+            lat = locationCoords[locationKey].lat;
+            lng = locationCoords[locationKey].lng;
+          } else {
+            // Default to Copenhagen Airport if no match
+            lat = 55.6120128;
+            lng = 12.6476789;
+          }
+        }
+        
+        // Update location name
+        const locationNameElement = document.getElementById(`location-name-${sectionId}`);
+        if (locationNameElement) {
+          locationNameElement.textContent = locationName;
+        }
+        
+        // Update address
+        const locationAddressElement = document.getElementById(`location-address-${sectionId}`);
+        if (locationAddressElement) {
+          // Check if there's a formatted address in data attribute
+          const formattedAddress = selectedOption.getAttribute('data-address-formatted');
+          if (formattedAddress) {
+            locationAddressElement.innerHTML = formattedAddress;
+          } else {
+            // Format address - split by comma and take first two parts for address lines
+            const addressParts = address.split(',');
+            if (addressParts.length >= 2) {
+              // For Copenhagen Airport, format specially
+              if (address.includes('Copenhagen Airport') || address.includes('CPH')) {
+                locationAddressElement.innerHTML = 'Lufthavnsboulevarden 6<br>2770 Kastrup';
+              } else if (addressParts.length >= 3) {
+                // For addresses with multiple parts, show first part and next 2 parts
+                locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1, 3).join(', ')}`;
+              } else {
+                locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1).join(', ')}`;
+              }
+            } else {
+              locationAddressElement.textContent = address;
+            }
+          }
+        }
+        
+        // Update directions link
+        const directionsLink = document.getElementById(`location-directions-${sectionId}`);
+        if (directionsLink && lat && lng) {
+          directionsLink.href = `https://www.openstreetmap.org/directions?to=${lat},${lng}`;
+        }
+        
+        // Update email link
+        const emailLink = document.getElementById(`location-email-${sectionId}`);
+        if (emailLink) {
+          emailLink.href = `mailto:${email}`;
+          emailLink.textContent = email;
+        }
+        
+        // Update map iframe
+        const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
+        if (mapIframe && lat && lng) {
+          // Calculate bounding box (approximately 0.01 degrees around the marker)
+          const bboxPadding = 0.01;
+          const bbox = `${parseFloat(lng) - bboxPadding},${parseFloat(lat) - bboxPadding},${parseFloat(lng) + bboxPadding},${parseFloat(lat) + bboxPadding}`;
+          mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+        }
+      };
+      
+      // Initialize all map sections on the page
+      const mapSections = document.querySelectorAll('.locations-map');
+      mapSections.forEach((section) => {
+        // Extract section ID from section.id (format: "map-section-1766041536372-jyz84o8i5")
+        const sectionId = section.id;
+        const selectElement = document.getElementById(`location-select-${sectionId}`);
+        
+        if (selectElement) {
+          // Store location data in data attributes if not already present
+          Array.from(selectElement.options).forEach((option, index) => {
+            if (!option.getAttribute('data-latitude') || !option.getAttribute('data-longitude')) {
+              const fullAddress = option.textContent.trim();
+              
+              // Extract location name (first part before comma, but handle special cases)
+              let locationName = fullAddress.split(',')[0];
+              if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
+                locationName = 'Copenhagen Airport (CPH)';
+              }
+              option.setAttribute('data-location-name', locationName);
+              option.setAttribute('data-address', fullAddress);
+              
+              // Set formatted address for special cases
+              if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
+                option.setAttribute('data-address-formatted', 'Lufthavnsboulevarden 6<br>2770 Kastrup');
+              } else if (fullAddress.includes('Amsterdam') || fullAddress.includes('Strawinskylaan')) {
+                option.setAttribute('data-address-formatted', 'Strawinskylaan 4117<br>1077 ZX Amsterdam, Netherlands');
+              } else if (fullAddress.includes('Dehradun')) {
+                option.setAttribute('data-address-formatted', 'Dehradun<br>Uttarakhand, India');
+              }
+              
+              // Set coordinates based on location
+              let lat, lng;
+              if (fullAddress.includes('Dehradun')) {
+                lat = 30.3165;
+                lng = 78.0322;
+              } else if (fullAddress.includes('Amsterdam') || fullAddress.includes('Strawinskylaan')) {
+                lat = 52.3676;
+                lng = 4.9041;
+              } else if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
+                lat = 55.6120128;
+                lng = 12.6476789;
+              } else if (fullAddress.includes('Copenhagen')) {
+                lat = 55.6120;
+                lng = 12.6477;
+              } else {
+                // Try to extract from current map iframe
+                const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
+                if (mapIframe && mapIframe.src) {
+                  const markerMatch = mapIframe.src.match(/marker=([\d.]+),([\d.]+)/);
+                  if (markerMatch) {
+                    lat = markerMatch[1];
+                    lng = markerMatch[2];
+                  }
+                }
+                // Default fallback
+                if (!lat || !lng) {
+                  lat = 55.6120128;
+                  lng = 12.6476789;
+                }
+              }
+              
+              option.setAttribute('data-latitude', lat);
+              option.setAttribute('data-longitude', lng);
+            }
+          });
+          
+          // Ensure the change handler is attached
+          selectElement.onchange = function() {
+            window.handleMapLocationChange(sectionId, this.value);
+          };
+        }
+      });
+    };
+    
+    // Initialize map location handlers
+    // Use setTimeout to ensure DOM is fully rendered
+    setTimeout(() => {
+      initializeMapLocationHandlers();
+    }, 100);
+    
+    // Initialize cover carousel if present
+    const initializeCoverCarousel = () => {
+      const carouselSection = document.getElementById('cover-carousel-main');
+      if (!carouselSection) return null;
+      
+      const slides = carouselSection.querySelectorAll('.carousel-slide');
+      const indicators = carouselSection.querySelectorAll('.carousel-indicator');
+      
+      if (slides.length === 0) return null;
+      
+      let currentIndex = 0;
+      let carouselInterval = null;
+      const slideDuration = 5000; // 5 seconds per slide
+      
+      // Function to update slide visibility with smooth animation
+      const updateSlide = (index) => {
+        slides.forEach((slide, i) => {
+          const img = slide.querySelector('img');
+          if (i === index) {
+            slide.style.opacity = '1';
+            slide.style.zIndex = '10';
+            slide.style.transform = 'scale(1)';
+            if (img) {
+              img.style.transform = 'scale(1)';
+            }
+          } else {
+            slide.style.opacity = '0';
+            slide.style.zIndex = '1';
+            slide.style.transform = 'scale(1.02)';
+            if (img) {
+              img.style.transform = 'scale(1.05)';
+            }
+          }
+        });
+        
+        // Update indicators
+        indicators.forEach((indicator, i) => {
+          if (i === index) {
+            indicator.style.opacity = '1';
+            indicator.style.transform = 'scale(1.2)';
+            indicator.style.background = 'white';
+          } else {
+            indicator.style.opacity = '0.5';
+            indicator.style.transform = 'scale(1)';
+            indicator.style.background = 'white';
+          }
+        });
+      };
+      
+      // Function to go to next slide
+      const nextSlide = () => {
+        currentIndex = (currentIndex + 1) % slides.length;
+        updateSlide(currentIndex);
+      };
+      
+      // Function to go to specific slide
+      const goToSlide = (index) => {
+        if (index >= 0 && index < slides.length) {
+          currentIndex = index;
+          updateSlide(currentIndex);
+          // Reset auto-play timer
+          if (carouselInterval) {
+            clearInterval(carouselInterval);
+          }
+          carouselInterval = setInterval(nextSlide, slideDuration);
+        }
+      };
+      
+      // Add click handlers to indicators
+      const indicatorClickHandlers = [];
+      indicators.forEach((indicator, index) => {
+        const clickHandler = () => {
+          goToSlide(index);
+        };
+        indicatorClickHandlers.push({ indicator, handler: clickHandler });
+        indicator.addEventListener('click', clickHandler);
+      });
+      
+      // Initialize first slide
+      updateSlide(0);
+      
+      // Start auto-play
+      carouselInterval = setInterval(nextSlide, slideDuration);
+      
+      // Pause on hover
+      const pauseCarousel = () => {
+        if (carouselInterval) {
+          clearInterval(carouselInterval);
+          carouselInterval = null;
+        }
+      };
+      
+      // Resume on mouse leave
+      const resumeCarousel = () => {
+        if (!carouselInterval) {
+          carouselInterval = setInterval(nextSlide, slideDuration);
+        }
+      };
+      
+      carouselSection.addEventListener('mouseenter', pauseCarousel);
+      carouselSection.addEventListener('mouseleave', resumeCarousel);
+      
+      // Cleanup function
+      return () => {
+        if (carouselInterval) {
+          clearInterval(carouselInterval);
+        }
+        carouselSection.removeEventListener('mouseenter', pauseCarousel);
+        carouselSection.removeEventListener('mouseleave', resumeCarousel);
+        // Remove indicator click handlers
+        indicatorClickHandlers.forEach(({ indicator, handler }) => {
+          indicator.removeEventListener('click', handler);
+        });
+      };
+    };
+    
+    // Initialize carousel after DOM is ready
+    let carouselCleanup = null;
+    const carouselTimeout = setTimeout(() => {
+      carouselCleanup = initializeCoverCarousel();
+    }, 200);
+    
     // Add event delegation for location clicks
     const handleLocationClickDelegation = (e) => {
       const locationElement = e.target.closest('#job_location') || (e.target.id === 'job_location' ? e.target : null);
@@ -275,6 +593,11 @@ const Page = () => {
     
     // Cleanup function
     return () => {
+      // Clear carousel timeout and cleanup
+      clearTimeout(carouselTimeout);
+      if (carouselCleanup) {
+        carouselCleanup();
+      }
       // Remove location and job card click listeners
       document.removeEventListener('click', handleLocationClickDelegation);
       document.removeEventListener('click', handleJobCardClick);
@@ -1216,6 +1539,35 @@ const Page = () => {
           }
         }
         
+        // Handle job-image container with dynamic image
+        const jobImageContainer = newJobCard.querySelector('.job-image');
+        if (jobImageContainer) {
+          // Remove background color from job-image container
+          jobImageContainer.style.backgroundColor = 'transparent';
+          jobImageContainer.style.background = 'none';
+          
+          const jobImage = jobImageContainer.querySelector('img');
+          if (jobImage) {
+            if (isValidUrl(job.job_picture_url)) {
+              // Update the image src with API image
+              jobImage.src = job.job_picture_url;
+              jobImage.alt = job.title || 'Job Image';
+              jobImage.style.display = 'block';
+              jobImage.style.width = '100%';
+              jobImage.style.height = '100%';
+              jobImage.style.objectFit = 'cover';
+              
+              // Handle image load errors - hide image on error
+              jobImage.onerror = function() {
+                this.style.display = 'none';
+              };
+            } else {
+              // Hide the image if no valid URL
+              jobImage.style.display = 'none';
+            }
+          }
+        }
+        
         // Handle company name and contract type on one line
         const companyNameElement = newJobCard.querySelector(`#job_company_name`);
         const contractTypeElement = newJobCard.querySelector(`#job_contract_type`);
@@ -1296,135 +1648,50 @@ const Page = () => {
           if (!isValidUrl(job.job_picture_url)) {
             companyContractContainer.style.marginTop = '';
           }
+      
+        }
+        
+        // Handle dynamic skills - replace static skills with dynamic ones
+        const existingSkillsContainer = newJobCard.querySelector('#job-skills-container') || newJobCard.querySelector('.job-skills');
+        if (existingSkillsContainer) {
+          // Clear existing static skills
+          existingSkillsContainer.innerHTML = '';
+          existingSkillsContainer.style.display = 'flex';
+          existingSkillsContainer.style.flexWrap = 'wrap';
+          existingSkillsContainer.style.gap = '8px';
           
-          // Add skills below company name
-          const existingSkillsContainer = newJobCard.querySelector('.job-skills-container');
-          if (existingSkillsContainer) {
-            existingSkillsContainer.remove();
-          }
-          
+          // Add dynamic skills from job data
           if (job.job_skills && job.job_skills.length > 0) {
-            const skillsContainer = document.createElement('div');
-            skillsContainer.className = 'job-skills-container';
-            skillsContainer.setAttribute('data-not-editable', 'true');
-            skillsContainer.style.marginBottom = '16px';
-            skillsContainer.style.marginTop = '14px';
-            
-            const skillsList = document.createElement('ul');
-            skillsList.className = 'skills-list';
-            skillsList.setAttribute('data-not-editable', 'true');
-            skillsList.style.display = 'flex';
-            skillsList.style.alignItems = 'center';
-            skillsList.style.flexWrap = 'wrap';
-            skillsList.style.gap = '8px';
-            skillsList.style.listStyle = 'none';
-            skillsList.style.padding = '0';
-            skillsList.style.margin = '0';
-            
-            job.job_skills.slice(0, 3).forEach((skill, index) => {
-              const skillItem = document.createElement('li');
-              skillItem.className = 'skill-tag';
-              skillItem.setAttribute('data-not-editable', 'true');
-              skillItem.id = `job_skill_${skill.id || skill.skill_id || index}`;
-              skillItem.style.display = 'flex';
-              skillItem.style.alignItems = 'center';
-              skillItem.style.gap = '6px';
-              // Enhanced skill tag styling
-              skillItem.style.backgroundColor = '#f7f8fa';
-              skillItem.style.padding = '6px 12px';
-              skillItem.style.borderRadius = '16px';
-              skillItem.style.fontSize = '12px';
-              skillItem.style.fontWeight = '500';
-              skillItem.style.color = '#2d3748';
-              skillItem.style.border = '1px solid #e2e8f0';
-              
-              // Create SVG tag icon for skills
-              const svgIcon = createSVGIcon('skill', 14);
-              svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.style.color = '#64748b';
-              svgIcon.style.opacity = '0.7';
-              svgIcon.style.flexShrink = '0';
-              
-              // Create span for skill name
-              const skillSpan = document.createElement('span');
-              skillSpan.textContent = skill.skill_name || skill;
-              
-              skillItem.appendChild(svgIcon);
-              skillItem.appendChild(skillSpan);
-              skillsList.appendChild(skillItem);
+            job.job_skills.forEach((skill) => {
+              const skillTag = document.createElement('span');
+              skillTag.className = 'skill-tag';
+              skillTag.setAttribute('data-not-editable', 'true');
+              skillTag.style.background = '#f3f4f6';
+              skillTag.style.color = '#4b5563';
+              skillTag.style.padding = '4px 12px';
+              skillTag.style.borderRadius = '20px';
+              skillTag.style.fontSize = '12px';
+              skillTag.textContent = skill.skill_name || skill.normalized_skill_name || skill;
+              existingSkillsContainer.appendChild(skillTag);
             });
-            
-            skillsContainer.appendChild(skillsList);
-            
-            // Insert skills container after company-contract container
-            const companyContainer = newJobCard.querySelector('.company-contract-container');
-            if (companyContainer && companyContainer.parentNode) {
-              companyContainer.parentNode.insertBefore(skillsContainer, companyContainer.nextSibling);
-            } else if (companyNameElement && companyNameElement.parentNode) {
-              companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
-            }
           } else if (job.skills) {
             // Fallback to comma-separated skills string
-            const skillsContainer = document.createElement('div');
-            skillsContainer.className = 'job-skills-container';
-            skillsContainer.setAttribute('data-not-editable', 'true');
-            skillsContainer.style.marginBottom = '16px';
-            skillsContainer.style.marginTop = '14px';
-            
-            const skillsList = document.createElement('ul');
-            skillsList.className = 'skills-list';
-            skillsList.setAttribute('data-not-editable', 'true');
-            skillsList.style.display = 'flex';
-            skillsList.style.alignItems = 'center';
-            skillsList.style.flexWrap = 'wrap';
-            skillsList.style.gap = '8px';
-            skillsList.style.listStyle = 'none';
-            skillsList.style.padding = '0';
-            skillsList.style.margin = '0';
-            
-            job.skills.split(',').slice(0, 3).forEach((skill, index) => {
-              const skillItem = document.createElement('li');
-              skillItem.className = 'skill-tag';
-              skillItem.setAttribute('data-not-editable', 'true');
-              skillItem.style.display = 'flex';
-              skillItem.style.alignItems = 'center';
-              skillItem.style.gap = '6px';
-              // Enhanced skill tag styling
-              skillItem.style.backgroundColor = '#f7f8fa';
-              skillItem.style.padding = '6px 12px';
-              skillItem.style.borderRadius = '16px';
-              skillItem.style.fontSize = '12px';
-              skillItem.style.fontWeight = '500';
-              skillItem.style.color = '#2d3748';
-              skillItem.style.border = '1px solid #e2e8f0';
-              
-              // Create SVG tag icon for skills
-              const svgIcon = createSVGIcon('skill', 14);
-              svgIcon.setAttribute('class', 'skill-icon');
-              svgIcon.style.color = '#64748b';
-              svgIcon.style.opacity = '0.7';
-              svgIcon.style.flexShrink = '0';
-              
-              // Create span for skill name
-              const skillSpan = document.createElement('span');
-              skillSpan.textContent = skill.trim();
-              
-              skillItem.appendChild(svgIcon);
-              skillItem.appendChild(skillSpan);
-              skillsList.appendChild(skillItem);
+            const skillsArray = typeof job.skills === 'string' ? job.skills.split(',') : job.skills;
+            skillsArray.forEach((skill) => {
+              const skillTag = document.createElement('span');
+              skillTag.className = 'skill-tag';
+              skillTag.setAttribute('data-not-editable', 'true');
+              skillTag.style.background = '#f3f4f6';
+              skillTag.style.color = '#4b5563';
+              skillTag.style.padding = '4px 12px';
+              skillTag.style.borderRadius = '20px';
+              skillTag.style.fontSize = '12px';
+              skillTag.textContent = typeof skill === 'string' ? skill.trim() : (skill.skill_name || skill);
+              existingSkillsContainer.appendChild(skillTag);
             });
-            
-            skillsContainer.appendChild(skillsList);
-            
-            // Insert skills container after company-contract container
-            const companyContainer = newJobCard.querySelector('.company-contract-container');
-            if (companyContainer && companyContainer.parentNode) {
-              companyContainer.parentNode.insertBefore(skillsContainer, companyContainer.nextSibling);
-            } else if (companyNameElement && companyNameElement.parentNode) {
-              companyNameElement.parentNode.insertBefore(skillsContainer, companyNameElement.nextSibling);
-            }
           }
         }
+        
         // Handle time display with icon
         const timeElement = newJobCard.querySelector(`#job-post-time`);
         if (timeElement) {

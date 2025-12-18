@@ -8,8 +8,6 @@ import "./style.css";
 const Header = ({ setLoader, loader }) => {
   const [headerSectionData, setHeaderSectionData] = useState("");
   const [isHeaderActive, setIsHeaderActive] = useState(false);
-  const [activeAccountType, setActiveAccountType] = useState("user");
-  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
 
   useEffect(() => {
     webSiteBuilderInstance
@@ -25,31 +23,6 @@ const Header = ({ setLoader, loader }) => {
       });
   }, []);
 
-  const toggleMenuModal = () => {
-    setIsMenuModalOpen(!isMenuModalOpen);
-  };
-
-  const closeMenuModal = () => {
-    setIsMenuModalOpen(false);
-  };
-
-  const handleAccountTypeChange = (type) => {
-    setActiveAccountType(type);
-  };
-
-  const handleLoginOption = (type) => {
-    console.log(`Login as ${type}`);
-    if (type === 'user') {
-      window.location.href = `${import.meta.env.VITE_CRM_URL}/`;
-    } else if (type === 'candidate-login') {
-      window.location.href = `${import.meta.env.VITE_CRM_URL}/candidate-login`;
-    }
-  };
-
-  const handleSignupRedirect = () => {
-    window.location.href = `${import.meta.env.VITE_CRM_URL}/talent-registration`;
-  };
-
   useEffect(() => {
     if (isHeaderActive) {
       const closeMenuHeader = document.getElementById("close-menu-header");
@@ -63,19 +36,62 @@ const Header = ({ setLoader, loader }) => {
     }
   }, [isHeaderActive]);
 
-  // Add event listener for menu-icon buttons coming from API
+  // Set up drawer functions for API HTML drawer (coming from API)
   useEffect(() => {
-    const handleMenuIconClick = (event) => {
-      if (event.target.classList.contains('menu-icon')) {
-        toggleMenuModal();
+    // Implement drawer functions based on the API HTML structure
+    window.openHeaderDrawer = () => {
+      const overlay = document.getElementById('headerDrawerOverlay');
+      const drawer = document.getElementById('headerDrawer');
+      if (overlay && drawer) {
+        overlay.classList.add('active');
+        drawer.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    };
+    
+    window.closeHeaderDrawer = () => {
+      const overlay = document.getElementById('headerDrawerOverlay');
+      const drawer = document.getElementById('headerDrawer');
+      if (overlay && drawer) {
+        overlay.classList.remove('active');
+        drawer.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    };
+    
+    window.switchDrawerTab = (tab) => {
+      const tabs = document.querySelectorAll('.header-drawer-tab');
+      const contents = document.querySelectorAll('.header-drawer-tab-content');
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      contents.forEach(c => c.classList.remove('active'));
+      
+      if (tab === 'user') {
+        if (tabs[0]) tabs[0].classList.add('active');
+        const userTab = document.getElementById('drawerTabUser');
+        if (userTab) userTab.classList.add('active');
+      } else {
+        if (tabs[1]) tabs[1].classList.add('active');
+        const candidateTab = document.getElementById('drawerTabCandidate');
+        if (candidateTab) candidateTab.classList.add('active');
+      }
+    };
+    
+    // Close drawer on ESC key
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' && window.closeHeaderDrawer) {
+        window.closeHeaderDrawer();
       }
     };
 
-    // Use event delegation on the document to catch clicks on dynamically added elements
-    document.addEventListener('click', handleMenuIconClick);
+    document.addEventListener('keydown', handleEscapeKey);
 
     return () => {
-      document.removeEventListener('click', handleMenuIconClick);
+      // Clean up global functions
+      delete window.openHeaderDrawer;
+      delete window.closeHeaderDrawer;
+      delete window.switchDrawerTab;
+      document.removeEventListener('keydown', handleEscapeKey);
     };
   }, []);
 
@@ -88,90 +104,6 @@ const Header = ({ setLoader, loader }) => {
             __html: headerSectionData["mycustom-html"],
           }}
         />
-        {/* Menu icon button */}
-     
-      </div>
-
-      {/* Menu Modal */}
-      <div id="menu-modal" className={`menu-modal ${isMenuModalOpen ? 'active' : ''}`}>
-        <div className="menu-backdrop" onClick={closeMenuModal}></div>
-        <div className="menu-content">
-          <div className="menu-header">
-            <div className="menu-logo">
-              {/* Add your logo here */}
-            </div>
-            <button className="menu-close" onClick={closeMenuModal}>&times;</button>
-          </div>
-          
-          <div className="menu-title-section">
-            <h2 className="menu-title">Login</h2>
-            <p className="menu-subtitle">To begin, please choose your account type</p>
-          </div>
-            
-          <div className="account-type-section">
-            <div className="account-type-tabs">
-              <button 
-                className={`account-tab ${activeAccountType === 'user' ? 'active' : ''}`} 
-                onClick={() => handleAccountTypeChange('user')}
-                data-type="user"
-              >
-                Login
-              </button>
-              <button 
-                className={`account-tab ${activeAccountType === 'candidate' ? 'active' : ''}`} 
-                onClick={() => handleAccountTypeChange('candidate')}
-                data-type="candidate"
-              >
-                Candidate
-              </button>
-            </div>
-          </div>
-            
-          {/* User Login Options */}
-          <div className="login-form-section" style={{ display: activeAccountType === 'user' ? 'block' : 'none' }}>
-            <div className="login-options">
-              <div className="login-option">
-              <p>Login with your Client or Employee account to access your dashboard</p>
-                <button 
-                  className="btn btn-login-option" 
-                  onClick={() => handleLoginOption('user')}
-                  data-type="user"
-                >
-                  Login 
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Candidate Login/Signup Options */}
-          <div className="login-form-section" style={{ display: activeAccountType === 'candidate' ? 'block' : 'none' }}>
-            <div >
-              <div className="login-option">
-                <p>Access your candidate dashboard and manage your applications</p>
-               
-                <button 
-                  className="btn btn-login-option" 
-                  onClick={() => handleLoginOption('candidate-login')}
-                  data-type="candidate-login"
-                >
-                  Login as Candidate
-                </button>
-                <p className="signup-text mt-3" onClick={handleSignupRedirect}>
-                  Do you want to sign up?
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="menu-footer">
-            <div className="menu-footer-links">
-              <a href="#home" target="_blank" className="footer-link">Home</a>
-              <a href="#about" target="_blank" className="footer-link">About Us</a>
-              <a href="#blog" target="_blank" className="footer-link">Privacy Policy</a>
-              <a href="#contact" target="_blank" className="footer-link">Contact</a>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );
