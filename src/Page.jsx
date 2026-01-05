@@ -1173,6 +1173,26 @@ const Page = () => {
         clockLine2.setAttribute('y2', '12');
         svg.appendChild(clockLine2);
         break;
+      case 'briefcase':
+        // Briefcase icon for no jobs
+        const briefcasePath1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        briefcasePath1.setAttribute('d', 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z');
+        svg.appendChild(briefcasePath1);
+        break;
+      case 'search':
+        // Search icon
+        const searchCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        searchCircle.setAttribute('cx', '11');
+        searchCircle.setAttribute('cy', '11');
+        searchCircle.setAttribute('r', '8');
+        svg.appendChild(searchCircle);
+        const searchLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        searchLine.setAttribute('x1', '21');
+        searchLine.setAttribute('y1', '21');
+        searchLine.setAttribute('x2', '16.65');
+        searchLine.setAttribute('y2', '16.65');
+        svg.appendChild(searchLine);
+        break;
       default:
         return svg;
     }
@@ -1419,11 +1439,89 @@ const Page = () => {
       const noJobsMessage = document.createElement("div");
       noJobsMessage.id = "no_jobs";
       noJobsMessage.className = "no-jobs";
-      noJobsMessage.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px;">
-          <i class="fas fa-search" style="font-size: 48px; color: #ccc; margin-bottom: 20px;"></i>
-          <p style="font-size: 24px; color: #666; margin: 0;">No Jobs Found</p>
-        </div>`;
+      
+      // Create container for the no jobs message
+      const container = document.createElement("div");
+      container.style.cssText = `
+        text-align: center;
+        padding: 60px 20px;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+      `;
+      
+      // Create icon container with background circle
+      const iconContainer = document.createElement("div");
+      iconContainer.style.cssText = `
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 24px;
+        position: relative;
+      `;
+      
+      // Create background circle
+      const iconWrapper = document.createElement("div");
+      iconWrapper.style.cssText = `
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      `;
+      
+      // Create briefcase icon
+      const briefcaseIcon = createSVGIcon('briefcase', 64);
+      briefcaseIcon.style.cssText = `
+        color: #94a3b8;
+        display: block;
+      `;
+      iconWrapper.appendChild(briefcaseIcon);
+      iconContainer.appendChild(iconWrapper);
+      
+      // Create title
+      const title = document.createElement("h3");
+      title.textContent = "No Jobs Found";
+      title.style.cssText = `
+        font-size: 28px;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 12px 0;
+        line-height: 1.3;
+      `;
+      
+      // Create subtitle
+      const subtitle = document.createElement("p");
+      subtitle.textContent = "We couldn't find any jobs matching your criteria. Try adjusting your filters or check back later.";
+      subtitle.style.cssText = `
+        font-size: 16px;
+        color: #64748b;
+        margin: 0;
+        line-height: 1.6;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+      `;
+      
+      // Append all elements
+      container.appendChild(iconContainer);
+      container.appendChild(title);
+      container.appendChild(subtitle);
+      noJobsMessage.appendChild(container);
+      
+      // Style the no jobs message container
+      noJobsMessage.style.cssText = `
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+        padding: 40px 20px;
+      `;
+      
       jobListParent.appendChild(noJobsMessage);
       console.log("No jobs found - added no jobs message");
     } else {
