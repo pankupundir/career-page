@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import JobDetails from "./JobDetails";
 import SeeAllJobs from "./SeeAllJobs";
+import DynamicPage from "./DynamicPage";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 function App() {
@@ -25,9 +26,10 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Page />} />
-          <Route path="/:pageId" element={<Page />} />
           <Route path="/job-details/:jobId" element={<JobDetails />} />
           <Route path="/see-all-jobs" element={<SeeAllJobs />} />
+          <Route path="/:pageName" element={<DynamicPage />} />
+          <Route path="/:pageId" element={<Page />} />
           {/* Define other routes here */}
         </Routes>
       </Router>

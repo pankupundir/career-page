@@ -217,198 +217,339 @@ const Page = () => {
     
     // Initialize map location change handler
     const initializeMapLocationHandlers = () => {
-      // Create or update the global handleMapLocationChange function
-      window.handleMapLocationChange = (sectionId, selectedValue) => {
-        // sectionId format: "map-section-1766041536372-jyz84o8i5"
-        const selectElement = document.getElementById(`location-select-${sectionId}`);
-        if (!selectElement) return;
-        
-        const selectedOption = selectElement.options[selectElement.selectedIndex];
-        if (!selectedOption) return;
-        
-        // Get location data from data attributes or parse from option text
-        const fullAddress = selectedOption.textContent.trim();
-        const latitude = selectedOption.getAttribute('data-latitude');
-        const longitude = selectedOption.getAttribute('data-longitude');
-        const locationName = selectedOption.getAttribute('data-location-name') || fullAddress.split(',')[0];
-        const address = selectedOption.getAttribute('data-address') || fullAddress;
-        const email = selectedOption.getAttribute('data-email') || 'support@kretsia.com';
-        
-        // If coordinates are not in data attributes, try to extract from current map iframe
-        let lat = latitude;
-        let lng = longitude;
-        
-        if (!lat || !lng) {
-          // Try to extract from the map iframe URL
-          const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
-          if (mapIframe && mapIframe.src) {
-            const markerMatch = mapIframe.src.match(/marker=([\d.]+),([\d.]+)/);
-            if (markerMatch) {
-              lat = markerMatch[1];
-              lng = markerMatch[2];
-            }
-          }
-        }
-        
-        // If still no coordinates, use geocoding coordinates based on location name
-        // Coordinates for specific locations
-        if (!lat || !lng) {
-          const locationCoords = {
-            'Dehradun': { lat: 30.3165, lng: 78.0322 },
-            'Amsterdam': { lat: 52.3676, lng: 4.9041 },
-            'Strawinskylaan': { lat: 52.3676, lng: 4.9041 },
-            'Copenhagen': { lat: 55.6120, lng: 12.6477 },
-            'Copenhagen Airport': { lat: 55.6120128, lng: 12.6476789 },
-            'CPH': { lat: 55.6120128, lng: 12.6476789 }
-          };
-          
-          const locationKey = Object.keys(locationCoords).find(key => 
-            fullAddress.includes(key)
-          );
-          
-          if (locationKey) {
-            lat = locationCoords[locationKey].lat;
-            lng = locationCoords[locationKey].lng;
-          } else {
-            // Default to Copenhagen Airport if no match
-            lat = 55.6120128;
-            lng = 12.6476789;
-          }
-        }
-        
-        // Update location name
-        const locationNameElement = document.getElementById(`location-name-${sectionId}`);
-        if (locationNameElement) {
-          locationNameElement.textContent = locationName;
-        }
-        
-        // Update address
-        const locationAddressElement = document.getElementById(`location-address-${sectionId}`);
-        if (locationAddressElement) {
-          // Check if there's a formatted address in data attribute
-          const formattedAddress = selectedOption.getAttribute('data-address-formatted');
-          if (formattedAddress) {
-            locationAddressElement.innerHTML = formattedAddress;
-          } else {
-            // Format address - split by comma and take first two parts for address lines
-            const addressParts = address.split(',');
-            if (addressParts.length >= 2) {
-              // For Copenhagen Airport, format specially
-              if (address.includes('Copenhagen Airport') || address.includes('CPH')) {
-                locationAddressElement.innerHTML = 'Lufthavnsboulevarden 6<br>2770 Kastrup';
-              } else if (addressParts.length >= 3) {
-                // For addresses with multiple parts, show first part and next 2 parts
-                locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1, 3).join(', ')}`;
-              } else {
-                locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1).join(', ')}`;
+      // Store event handler references for cleanup
+      const eventHandlers = new Map();
+      
+      // Helper function to geocode an address using OpenStreetMap Nominatim API
+      const geocodeAddress = async (address) => {
+        try {
+          const encodedAddress = encodeURIComponent(address);
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
+            {
+              headers: {
+                'User-Agent': 'CareerPage/1.0' // Required by Nominatim
               }
+            }
+          );
+          const data = await response.json();
+          if (data && data.length > 0) {
+            return {
+              lat: parseFloat(data[0].lat),
+              lng: parseFloat(data[0].lon)
+            };
+          }
+        } catch (error) {
+          console.error('Geocoding error:', error);
+        }
+        return null;
+      };
+
+      // Helper function to validate coordinates
+      const isValidCoordinate = (coord) => {
+        if (coord === null || coord === undefined || coord === '') return false;
+        const num = parseFloat(coord);
+        return !isNaN(num) && num >= -180 && num <= 180;
+      };
+      
+      // Helper function to validate latitude specifically
+      const isValidLatitude = (lat) => {
+        if (lat === null || lat === undefined || lat === '') return false;
+        const num = parseFloat(lat);
+        return !isNaN(num) && num >= -90 && num <= 90;
+      };
+      
+      // Helper function to validate longitude specifically
+      const isValidLongitude = (lng) => {
+        if (lng === null || lng === undefined || lng === '') return false;
+        const num = parseFloat(lng);
+        return !isNaN(num) && num >= -180 && num <= 180;
+      };
+
+      // Create or update the global handleMapLocationChange function
+      window.handleMapLocationChange = async (sectionId, selectedValue) => {
+        try {
+          // sectionId format: "map-section-1766041536372-jyz84o8i5"
+          const selectElement = document.getElementById(`location-select-${sectionId}`);
+          if (!selectElement) {
+            console.warn('Select element not found for section:', sectionId);
+            return;
+          }
+          
+          const selectedOption = selectElement.options[selectElement.selectedIndex];
+          if (!selectedOption) {
+            console.warn('Selected option not found');
+            return;
+          }
+          
+          // Get location data from data attributes or parse from option text
+          const fullAddress = selectedOption.textContent.trim();
+          if (!fullAddress) {
+            console.warn('No address found for selected option');
+            return;
+          }
+          
+          let latitude = selectedOption.getAttribute('data-latitude');
+          let longitude = selectedOption.getAttribute('data-longitude');
+          const locationName = selectedOption.getAttribute('data-location-name') || fullAddress.split(',')[0];
+          const address = selectedOption.getAttribute('data-address') || fullAddress;
+          const email = selectedOption.getAttribute('data-email') || 'support@kretsia.com';
+          
+          // Parse coordinates and validate they are valid numbers
+          let lat = latitude ? parseFloat(latitude) : null;
+          let lng = longitude ? parseFloat(longitude) : null;
+          
+          // Check if cached coordinates are valid
+          const hasValidCachedCoords = isValidLatitude(lat) && isValidLongitude(lng);
+          
+          // Geocode if no valid cached coordinates
+          let coords = null;
+          if (!hasValidCachedCoords && fullAddress) {
+            console.log('Geocoding address:', fullAddress);
+            coords = await geocodeAddress(fullAddress);
+          }
+          
+          if (coords && isValidLatitude(coords.lat) && isValidLongitude(coords.lng)) {
+            lat = coords.lat;
+            lng = coords.lng;
+            // Cache the coordinates in data attributes for future use
+            selectedOption.setAttribute('data-latitude', lat.toString());
+            selectedOption.setAttribute('data-longitude', lng.toString());
+            console.log('✓ Geocoded and cached coordinates for:', fullAddress, '→', lat, lng);
+          } else if (hasValidCachedCoords) {
+            // Use cached coordinates if they're valid
+            console.log('✓ Using cached coordinates for:', fullAddress, '→', lat, lng);
+          } else {
+            // Retry geocoding once more if still no valid coordinates
+            console.warn('⚠ No valid coordinates found, retrying geocoding for:', fullAddress);
+            const retryCoords = await geocodeAddress(fullAddress);
+            if (retryCoords && isValidLatitude(retryCoords.lat) && isValidLongitude(retryCoords.lng)) {
+              lat = retryCoords.lat;
+              lng = retryCoords.lng;
+              selectedOption.setAttribute('data-latitude', lat.toString());
+              selectedOption.setAttribute('data-longitude', lng.toString());
+              console.log('✓ Retry geocoding successful for:', fullAddress, '→', lat, lng);
             } else {
-              locationAddressElement.textContent = address;
+              console.error('✗ Geocoding failed for:', fullAddress);
+              // Don't use fallback coordinates, just return early
+              return;
             }
           }
-        }
-        
-        // Update directions link
-        const directionsLink = document.getElementById(`location-directions-${sectionId}`);
-        if (directionsLink && lat && lng) {
-          directionsLink.href = `https://www.openstreetmap.org/directions?to=${lat},${lng}`;
-        }
-        
-        // Update email link
-        const emailLink = document.getElementById(`location-email-${sectionId}`);
-        if (emailLink) {
-          emailLink.href = `mailto:${email}`;
-          emailLink.textContent = email;
-        }
-        
-        // Update map iframe
-        const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
-        if (mapIframe && lat && lng) {
-          // Calculate bounding box (approximately 0.01 degrees around the marker)
-          const bboxPadding = 0.01;
-          const bbox = `${parseFloat(lng) - bboxPadding},${parseFloat(lat) - bboxPadding},${parseFloat(lng) + bboxPadding},${parseFloat(lat) + bboxPadding}`;
-          mapIframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
+          
+          // Validate final coordinates before proceeding
+          if (!isValidLatitude(lat) || !isValidLongitude(lng)) {
+            console.error('Invalid final coordinates:', lat, lng);
+            return;
+          }
+          
+          // Update location name
+          const locationNameElement = document.getElementById(`location-name-${sectionId}`);
+          if (locationNameElement) {
+            locationNameElement.textContent = locationName;
+          }
+          
+          // Update address
+          const locationAddressElement = document.getElementById(`location-address-${sectionId}`);
+          if (locationAddressElement) {
+            // Check if there's a formatted address in data attribute
+            const formattedAddress = selectedOption.getAttribute('data-address-formatted');
+            if (formattedAddress) {
+              locationAddressElement.innerHTML = formattedAddress;
+            } else {
+              // Format address - split by comma and take first two parts for address lines
+              const addressParts = address.split(',');
+              if (addressParts.length >= 2) {
+                if (address.includes('Copenhagen Airport') || address.includes('CPH')) {
+                  locationAddressElement.innerHTML = 'Lufthavnsboulevarden 6<br>2770 Kastrup';
+                } else if (addressParts.length >= 3) {
+                  locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1, 3).join(', ')}`;
+                } else {
+                  locationAddressElement.innerHTML = `${addressParts[0]}<br>${addressParts.slice(1).join(', ')}`;
+                }
+              } else {
+                locationAddressElement.textContent = address;
+              }
+            }
+          }
+          
+          // Update directions link
+          const directionsLink = document.getElementById(`location-directions-${sectionId}`);
+          if (directionsLink && lat && lng) {
+            directionsLink.href = `https://www.openstreetmap.org/directions?to=${lat},${lng}`;
+          }
+          
+          // Update email link
+          const emailLink = document.getElementById(`location-email-${sectionId}`);
+          if (emailLink) {
+            emailLink.href = `mailto:${email}`;
+            emailLink.textContent = email;
+          }
+          
+          // Update map iframe - THIS IS THE KEY PART
+          const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
+          if (mapIframe) {
+            // Calculate bounding box (approximately 0.01 degrees around the marker)
+            const bboxPadding = 0.01;
+            const bbox = `${(lng - bboxPadding).toFixed(6)},${(lat - bboxPadding).toFixed(6)},${(lng + bboxPadding).toFixed(6)},${(lat + bboxPadding).toFixed(6)}`;
+            
+            // Build the new map URL with timestamp to force reload
+            const newMapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat.toFixed(6)},${lng.toFixed(6)}&_t=${Date.now()}`;
+            
+            // Update the iframe src immediately
+            mapIframe.src = newMapUrl;
+            console.log('✓ Map updated for location:', fullAddress, 'Coordinates:', lat, lng);
+          } else {
+            console.warn('⚠ Map iframe not found for section:', sectionId);
+          }
+        } catch (error) {
+          console.error('Error in handleMapLocationChange:', error);
         }
       };
       
       // Initialize all map sections on the page
       const mapSections = document.querySelectorAll('.locations-map');
       mapSections.forEach((section) => {
-        // Extract section ID from section.id (format: "map-section-1766041536372-jyz84o8i5")
+        // Extract section ID from section.id
         const sectionId = section.id;
+        if (!sectionId) {
+          console.warn('Map section missing ID');
+          return;
+        }
+        
         const selectElement = document.getElementById(`location-select-${sectionId}`);
         
-        if (selectElement) {
-          // Store location data in data attributes if not already present
-          Array.from(selectElement.options).forEach((option, index) => {
-            if (!option.getAttribute('data-latitude') || !option.getAttribute('data-longitude')) {
-              const fullAddress = option.textContent.trim();
-              
-              // Extract location name (first part before comma, but handle special cases)
-              let locationName = fullAddress.split(',')[0];
-              if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
-                locationName = 'Copenhagen Airport (CPH)';
-              }
-              option.setAttribute('data-location-name', locationName);
-              option.setAttribute('data-address', fullAddress);
-              
-              // Set formatted address for special cases
-              if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
-                option.setAttribute('data-address-formatted', 'Lufthavnsboulevarden 6<br>2770 Kastrup');
-              } else if (fullAddress.includes('Amsterdam') || fullAddress.includes('Strawinskylaan')) {
-                option.setAttribute('data-address-formatted', 'Strawinskylaan 4117<br>1077 ZX Amsterdam, Netherlands');
-              } else if (fullAddress.includes('Dehradun')) {
-                option.setAttribute('data-address-formatted', 'Dehradun<br>Uttarakhand, India');
-              }
-              
-              // Set coordinates based on location
-              let lat, lng;
-              if (fullAddress.includes('Dehradun')) {
-                lat = 30.3165;
-                lng = 78.0322;
-              } else if (fullAddress.includes('Amsterdam') || fullAddress.includes('Strawinskylaan')) {
-                lat = 52.3676;
-                lng = 4.9041;
-              } else if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
-                lat = 55.6120128;
-                lng = 12.6476789;
-              } else if (fullAddress.includes('Copenhagen')) {
-                lat = 55.6120;
-                lng = 12.6477;
-              } else {
-                // Try to extract from current map iframe
-                const mapIframe = document.getElementById(`map-iframe-${sectionId}`);
-                if (mapIframe && mapIframe.src) {
-                  const markerMatch = mapIframe.src.match(/marker=([\d.]+),([\d.]+)/);
-                  if (markerMatch) {
-                    lat = markerMatch[1];
-                    lng = markerMatch[2];
-                  }
-                }
-                // Default fallback
-                if (!lat || !lng) {
-                  lat = 55.6120128;
-                  lng = 12.6476789;
-                }
-              }
-              
-              option.setAttribute('data-latitude', lat);
-              option.setAttribute('data-longitude', lng);
-            }
-          });
-          
-          // Ensure the change handler is attached
-          selectElement.onchange = function() {
-            window.handleMapLocationChange(sectionId, this.value);
-          };
+        if (!selectElement) {
+          console.warn('Select element not found for section:', sectionId);
+          return;
         }
+        
+        // Remove any existing event listener for this select element
+        const existingHandler = eventHandlers.get(selectElement);
+        if (existingHandler) {
+          selectElement.removeEventListener('change', existingHandler);
+        }
+        
+        // Create a new change handler for this select element
+        const handleChange = async function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const currentSectionId = sectionId;
+          const currentValue = this.value;
+          
+          console.log('Location dropdown changed:', currentValue, 'for section:', currentSectionId);
+          
+          // Immediately call the map update function
+          if (window.handleMapLocationChange) {
+            await window.handleMapLocationChange(currentSectionId, currentValue);
+          }
+        };
+        
+        // Store the handler for cleanup
+        eventHandlers.set(selectElement, handleChange);
+        
+        // Attach the change event listener
+        selectElement.addEventListener('change', handleChange);
+        
+        // Also handle input event for better browser compatibility
+        selectElement.addEventListener('input', handleChange);
+        
+        // Pre-geocode all options in the background
+        Array.from(selectElement.options).forEach((option, index) => {
+          // Skip if option has no text content or is placeholder
+          const fullAddress = option.textContent.trim();
+          if (!fullAddress || index === 0) return; // Skip first option if it's a placeholder
+          
+          // Extract location name
+          let locationName = fullAddress.split(',')[0];
+          if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
+            locationName = 'Copenhagen Airport (CPH)';
+          }
+          option.setAttribute('data-location-name', locationName);
+          option.setAttribute('data-address', fullAddress);
+          
+          // Set formatted address for special cases
+          if (fullAddress.includes('Copenhagen Airport') || fullAddress.includes('CPH')) {
+            option.setAttribute('data-address-formatted', 'Lufthavnsboulevarden 6<br>2770 Kastrup');
+          } else if (fullAddress.includes('Amsterdam') || fullAddress.includes('Strawinskylaan')) {
+            option.setAttribute('data-address-formatted', 'Strawinskylaan 4117<br>1077 ZX Amsterdam, Netherlands');
+          } else if (fullAddress.includes('Dehradun')) {
+            option.setAttribute('data-address-formatted', 'Dehradun<br>Uttarakhand, India');
+          }
+          
+          // Check if coordinates already exist and are valid
+          let existingLat = option.getAttribute('data-latitude');
+          let existingLng = option.getAttribute('data-longitude');
+          
+          // If coordinates already exist and are valid, skip geocoding
+          if (isValidLatitude(existingLat) && isValidLongitude(existingLng)) {
+            return;
+          }
+          
+          // Geocode each address in the background
+          geocodeAddress(fullAddress).then((coords) => {
+            if (coords && isValidLatitude(coords.lat) && isValidLongitude(coords.lng)) {
+              option.setAttribute('data-latitude', coords.lat.toString());
+              option.setAttribute('data-longitude', coords.lng.toString());
+              console.log(`✓ Geocoded ${fullAddress}: ${coords.lat}, ${coords.lng}`);
+              
+              // If this is the currently selected option, update the map immediately
+              if (selectElement.selectedIndex === index && window.handleMapLocationChange) {
+                setTimeout(() => {
+                  window.handleMapLocationChange(sectionId, selectElement.value);
+                }, 50);
+              }
+            } else {
+              console.warn(`⚠ Geocoding failed for: ${fullAddress}`);
+            }
+          }).catch((error) => {
+            console.error('✗ Geocoding error for', fullAddress, ':', error);
+          });
+        });
+        
+        // Initialize map with the currently selected option
+        setTimeout(() => {
+          const selectedIndex = selectElement.selectedIndex;
+          if (selectedIndex >= 0) {
+            const selectedOption = selectElement.options[selectedIndex];
+            if (selectedOption) {
+              const selectedLat = selectedOption.getAttribute('data-latitude');
+              const selectedLng = selectedOption.getAttribute('data-longitude');
+              
+              // If coordinates are valid, update the map immediately
+              if (isValidLatitude(selectedLat) && isValidLongitude(selectedLng)) {
+                if (window.handleMapLocationChange) {
+                  window.handleMapLocationChange(sectionId, selectElement.value);
+                }
+              } else {
+                // Wait a bit for geocoding to complete, then update
+                setTimeout(() => {
+                  if (window.handleMapLocationChange) {
+                    window.handleMapLocationChange(sectionId, selectElement.value);
+                  }
+                }, 2000);
+              }
+            }
+          }
+        }, 500);
       });
+      
+      // Return cleanup function
+      return () => {
+        // Clean up event listeners
+        eventHandlers.forEach((handler, element) => {
+          element.removeEventListener('change', handler);
+          element.removeEventListener('input', handler);
+        });
+        eventHandlers.clear();
+      };
     };
     
     // Initialize map location handlers
     // Use setTimeout to ensure DOM is fully rendered
-    setTimeout(() => {
-      initializeMapLocationHandlers();
+    let cleanupMapHandlers = null;
+    const mapInitTimeout = setTimeout(() => {
+      cleanupMapHandlers = initializeMapLocationHandlers();
     }, 100);
     
     // Initialize cover carousel if present
@@ -593,6 +734,12 @@ const Page = () => {
     
     // Cleanup function
     return () => {
+      // Clear map initialization timeout
+      clearTimeout(mapInitTimeout);
+      // Cleanup map handlers
+      if (cleanupMapHandlers) {
+        cleanupMapHandlers();
+      }
       // Clear carousel timeout and cleanup
       clearTimeout(carouselTimeout);
       if (carouselCleanup) {
