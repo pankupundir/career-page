@@ -1370,15 +1370,11 @@ const Page = () => {
     
     const icon = createSVGIcon(iconType, size);
     icon.classList.add('job-icon');
-    // Enhanced icon colors based on element type
-    if (iconType === 'company') {
-      icon.style.color = '#64748b';
-    } else if (iconType === 'location') {
-      icon.style.color = '#64748b';
-    } else if (iconType === 'time') {
-      icon.style.color = '#94a3b8';
+    // Only time icons should be white, all other icons should be black
+    if (iconType === 'time') {
+      icon.style.color = '#ffffff';
     } else {
-      icon.style.color = '#64748b';
+      icon.style.color = '#000000';
     }
     icon.style.marginRight = '4px';
     icon.style.opacity = '0.8';
@@ -1739,7 +1735,7 @@ const Page = () => {
             : job.title;
           jobTitleElement.innerText = truncatedTitle;
           // Enhanced title styling
-          jobTitleElement.style.fontSize = '20px';
+          jobTitleElement.style.fontSize = '18px';
           jobTitleElement.style.fontWeight = '700';
           jobTitleElement.style.color = '#1a1a1a';
           jobTitleElement.style.lineHeight = '1.3';
@@ -1841,7 +1837,7 @@ const Page = () => {
           companyWrapper.style.gap = '6px';
           companyWrapper.innerText = job.company_name;
           addIconToElement(companyWrapper, 'company', 16);
-          companyWrapper.style.fontSize = '15px';
+          companyWrapper.style.fontSize = '12px';
           companyWrapper.style.fontWeight = '500';
           companyWrapper.style.color = '#4a5568';
           companyWrapper.style.lineHeight = '1.5';
@@ -1872,7 +1868,7 @@ const Page = () => {
                 .join('');
             };
             contractWrapper.textContent = formatContractTypeToCamelCase(job.contract_type);
-            contractWrapper.style.fontSize = '14px';
+            contractWrapper.style.fontSize = '12px';
             contractWrapper.style.fontWeight = '500';
             contractWrapper.style.color = '#64748b';
             contractWrapper.style.lineHeight = '1.5';
@@ -1945,8 +1941,8 @@ const Page = () => {
           timeElement.style.display = 'inline-flex';
           timeElement.style.alignItems = 'center';
           timeElement.style.gap = '6px';
-          timeElement.style.color = '#000000';
-          timeElement.style.fontSize = '13px';
+          timeElement.style.color = '#ffffff';
+          timeElement.style.fontSize = '12px';
           timeElement.style.fontWeight = '400';
           timeElement.style.marginTop = '8px';
           timeElement.style.marginBottom = '4px';

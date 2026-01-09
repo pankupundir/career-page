@@ -420,3 +420,20 @@
   opacity: 0.8 !important;
   transform: scale(1.3) !important;
 }
+
+/* Overview Icon - Remove background-image and use background color */
+.overview-icon {
+  background-image: none !important;
+  background-color: #3A1E3D !important;
+}
+
+/* Skill Tag Sidebar - Remove background-image and change background color */
+.skill-tag-sidebar {
+  background-image: none !important;
+  background-color: #3A1E3D !important;
+}
+
+/* Skill Tag Optional - White text color */
+.skill-tag-optional {
+  color: #ffffff !important;
+}
