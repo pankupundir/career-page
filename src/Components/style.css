@@ -61,22 +61,7 @@ form button[type="submit"]:hover {
   background-color: #0056b3; /* Darken on hover */
 }
 
-/* Close button styling */
-button.close-btn {
-  background-color: #ccc;
-  color: #dddbdb;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 6px;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: background-color 0.3s ease-in-out;
-}
 
-button.close-btn:hover {
-  background-color: #999;
-}
 
 /* Ensure the modal doesn't exceed viewport on smaller screens */
 @media (max-width: 500px) {
