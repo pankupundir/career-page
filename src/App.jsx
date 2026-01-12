@@ -7,10 +7,12 @@ import SeeAllJobs from "./SeeAllJobs";
 import DynamicPage from "./DynamicPage";
 import ErrorBoundary from "./Components/ErrorBoundary";
 import GoogleTranslate from "./Components/GoogleTranslate";
+import CookieConsent from "./Components/CookieConsent";
 
 function App() {
   return (
     <ErrorBoundary>
+      <CookieConsent />
       <GoogleTranslate />
       <ToastContainer
         className="custom-toast-container"

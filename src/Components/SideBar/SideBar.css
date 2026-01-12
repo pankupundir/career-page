@@ -14,7 +14,7 @@
   transition: transform 0.3s ease-in-out;
   transform: translateX(100%);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 11187;
   padding: 24px;
   overflow: auto;
   border-left: 1px solid #e9ecef;
