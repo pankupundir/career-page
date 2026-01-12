@@ -1062,8 +1062,18 @@ const SeeAllJobs = () => {
     // Only time icons should be white, all other icons should be black
     if (iconType === 'time') {
       icon.style.color = '#ffffff';
+      icon.style.stroke = '#ffffff';
+      // Ensure all child elements also have white stroke
+      const allPaths = icon.querySelectorAll('path, circle, line');
+      allPaths.forEach(path => {
+        path.setAttribute('stroke', '#ffffff');
+        if (path.tagName === 'circle' || path.tagName === 'path') {
+          path.setAttribute('fill', 'none');
+        }
+      });
     } else {
       icon.style.color = '#000000';
+      icon.style.stroke = '#000000';
     }
     icon.style.marginRight = '4px';
     icon.style.opacity = '0.8';
@@ -1820,6 +1830,9 @@ const SeeAllJobs = () => {
           timeElement.style.alignItems = 'center';
           timeElement.style.gap = '6px';
           timeElement.style.color = '#ffffff';
+          timeElement.style.backgroundColor = '#3A1E3D';
+          timeElement.style.padding = '4px 10px';
+          timeElement.style.borderRadius = '10px';
           timeElement.style.fontSize = '12px';
           timeElement.style.fontWeight = '400';
           timeElement.style.marginTop = '8px';
