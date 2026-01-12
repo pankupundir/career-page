@@ -21,6 +21,7 @@ const CookieConsent = () => {
   });
   const [showUserData, setShowUserData] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [showMoreText, setShowMoreText] = useState(false);
 
   useEffect(() => {
     // Check if consent has been given
@@ -164,11 +165,21 @@ const CookieConsent = () => {
                 <p>
                   We use cookies to help you navigate efficiently and perform certain functions.
                   You will find detailed information about all cookies under each consent category below.
-                </p>
-                <p className="cookie-necessary-info">
-                  The cookies that are categorised as "Necessary" are stored on your browser as
-                  they are essential for enabling the basic functionalities of the site. These cookies
-                  cannot be disabled and are always active.
+                  {!showMoreText && (
+                    <span> </span>
+                  )}
+                  {showMoreText && (
+                    <span className="cookie-more-text">
+                      The cookies that are categorised as "Necessary" are stored on your browser as
+                      they are essential for enabling the basic functionalities of the site.{' '}
+                    </span>
+                  )}
+                  <button 
+                    className="cookie-show-more-link" 
+                    onClick={() => setShowMoreText(!showMoreText)}
+                  >
+                    {showMoreText ? 'Show less' : 'Show more'}
+                  </button>
                 </p>
               </div>
 
@@ -290,7 +301,7 @@ const CookieConsent = () => {
             </div>
 
             <div className="cookie-modal-powered-by">
-              Powered by Custom Cookie Consent
+              Powered by <span className="cookie-powered-by-logo">CookieYes</span>
             </div>
           </div>
         </div>
