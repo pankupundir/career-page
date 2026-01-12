@@ -15,6 +15,7 @@ import usePagination from "./Hooks/usePaginantion";
 import Pagination from "./Components/Pagination";
 import { initializeAccordion } from "./Components/AccordionInit";
 import LocationModal from "./Components/LocationModal";
+import { storeLangInfo } from "./utils/languageHelper";
 
 const Page = () => {
   const [website, setWebsite] = useState({
@@ -2175,6 +2176,13 @@ const Page = () => {
           total_pages: response.data.data.total_pages || 0,
         };     
         setPaginationData(newPaginationData);
+        
+        // Extract and store langInfo from API response
+        if (response.data.data.langInfo) {
+          storeLangInfo(response.data.data.langInfo);
+          console.log('Stored langInfo:', response.data.data.langInfo);
+        }
+        
         // Don't fetch website when filters change - only update job data
         // The website HTML structure doesn't need to be reloaded on filter changes
    

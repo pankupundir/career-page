@@ -12,6 +12,7 @@ import usePagination from "./Hooks/usePaginantion";
 import Pagination from "./Components/Pagination";
 import { createRoot } from "react-dom/client";
 import LocationModal from "./Components/LocationModal";
+import { storeLangInfo } from "./utils/languageHelper";
 
 const SeeAllJobs = () => {
   const [website, setWebsite] = useState({
@@ -179,6 +180,12 @@ const SeeAllJobs = () => {
         };     
         setPaginationData(newPaginationData);
         console.log("Pagination data set:", newPaginationData);
+        
+        // Extract and store langInfo from API response
+        if (response.data.data.langInfo) {
+          storeLangInfo(response.data.data.langInfo);
+          console.log('Stored langInfo:', response.data.data.langInfo);
+        }
         
         // Show success message if no jobs found (but API call succeeded)
         if (list.length === 0) {
