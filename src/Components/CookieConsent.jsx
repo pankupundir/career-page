@@ -119,28 +119,32 @@ const CookieConsent = () => {
     <>
       {/* Floating Button */}
       {showFloatingButton && (
-        <button
-          className="cookie-floating-button"
-          onClick={() => {
-            handleShowUserData();
-            setShowModal(true);
-          }}
-          aria-label="Manage cookie preferences"
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+        <div className="cookie-floating-button-wrapper">
+          <button
+            className="cookie-floating-button"
+            onClick={() => {
+              handleShowUserData();
+              setShowModal(true);
+            }}
+            aria-label="Manage cookie preferences"
           >
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
-              fill="currentColor"
-            />
-          </svg>
-          <span className="cookie-floating-button-text">Cookies</span>
-        </button>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
+            </svg>
+          </button>
+          <span className="cookie-floating-button-tooltip">Cookie Preferences</span>
+        </div>
       )}
 
       {/* Modal */}

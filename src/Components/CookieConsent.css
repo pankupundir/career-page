@@ -1,42 +1,75 @@
 /* Floating Button */
-.cookie-floating-button {
+.cookie-floating-button-wrapper {
   position: fixed;
   left: 20px;
   bottom: 20px;
   z-index: 9998;
+}
+
+.cookie-floating-button {
   background: linear-gradient(to right, rgb(255, 104, 104), rgb(192, 169, 255));
   color: white;
   border: none;
-  border-radius: 50px;
-  padding: 12px 20px;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(255, 104, 104, 0.4);
   transition: all 0.3s ease;
-  font-size: 14px;
-  font-weight: 400;
-  min-width: 120px;
-  justify-content: center;
 }
 
 .cookie-floating-button:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.05);
   box-shadow: 0 6px 20px rgba(255, 104, 104, 0.6);
 }
 
 .cookie-floating-button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
 }
 
 .cookie-floating-button svg {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
-.cookie-floating-button-text {
-  font-size: 14px;
+.cookie-floating-button-tooltip {
+  position: absolute;
+  left: 70px;
+  bottom: 50%;
+  transform: translateY(50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.cookie-floating-button-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(0, 0, 0, 0.85);
+}
+
+.cookie-floating-button-wrapper:hover .cookie-floating-button-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(50%) translateX(0);
 }
 
 /* Modal Overlay */
@@ -530,15 +563,25 @@
     width: 100%;
   }
 
-  .cookie-floating-button {
+  .cookie-floating-button-wrapper {
     left: 10px;
     bottom: 10px;
-    padding: 10px 16px;
-    min-width: 100px;
   }
 
-  .cookie-floating-button-text {
+  .cookie-floating-button {
+    width: 52px;
+    height: 52px;
+  }
+
+  .cookie-floating-button svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .cookie-floating-button-tooltip {
+    left: 65px;
     font-size: 12px;
+    padding: 6px 10px;
   }
 
   .cookie-user-data-grid {
@@ -547,14 +590,25 @@
 }
 
 @media (max-width: 480px) {
-  .cookie-floating-button {
-    padding: 10px;
-    min-width: 50px;
-    border-radius: 50%;
+  .cookie-floating-button-wrapper {
+    left: 10px;
+    bottom: 10px;
   }
 
-  .cookie-floating-button-text {
-    display: none;
+  .cookie-floating-button {
+    width: 48px;
+    height: 48px;
+  }
+
+  .cookie-floating-button svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .cookie-floating-button-tooltip {
+    left: 60px;
+    font-size: 11px;
+    padding: 5px 8px;
   }
 
   .cookie-modal-title {
