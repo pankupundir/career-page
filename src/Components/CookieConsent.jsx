@@ -303,10 +303,6 @@ const CookieConsent = () => {
                 Accept All
               </button>
             </div>
-
-            <div className="cookie-modal-powered-by">
-              Powered by <span className="cookie-powered-by-logo">CookieYes</span>
-            </div>
           </div>
         </div>
       )}
