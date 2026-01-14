@@ -16,6 +16,7 @@ const ThankYouModal = ({
     overlay: {
       backgroundColor: "rgb(16 14 14 / 75%)",
       padding: "20px",
+      zIndex: 9999999,
     },
     content: {
       top: "50%",
@@ -24,7 +25,7 @@ const ThankYouModal = ({
       bottom: "auto",
       marginRight: "-50%",
       transform: "translate(-50%, -50%)",
-      zIndex: 999999,
+      zIndex: 9999999,
       width: "90%",
       maxWidth: "600px",
       minWidth: "320px",
