@@ -1,4 +1,4 @@
-import { useEffect, useState,React } from "react";
+import { useEffect, useState, useRef, React } from "react";
 import "./SideBar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -1149,7 +1149,8 @@ console.log(isEmailVerified,"isEmailVerified")
                                   required: true,
                                   autoFocus: true,
                                 }}
-                                country={"SW"}
+                                country={"se"}
+                                defaultCountry={"se"}
                                 placeholder={"Enter Your phone number"}
                                 onChange={(phone, code) => {
                                   const numberValue = phone.replace(/[^0-9]/g, "");
@@ -1185,21 +1186,6 @@ console.log(isEmailVerified,"isEmailVerified")
                     </div>
 
                     <Row>
-                      <Col>
-                        <LocationField
-                          fieldName="address"
-                          formConfig={formConfig}
-                          className="form-control form-select apply_experiance"
-                          placeholder="Enter Address here"
-                          label={`Address *`}
-                          rules={{ required: "Address is required" }}
-                          options={{
-                            types: ["address"],
-                          }}
-                          callBack={fillAddress}
-                        />
-                      </Col>
-
                       <Col lg={12}>
                         <div className="mb-3 language-preferences-container">
                           <label
@@ -1217,282 +1203,254 @@ console.log(isEmailVerified,"isEmailVerified")
                           <Controller
                             name="language_preference"
                             control={control}
+                            rules={{
+                              required: "Language preference is required",
+                            }}
                             render={({
-                              field: { onChange, ref, value, ...field },
+                              field: { onChange, value, ...field },
                             }) => {
-                              const [selectedLanguages, setSelectedLanguages] = useState([]);
-                              const [inputValue, setInputValue] = useState('');
-                              const [showSuggestions, setShowSuggestions] = useState(false);
+                              const [isOpen, setIsOpen] = useState(false);
+                              const dropdownRef = useRef(null);
 
-                              // Initialize selected languages from form value
-                              useEffect(() => {
-                                if (value && typeof value === 'string' && value.trim() !== '') {
-                                  const languageValues = value.split(',');
-                                  const selectedLangs = languageValues
-                                    .map(langValue => language_preference.find(lang => lang.value === langValue.trim()))
-                                    .filter(lang => lang !== undefined);
-                                  setSelectedLanguages(selectedLangs);
+                              // Convert string value to array of selected language values
+                              const getSelectedLanguageValues = () => {
+                                if (!value || typeof value !== 'string' || value.trim() === '') {
+                                  return [];
+                                }
+                                return value.split(',').map(v => v.trim()).filter(v => v !== '');
+                              };
+
+                              const selectedValues = getSelectedLanguageValues();
+
+                              // Toggle language selection
+                              const toggleLanguage = (langValue) => {
+                                let newSelectedValues;
+                                if (selectedValues.includes(langValue)) {
+                                  newSelectedValues = selectedValues.filter(v => v !== langValue);
                                 } else {
-                                  setSelectedLanguages([]);
+                                  newSelectedValues = [...selectedValues, langValue];
                                 }
-                              }, [value]);
-
-                              // Filter languages based on input
-                              const filteredLanguages = language_preference.filter(lang =>
-                                lang.label.toLowerCase().includes(inputValue.toLowerCase()) &&
-                                !selectedLanguages.some(selected => selected.value === lang.value)
-                              );
-
-                              // Handle adding language from input
-                              const handleAddLanguage = (language) => {
-                                if (!selectedLanguages.some(lang => lang.value === language.value)) {
-                                  const newSelection = [...selectedLanguages, language];
-                                  setSelectedLanguages(newSelection);
-                                  const langString = newSelection.map(lang => lang.value).join(',');
-                                  setValue("language_preference", langString);
-                                  onChange(langString);
-                                }
-                                setInputValue('');
-                                setShowSuggestions(false);
-                              };
-
-                              // Handle input change
-                              const handleInputChange = (e) => {
-                                const value = e.target.value;
-                                setInputValue(value);
-                                setShowSuggestions(value.length > 0);
-                              };
-
-                              // Handle input key press
-                              const handleKeyPress = (e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  if (filteredLanguages.length > 0) {
-                                    handleAddLanguage(filteredLanguages[0]);
-                                  }
-                                } else if (e.key === 'Backspace' && inputValue === '' && selectedLanguages.length > 0) {
-                                  // Remove last selected language when backspace is pressed on empty input
-                                  const newSelection = selectedLanguages.slice(0, -1);
-                                  setSelectedLanguages(newSelection);
-                                  const langString = newSelection.map(lang => lang.value).join(',');
-                                  setValue("language_preference", langString);
-                                  onChange(langString);
-                                }
-                              };
-
-                              // Remove selected language
-                              const removeLanguage = (languageToRemove) => {
-                                const newSelection = selectedLanguages.filter(lang => lang.value !== languageToRemove.value);
-                                setSelectedLanguages(newSelection);
-                                const langString = newSelection.map(lang => lang.value).join(',');
-                                setValue("language_preference", langString);
+                                const langString = newSelectedValues.join(',');
                                 onChange(langString);
+                                setValue("language_preference", langString);
                               };
 
-                              // Clear all selections
-                              const clearAll = () => {
-                                setSelectedLanguages([]);
-                                setValue("language_preference", '');
-                              };
+                              // Handle click outside to close dropdown
+                              useEffect(() => {
+                                const handleClickOutside = (event) => {
+                                  if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                                    setIsOpen(false);
+                                  }
+                                };
+
+                                if (isOpen) {
+                                  document.addEventListener('mousedown', handleClickOutside);
+                                }
+
+                                return () => {
+                                  document.removeEventListener('mousedown', handleClickOutside);
+                                };
+                              }, [isOpen]);
+
+                              const isDisabled = !(isEmailVerified.isVerify || emailVerificationStatus === 'verified');
 
                               return (
-                                <div className="tag-input-container" style={{ position: 'relative' }}>
-                                  {/* Tag Input Container */}
-                                  <div 
+                                <div 
+                                  ref={dropdownRef}
+                                  style={{ position: 'relative', width: '100%' }}
+                                >
+                                  {/* Input/Button to open dropdown */}
+                                  <div
+                                    onClick={() => !isDisabled && setIsOpen(!isOpen)}
                                     style={{
-                                      border: '2px solid #e1e8ed',
-                                      borderRadius: '12px',
-                                      padding: '8px 12px',
-                                      minHeight: '50px',
-                                      backgroundColor: !(isEmailVerified.isVerify || emailVerificationStatus === 'verified') ? '#f8f9fa' : '#ffffff',
-                                      cursor: !(isEmailVerified.isVerify || emailVerificationStatus === 'verified') ? 'not-allowed' : 'text',
-                                      transition: 'all 0.3s ease',
+                                      border: '1px solid #e9ecef',
+                                      borderRadius: '8px',
+                                      padding: '12px 16px',
+                                      backgroundColor: isDisabled ? '#f8f9fa' : '#ffffff',
+                                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                                      minHeight: '44px',
                                       display: 'flex',
-                                      flexWrap: 'wrap',
                                       alignItems: 'center',
-                                      gap: '8px'
+                                      justifyContent: 'space-between',
+                                      transition: 'all 0.2s ease',
+                                      ...(isOpen && !isDisabled ? {
+                                        borderColor: '#007bff',
+                                        boxShadow: '0 0 0 3px rgba(0, 123, 255, 0.1)',
+                                      } : {})
                                     }}
                                     onMouseEnter={(e) => {
-                                      if (isEmailVerified.isVerify || emailVerificationStatus === 'verified') {
-                                        e.target.style.borderColor = '#3498db';
-                                        e.target.style.boxShadow = '0 0 0 3px rgba(52, 152, 219, 0.1)';
+                                      if (!isDisabled) {
+                                        e.target.style.borderColor = '#007bff';
                                       }
                                     }}
                                     onMouseLeave={(e) => {
-                                      e.target.style.borderColor = '#e1e8ed';
-                                      e.target.style.boxShadow = 'none';
+                                      if (!isOpen) {
+                                        e.target.style.borderColor = '#e9ecef';
+                                      }
                                     }}
                                   >
-                                    {/* Selected Language Tags */}
-                                    {selectedLanguages.map((language) => (
-                                      <div
-                                        key={language.value}
-                                        style={{
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          backgroundColor: '#e3f2fd',
-                                          color: '#1976d2',
-                                          border: '1px solid #bbdefb',
-                                          borderRadius: '20px',
-                                          padding: '6px 12px',
-                                          fontSize: '13px',
-                                          fontWeight: '500',
-                                          height: '32px',
-                                          maxWidth: '140px',
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                          whiteSpace: 'nowrap',
-                                          boxShadow: '0 2px 4px rgba(52, 152, 219, 0.1)',
-                                          transition: 'all 0.2s ease'
-                                        }}
-                                      >
-                                        <span style={{ marginRight: '6px', fontSize: '14px' }}>🌐</span>
-                                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                          {language.label}
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      flexWrap: 'wrap', 
+                                      gap: '6px', 
+                                      flex: 1,
+                                      alignItems: 'center'
+                                    }}>
+                                      {selectedValues.length > 0 ? (
+                                        selectedValues.map((langValue) => {
+                                          const lang = language_preference.find(l => l.value === langValue);
+                                          return lang ? (
+                                            <span
+                                              key={lang.value}
+                                              style={{
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                backgroundColor: '#e3f2fd',
+                                                color: '#1976d2',
+                                                border: '1px solid #bbdefb',
+                                                borderRadius: '16px',
+                                                padding: '4px 10px',
+                                                fontSize: '13px',
+                                                fontWeight: '500',
+                                              }}
+                                            >
+                                              {lang.label}
+                                              <span
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  toggleLanguage(lang.value);
+                                                }}
+                                                style={{
+                                                  marginLeft: '6px',
+                                                  cursor: 'pointer',
+                                                  fontSize: '16px',
+                                                  fontWeight: 'bold',
+                                                  color: '#e74c3c',
+                                                }}
+                                              >
+                                                ×
+                                              </span>
+                                            </span>
+                                          ) : null;
+                                        })
+                                      ) : (
+                                        <span style={{ color: '#6c757d', fontSize: '14px' }}>
+                                          Click to select languages...
                                         </span>
-                                        <span
-                                          style={{
-                                            cursor: 'pointer',
-                                            marginLeft: '6px',
-                                            fontSize: '16px',
-                                            fontWeight: 'bold',
-                                            color: '#e74c3c',
-                                            width: '18px',
-                                            height: '18px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            borderRadius: '50%',
-                                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                                            transition: 'all 0.2s ease'
-                                          }}
-                                          onClick={() => removeLanguage(language)}
-                                          onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.2)';
-                                            e.target.style.transform = 'scale(1.1)';
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
-                                            e.target.style.transform = 'scale(1)';
-                                          }}
-                                        >
-                                          ×
-                                        </span>
-                                      </div>
-                                    ))}
-
-                                    {/* Input Field */}
-                                    <input
-                                      type="text"
-                                      value={inputValue}
-                                      onChange={handleInputChange}
-                                      onKeyDown={handleKeyPress}
-                                      onFocus={() => setShowSuggestions(inputValue.length > 0)}
-                                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                                      placeholder={selectedLanguages.length === 0 ? "Type to add languages..." : ""}
-                                      disabled={!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')}
+                                      )}
+                                    </div>
+                                    <svg
+                                      width="12"
+                                      height="12"
+                                      viewBox="0 0 12 12"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
                                       style={{
-                                        border: 'none',
-                                        outline: 'none',
-                                        fontSize: '14px',
-                                        flex: 1,
-                                        minWidth: '120px',
-                                        backgroundColor: 'transparent',
-                                        color: '#2c3e50'
+                                        transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        transition: 'transform 0.2s ease',
+                                        marginLeft: '10px',
+                                        flexShrink: 0,
                                       }}
-                                    />
-
-                                    {/* Clear All Button */}
-                                    {selectedLanguages.length > 0 && (
-                                      <button
-                                        type="button"
-                                        onClick={clearAll}
-                                        style={{
-                                          background: 'none',
-                                          border: 'none',
-                                          color: '#e74c3c',
-                                          fontSize: '12px',
-                                          cursor: 'pointer',
-                                          padding: '4px 8px',
-                                          borderRadius: '4px',
-                                          transition: 'all 0.2s ease',
-                                          marginLeft: 'auto'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          e.target.style.backgroundColor = 'rgba(231, 76, 60, 0.1)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                          e.target.style.backgroundColor = 'transparent';
-                                        }}
-                                      >
-                                        Clear All
-                                      </button>
-                                    )}
+                                    >
+                                      <path
+                                        d="M6 9L1 4h10L6 9z"
+                                        fill="#495057"
+                                      />
+                                    </svg>
                                   </div>
 
-                                  {/* Suggestions Dropdown */}
-                                  {showSuggestions && filteredLanguages.length > 0 && (
+                                  {/* Dropdown with checkboxes */}
+                                  {isOpen && !isDisabled && (
                                     <div
                                       style={{
                                         position: 'absolute',
                                         top: '100%',
                                         left: 0,
                                         right: 0,
+                                        marginTop: '4px',
                                         backgroundColor: '#ffffff',
-                                        border: '2px solid #e1e8ed',
-                                        borderTop: 'none',
-                                        borderRadius: '0 0 12px 12px',
+                                        border: '1px solid #e9ecef',
+                                        borderRadius: '8px',
                                         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                                         zIndex: 1000,
-                                        maxHeight: '200px',
-                                        overflowY: 'auto'
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
                                       }}
                                     >
-                                      {filteredLanguages.slice(0, 10).map((language) => (
-                                        <div
-                                          key={language.value}
-                                          onClick={() => handleAddLanguage(language)}
-                                          style={{
-                                            padding: '12px 16px',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            transition: 'all 0.2s ease',
-                                            borderBottom: '1px solid #f8f9fa'
-                                          }}
-                                          onMouseEnter={(e) => {
-                                            e.target.style.backgroundColor = '#f8f9fa';
-                                          }}
-                                          onMouseLeave={(e) => {
-                                            e.target.style.backgroundColor = 'transparent';
-                                          }}
-                                        >
-                                          <span style={{ marginRight: '8px', fontSize: '16px' }}>🌐</span>
-                                          <span style={{ fontSize: '14px', color: '#2c3e50' }}>
-                                            {language.label}
-                                          </span>
-                                        </div>
-                                      ))}
+                                      {language_preference.map((language) => {
+                                        const isSelected = selectedValues.includes(language.value);
+                                        return (
+                                          <div
+                                            key={language.value}
+                                            onClick={() => toggleLanguage(language.value)}
+                                            style={{
+                                              padding: '12px 16px',
+                                              cursor: 'pointer',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              transition: 'all 0.2s ease',
+                                              borderBottom: '1px solid #f8f9fa',
+                                              backgroundColor: isSelected ? '#f0f8ff' : 'transparent',
+                                            }}
+                                            onMouseEnter={(e) => {
+                                              e.target.style.backgroundColor = isSelected ? '#e3f2fd' : '#f8f9fa';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                              e.target.style.backgroundColor = isSelected ? '#f0f8ff' : 'transparent';
+                                            }}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => {}}
+                                              onClick={(e) => e.stopPropagation()}
+                                              style={{
+                                                width: '18px',
+                                                height: '18px',
+                                                marginRight: '12px',
+                                                cursor: 'pointer',
+                                                accentColor: '#007bff',
+                                              }}
+                                            />
+                                            <span style={{ 
+                                              fontSize: '14px', 
+                                              color: '#2c3e50',
+                                              fontWeight: isSelected ? '500' : '400',
+                                            }}>
+                                              {language.label}
+                                            </span>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
                               );
                             }}
                           />
-                          <div style={{
-                            marginTop: '8px',
-                            fontSize: '12px',
-                            color: '#7f8c8d',
-                            fontStyle: 'italic'
-                          }}>
-                            💡 Click to select multiple languages you're comfortable with
-                          </div>
+                          {errors.language_preference && (
+                            <ErrorMsg
+                              error={errors.language_preference.message}
+                            />
+                          )}
                         </div>
-                        {errors.language_preference && (
-                          <ErrorMsg
-                            error={errors.language_preference.message}
-                          />
-                        )}
+                      </Col>
+                    </Row>
+
+                    <Row>
+                      <Col lg={12}>
+                        <LocationField
+                          fieldName="address"
+                          formConfig={formConfig}
+                          className="form-control form-select apply_experiance"
+                          placeholder="Enter Address here"
+                          label={`Address *`}
+                          rules={{ required: "Address is required" }}
+                          options={{
+                            types: ["address"],
+                          }}
+                          callBack={fillAddress}
+                        />
                       </Col>
 
                       <Col lg={6}>
