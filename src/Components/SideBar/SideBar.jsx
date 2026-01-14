@@ -140,7 +140,7 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
       setIsEmailVerified({ isVerify: false });
     }
   }, [emailVerificationStatus, watch, setIsEmailVerified]);
-
+console.log(errors,"errors")
   // Effect to check and restore verification status on component mount
   useEffect(() => {
     const savedStatus = localStorage.getItem('emailVerificationStatus');
@@ -259,21 +259,65 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
 
   const options = ["establishment", "geocode"];
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep === 1) {
       // Validate Step 1: Personal Information
-    if (!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')) {
-      setShowVerifyEmailError(true);
-      return;
-    }
+      if (!(isEmailVerified.isVerify || emailVerificationStatus === 'verified')) {
+        setShowVerifyEmailError(true);
+        return;
+      }
+      
       // Trigger validation for step 1 fields
       const step1Fields = ['firstName', 'lastName', 'phone_number', 'profession', 'address', 'language_preference', 'country', 'zip_code', 'experience', 'time_zone'];
-      const isValid = step1Fields.every(field => {
+      
+      // Trigger react-hook-form validation for all fields
+      const validationResults = await Promise.all(
+        step1Fields.map(field => trigger(field))
+      );
+      
+      // Check each field with proper validation
+      const fieldChecks = step1Fields.map((field, index) => {
         const value = getValues(field);
-        return value && value.toString().trim() !== '';
+        const isValid = validationResults[index];
+        
+        // If react-hook-form validation fails, return false
+        if (!isValid) {
+          return false;
+        }
+        
+        // Special handling for address field (can be object or string)
+        if (field === 'address') {
+          if (typeof value === 'object' && value !== null) {
+            return value.formatted_address && value.formatted_address.trim() !== '';
+          }
+          return value && typeof value === 'string' && value.trim() !== '';
+        }
+        
+        // Special handling for language_preference (comma-separated string)
+        if (field === 'language_preference') {
+          return value && typeof value === 'string' && value.trim() !== '';
+        }
+        
+        // For other fields, check if value exists and is not empty
+        if (value === null || value === undefined) {
+          return false;
+        }
+        
+        const stringValue = value.toString().trim();
+        return stringValue !== '';
       });
       
+      const isValid = fieldChecks.every(check => check === true);
+      
+      // Log which fields are missing for debugging
       if (!isValid) {
+        const missingFields = step1Fields.filter((field, index) => !fieldChecks[index]);
+        console.log('Missing or invalid fields:', missingFields);
+        console.log('Field values:', step1Fields.reduce((acc, field) => {
+          acc[field] = getValues(field);
+          return acc;
+        }, {}));
+        console.log('Validation results:', validationResults);
         toast.error("Please fill in all required fields in Step 1");
         return;
       }
@@ -288,7 +332,10 @@ const Sidebar = ({ isOpen, onClose, jobDetails, setScreenLoader, loader, isEmail
       // Validate Step 2: Screening Questions (if they exist)
       if (jobDetails?.screening_questions?.length > 0) {
         const screeningFields = jobDetails.screening_questions.map((_, index) => `question_${index}`);
-        const isValid = screeningFields.every(field => {
+        const validationResults = await Promise.all(
+          screeningFields.map(field => trigger(field))
+        );
+        const isValid = validationResults.every(result => result === true) && screeningFields.every(field => {
           const value = getValues(field);
           return value && value.toString().trim() !== '';
         });
