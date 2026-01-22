@@ -8,6 +8,7 @@ import {
   getUserCookieData
 } from '../utils/cookieHelper';
 import './CookieConsent.css';
+import cookiesIcon from '../assets/cokkies.png';
 
 const CookieConsent = () => {
   const [showModal, setShowModal] = useState(false);
@@ -21,7 +22,6 @@ const CookieConsent = () => {
   });
   const [showUserData, setShowUserData] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [showMoreText, setShowMoreText] = useState(false);
 
   useEffect(() => {
     // Check if consent has been given
@@ -128,20 +128,11 @@ const CookieConsent = () => {
             }}
             aria-label="Manage cookie preferences"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="3" fill="currentColor"/>
-              <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
-            </svg>
+            <img 
+              src={cookiesIcon} 
+              alt="Cookie preferences" 
+              className="cookie-floating-button-icon"
+            />
           </button>
           <span className="cookie-floating-button-tooltip">Cookie Preferences</span>
         </div>
@@ -169,21 +160,8 @@ const CookieConsent = () => {
                 <p>
                   We use cookies to help you navigate efficiently and perform certain functions.
                   You will find detailed information about all cookies under each consent category below.
-                  {!showMoreText && (
-                    <span> </span>
-                  )}
-                  {showMoreText && (
-                    <span className="cookie-more-text">
-                      The cookies that are categorised as "Necessary" are stored on your browser as
-                      they are essential for enabling the basic functionalities of the site.{' '}
-                    </span>
-                  )}
-                  <button 
-                    className="cookie-show-more-link" 
-                    onClick={() => setShowMoreText(!showMoreText)}
-                  >
-                    {showMoreText ? 'Show less' : 'Show more'}
-                  </button>
+                  The cookies that are categorised as "Necessary" are stored on your browser as
+                  they are essential for enabling the basic functionalities of the site.
                 </p>
               </div>
 
