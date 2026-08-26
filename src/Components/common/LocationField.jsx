@@ -50,6 +50,7 @@ const LocationField = ({
             clearErrors(fieldName);
 
             const addressComponents = place?.address_components;
+            console
             const zipCodeObj = addressComponents?.find(
               (component) => component.types.includes("postal_code")
             );
